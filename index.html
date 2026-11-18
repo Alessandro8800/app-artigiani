@@ -281,7 +281,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .mostra-altro { width: 100%; margin-top: 18px; min-height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); font-weight: 800; font-size: 16px; }
 .mostra-nota { margin: 8px 4px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--testo-2); }
 /* Riprogramma */
-.giorno-testa h2 { display: flex; align-items: center; gap: 8px; }
+.giorno-testa span { white-space: nowrap; }
+.giorno-sotto { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; }
+.giorno-sotto .meteo-giorno { margin: 0; }
+.giorno-sotto .riprogramma { margin-left: auto; }
 .riprogramma { border: 0; border-radius: 99px; background: var(--foglia-chiara); color: var(--foglia); font-family: var(--font-testo); font-size: 13px; font-weight: 800; padding: 5px 11px; }
 .riprogramma.pioggia { background: var(--pioggia-2); color: var(--goccia); }
 .riprogramma.attivo { background: var(--foglia); color: var(--sul-foglia); }
@@ -1090,7 +1093,8 @@ let meseVisto = new Date(OGGI.getFullYear(), OGGI.getMonth(), 1);
 
 const fmtGiornoLungo = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long' });
 const fmtSett = new Intl.DateTimeFormat('it-IT', { weekday: 'long' });
-const fmtSettBreve = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric' });
+const fmtSettBreve = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });   // es. sab 21 nov
+const fmtMeseNome = new Intl.DateTimeFormat('it-IT', { month: 'long' });
 const daIso = s => { const [a, m, g] = s.split('-').map(Number); return new Date(a, m - 1, g); };
 const maiuscola = s => s.charAt(0).toUpperCase() + s.slice(1);
 const fmtNumero = new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximumFractionDigits: 2 });
@@ -1103,7 +1107,8 @@ function nomeGiorno(s) {
   if (s === tra(0)) return 'Oggi';
   if (s === tra(1)) return 'Domani';
   if (s === tra(-1)) return 'Ieri';
-  return maiuscola(fmtSett.format(daIso(s))) + ' ' + daIso(s).getDate();
+  // Con il mese, per essere chiari: es. Venerdì 20 novembre
+  return maiuscola(fmtSett.format(daIso(s))) + ' ' + daIso(s).getDate() + ' ' + fmtMeseNome.format(daIso(s));
 }
 
 function disegnaTestata() {
@@ -1204,7 +1209,7 @@ function disegnaAgenda() {
     const inSposta = riprogramma === s;
     const tastoRip = daFare.length ? `<button type="button" class="riprogramma${inSposta ? ' attivo' : ''}${livelloPioggia(s) ? ' pioggia' : ''}" data-rip="${s}">${inSposta ? 'Fine' : 'Riprogramma'}</button>` : '';
     const meteoGiorno = testoPioggia(s) ? `<div class="meteo-giorno livello-${livelloPioggia(s)}">${GOCCIA}${testoPioggia(s)}</div>` : '';
-    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}${tastoRip}</h2><span>${daFare.length ? `${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}` : ''}</span></div>${meteoGiorno}`;
+    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2><span>${daFare.length ? `${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}` : ''}</span></div>${meteoGiorno || tastoRip ? `<div class="giorno-sotto">${meteoGiorno}${tastoRip}</div>` : ''}`;
     const corpo = daFare.length
       ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di, inSposta)).join('')}</div>`
       : tutti.length ? `<div class="vuoto tutto-fatto">Tutto fatto</div>`

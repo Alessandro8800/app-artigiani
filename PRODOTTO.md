@@ -345,7 +345,9 @@ Prima pagina (Calendario):
   ("Sposta: nome del cliente"), si tocca il giorno e il lavoro è riprogrammato; "Fine" per uscire.
   Anche "Altro giorno" nella finestra Indietro apre lo stesso calendario.
 - **"Mostra altro"** in fondo all'agenda: dopo la settimana si vedono i **prossimi due mesi**
-  (oltre la settimana solo i giorni con lavori, per non riempire di giorni vuoti); poi "Mostra meno". "Piove? Sposta tutto" e il suo Annulla di 3 secondi: tolti.
+  (oltre la settimana solo i giorni con lavori, per non riempire di giorni vuoti); poi "Mostra meno".
+- **Giorni sempre con il mese**: "Venerdì 20 novembre" (nei riquadri "Sab 21 nov"). "Riprogramma"
+  sta sotto il nome del giorno, a destra, accanto all'eventuale pioggia. "Piove? Sposta tutto" e il suo Annulla di 3 secondi: tolti.
 
 ## Squadra di agenti (decisa il 18/11, da creare il 19/11)
 
