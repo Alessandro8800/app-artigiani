@@ -277,6 +277,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .ri-testa { display: flex; align-items: center; gap: 8px; }
 .ri-testa span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ri-testa small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
+/* Mostra altro, in fondo all'agenda */
+.mostra-altro { width: 100%; margin-top: 18px; min-height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); font-weight: 800; font-size: 16px; }
+.mostra-nota { margin: 8px 4px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--testo-2); }
 /* Riprogramma */
 .giorno-testa h2 { display: flex; align-items: center; gap: 8px; }
 .riprogramma { border: 0; border-radius: 99px; background: var(--foglia-chiara); color: var(--foglia); font-family: var(--font-testo); font-size: 13px; font-weight: 800; padding: 5px 11px; }
@@ -1179,13 +1182,20 @@ function cartaLavoro(l, parte = 1, di = 1, sposta = false) {
   </article>`;
 }
 
+// Quanti giorni mostra l'agenda: una settimana, oppure i prossimi due mesi con "Mostra altro"
+let agendaLunga = false;
 function disegnaAgenda() {
-  // Giorni mostrati: il giorno scelto se è fuori dalla settimana, poi oggi e i 6 giorni dopo.
+  // Giorni mostrati: il giorno scelto se è fuori dal periodo, poi oggi e la settimana.
+  // Con "Mostra altro" si va avanti fino a due mesi: oltre la settimana, solo i giorni con lavori.
   // I lavori fatti non si vedono più qui (andranno nella schermata "Lavori fatti").
-  const giorni = [];
-  if (scelto < tra(0) || scelto > tra(6)) giorni.push(scelto);
-  for (let i = 0; i <= 6; i++) giorni.push(tra(i));
   const mappa = mappaGiorni();
+  const fine = agendaLunga ? 61 : 6;
+  const giorni = [];
+  if (scelto < tra(0) || scelto > tra(fine)) giorni.push(scelto);
+  for (let i = 0; i <= fine; i++) {
+    const s = tra(i);
+    if (i <= 6 || ((mappa[s] || { lavori: [] }).lavori.some(v => !v.l.fatto))) giorni.push(s);
+  }
   document.getElementById('agenda').innerHTML = giorni.map(s => {
     const tutti = (mappa[s] || { lavori: [] }).lavori;
     const daFare = tutti.filter(v => !v.l.fatto).sort((a, b) => minutiOra(a.l.ora) - minutiOra(b.l.ora));
@@ -1201,7 +1211,13 @@ function disegnaAgenda() {
       : s >= tra(0) ? `<div class="vuoto con-tasto">Nessun lavoro<button class="aggiungi-qui" data-s="${s}"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button></div>`
       : `<div class="vuoto">Nessun lavoro</div>`;
     return `<section class="giorno" id="g-${s}">${testa}${corpo}</section>`;
-  }).join('');
+  }).join('') + (agendaLunga
+    ? `<button type="button" class="mostra-altro" id="mostra-altro">Mostra meno</button><p class="mostra-nota">Fino a ${nomeGiorno(tra(61)).toLowerCase()} · oltre la settimana si vedono solo i giorni con lavori</p>`
+    : `<button type="button" class="mostra-altro" id="mostra-altro">Mostra altro · i prossimi due mesi</button>`);
+  $('mostra-altro').onclick = () => {
+    agendaLunga = !agendaLunga; disegnaAgenda();
+    if (!agendaLunga) document.getElementById('g-' + tra(6)).scrollIntoView({ block: 'start' });
+  };
   document.querySelectorAll('.lavoro .spunta').forEach(b => { b.onclick = () => segnaFatto(b.closest('.lavoro')); });
   document.querySelectorAll('#agenda .riprogramma').forEach(b => { b.onclick = () => { riprogramma = riprogramma === b.dataset.rip ? null : b.dataset.rip; disegnaAgenda(); }; });
   document.querySelectorAll('#agenda .sposta-qui').forEach(b => { b.onclick = () => apriCalSposta(+b.dataset.sp); });
