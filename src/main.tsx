@@ -1,5 +1,4 @@
 import { render } from 'preact';
-import { registerSW } from 'virtual:pwa-register';
 import { chiediSpazioPermanente } from './db';
 import { Calendario } from './schermate/calendario';
 import { ElencoClienti, SchedaCliente } from './schermate/clienti';
@@ -36,6 +35,9 @@ function App() {
   );
 }
 
-registerSW({ immediate: true });
+// Questa versione ora vive in /prima-versione/: il file per lavorare senza internet sta una cartella sopra
+if ('serviceWorker' in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  navigator.serviceWorker.register(new URL('../sw.js', location.href), { scope: '../' }).catch(() => {});
+}
 chiediSpazioPermanente();
 render(<App />, document.getElementById('app')!);
