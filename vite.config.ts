@@ -5,18 +5,19 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   // './' fa funzionare l'app anche dentro una sottocartella (es. GitHub Pages)
   base: './',
-  // Oltre all'app, si pubblica anche la prova grafica: .../app-artigiani/prove/prima-pagina.html
+  // Pagina principale = la prova grafica (index.html).
+  // La prima versione resta in .../prima-versione/ (con i suoi dati), il vecchio link della prova porta alla principale.
   build: {
     rollupOptions: {
-      input: { app: 'index.html', prova: 'prove/prima-pagina.html' },
+      input: { app: 'index.html', primaVersione: 'prima-versione/index.html', vecchioLink: 'prove/prima-pagina.html' },
     },
   },
   plugins: [
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
-      // La prova non deve essere sostituita dall'app quando la si apre dal link
-      workbox: { navigateFallbackDenylist: [/\/prove\//] },
+      // Queste pagine non devono essere sostituite dalla principale quando si aprono dal link
+      workbox: { navigateFallbackDenylist: [/\/prove\//, /\/prima-versione\//] },
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
       manifest: {
         name: 'Lavori e Pagamenti',

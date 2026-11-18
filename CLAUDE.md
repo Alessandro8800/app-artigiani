@@ -17,6 +17,11 @@ Primo utente: un giardiniere. La specifica è in `SPEC.md`.
 
 ## Struttura
 
+- `index.html` — **la prova grafica approvata** (un unico file, dati inventati, si azzera a ogni
+  apertura). È la pagina principale del sito. Le decisioni sono in `PRODOTTO.md`.
+- `prima-versione/index.html` — la prima versione dell'app (bocciata), che usa i file in `src/`.
+  Resta online in `/prima-versione/` per non perdere i suoi dati.
+
 - `src/logica.ts` — tipi dei dati e calcoli (chi deve quanto, stati). Testato in `logica.test.ts`.
 - `src/db.ts` — lettura e scrittura dei dati sul telefono.
 - `src/backup.ts` — esportazione JSON/CSV e ripristino.
