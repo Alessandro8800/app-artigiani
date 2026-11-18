@@ -277,6 +277,29 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .ri-testa { display: flex; align-items: center; gap: 8px; }
 .ri-testa span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ri-testa small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
+/* Impostazioni avanzate a tendina */
+.avanzate-sotto { border-bottom: 1px solid var(--linea); }
+.avanzate-sotto:last-child { border-bottom: none; }
+.avanzate-sotto > summary { font-size: 15px; font-weight: 700; color: var(--testo); cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+.avanzate-sotto > summary::-webkit-details-marker { display: none; }
+.avanzate-sotto > summary::after { content: '›'; font-size: 20px; color: var(--testo-2); display: inline-block; transition: transform .2s; line-height: 1; }
+.avanzate-sotto[open] > summary::after { transform: rotate(90deg); }
+.avanzate-sotto .campo { padding-bottom: 12px; }
+/* Barra AI e microfono */
+.ai-barra { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding: 8px 10px; background: var(--carta); border-radius: 16px; border: 1px solid var(--linea); }
+.ai-barra-cat { flex: 1; display: flex; gap: 2px; }
+.ai-ic { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50px; border-radius: 10px; background: none; border: none; cursor: pointer; color: var(--testo-2); padding: 4px 2px; transition: background .12s; }
+.ai-ic:active, .ai-ic.attivo { background: var(--foglia-chiara); color: var(--foglia); }
+.ai-ic svg { width: 22px; height: 22px; }
+.ai-badge { position: absolute; top: 3px; right: 3px; background: var(--rosso); color: #fff; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; line-height: 1; }
+.ai-ic-tutto { width: 46px; min-height: 46px; display: flex; align-items: center; justify-content: center; background: var(--foglia-chiara); border-radius: 12px; border: 1.5px solid var(--foglia); cursor: pointer; color: var(--foglia); flex-shrink: 0; position: relative; transition: background .12s; }
+.ai-ic-tutto:active { background: var(--foglia); color: var(--sul-foglia); }
+.ai-ic-tutto svg { width: 22px; height: 22px; }
+.ai-microfono { margin-top: 10px; width: 100%; min-height: 62px; border-radius: 18px; border: none; background: var(--rosso); color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 18px rgba(180,35,24,.22); transition: transform .1s, box-shadow .1s; }
+.ai-microfono:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(180,35,24,.3); }
+.ai-microfono svg { width: 28px; height: 28px; }
+.ai-microfono.ascolta { background: #8c0000; animation: ai-pulsa 1.1s ease-in-out infinite; }
+@keyframes ai-pulsa { 0%,100% { box-shadow: 0 4px 18px rgba(180,35,24,.22); } 50% { box-shadow: 0 4px 36px rgba(180,35,24,.55), 0 0 0 10px rgba(180,35,24,.08); } }
 /* Mostra altro, in fondo all'agenda */
 .mostra-altro { width: 100%; margin-top: 18px; min-height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); font-weight: 800; font-size: 16px; }
 .mostra-nota { margin: 8px 4px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--testo-2); }
@@ -604,12 +627,20 @@ button.s-riga:first-child { border-top: 0; }
 .q-giorno strong { font-size: 16px; }
 .q-giorno small { font-size: 13px; }
 .avanzate { border-top: 1px solid var(--linea); padding-top: 4px; }
-.avanzate summary { list-style: none; cursor: pointer; font-weight: 800; font-size: 15px; padding: 10px 0; display: flex; align-items: baseline; gap: 8px; }
-.avanzate summary::-webkit-details-marker { display: none; }
-.avanzate summary::before { content: "+"; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--foglia-chiara); color: var(--foglia); font-weight: 800; }
-.avanzate[open] summary::before { content: "–"; }
-.avanzate summary small { font-weight: 600; color: var(--testo-2); font-size: 13px; }
-.avanzate-corpo { display: flex; flex-direction: column; gap: 14px; padding-bottom: 6px; }
+.avanzate > summary { list-style: none; cursor: pointer; font-weight: 800; font-size: 15px; padding: 10px 0; display: flex; align-items: center; justify-content: space-between; }
+.avanzate > summary::-webkit-details-marker { display: none; }
+.avanzate > summary::after { content: '›'; font-size: 20px; color: var(--testo-2); display: inline-block; transition: transform .2s; line-height: 1; }
+.avanzate[open] > summary::after { transform: rotate(90deg); }
+.avanzate > summary small { font-weight: 600; color: var(--testo-2); font-size: 13px; }
+.avanzate-corpo { display: flex; flex-direction: column; gap: 0; padding-bottom: 6px; }
+/* Mesi semestrale griglia */
+.sem-mesi-griglia { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 6px; }
+.sem-chip { border-radius: 10px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); font-size: 14px; font-weight: 700; min-height: 40px; cursor: pointer; }
+.sem-chip.attivo { border-color: var(--foglia); background: var(--foglia-chiara); color: var(--foglia); }
+/* Telefoni multipli */
+.tel-aggiungi { margin-top: 6px; background: none; border: 1.5px dashed var(--linea); border-radius: 10px; color: var(--foglia); font-size: 14px; font-weight: 700; min-height: 40px; width: 100%; cursor: pointer; }
+/* Si ripete: meno spaziatura */
+.ripeti-opz { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; background: var(--sfondo); font-weight: 700; font-size: 15px; cursor: pointer; }
 .colori { display: flex; gap: 7px; flex-wrap: wrap; }
 .colori button { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 2px solid var(--linea); background: var(--c, var(--carta)); display: grid; place-items: center; color: #fff; }
 .colori button.attivo { box-shadow: 0 0 0 3px var(--sfondo), 0 0 0 5px var(--foglia); }
@@ -663,8 +694,40 @@ button.s-riga:first-child { border-top: 0; }
         </div>
         <div class="griglia" id="griglia"></div>
       </div>
-      <!-- Al centro dello schermo, il posto più comodo col pollice -->
-      <div class="azioni-centro" id="azioni-cal"></div>
+      <!-- Barra AI: 5 categorie + inbox + microfono -->
+      <div class="ai-barra">
+        <div class="ai-barra-cat">
+          <button class="ai-ic" id="ai-cat-cliente" aria-label="Nuovi clienti da confermare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M2 20c0-4 3.6-7 8-7"/><path d="M19 12v6M16 15h6"/></svg>
+            <span class="ai-badge" id="ai-b-cliente" hidden>0</span>
+          </button>
+          <button class="ai-ic" id="ai-cat-nota" aria-label="Note da confermare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+            <span class="ai-badge" id="ai-b-nota" hidden>0</span>
+          </button>
+          <button class="ai-ic" id="ai-cat-sposta" aria-label="Spostamenti da confermare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/></svg>
+            <span class="ai-badge" id="ai-b-sposta" hidden>0</span>
+          </button>
+          <button class="ai-ic" id="ai-cat-costo" aria-label="Costi da confermare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            <span class="ai-badge" id="ai-b-costo" hidden>0</span>
+          </button>
+          <button class="ai-ic" id="ai-cat-paga" aria-label="Pagamenti da confermare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h2a2 2 0 100-4h-1a2 2 0 110-4h2m0 8h-2"/></svg>
+            <span class="ai-badge" id="ai-b-paga" hidden>0</span>
+          </button>
+        </div>
+        <button class="ai-ic-tutto" id="ai-tutto" aria-label="Tutte le notifiche">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 004-3V9a8 8 0 1116 0v5a3 3 0 004 3"/><path d="M9 17v1a3 3 0 006 0v-1"/></svg>
+          <span class="ai-badge" id="ai-b-tutto" hidden>0</span>
+        </button>
+      </div>
+      <button class="ai-microfono" id="ai-mic" aria-label="Parla con l'assistente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+        Parla
+      </button>
+
       <div id="agenda"></div>
     </div>
   </section>
@@ -738,9 +801,7 @@ button.s-riga:first-child { border-top: 0; }
     </header>
 
     <div class="f-corpo gutter">
-      <div class="campo" id="campo-tipo">
-        <div class="chips" id="f-tipo" role="radiogroup" aria-label="Tipo di cliente"></div>
-      </div>
+      <!-- 1. Chi -->
       <label class="campo" id="campo-nome">
         <span>Nome</span>
         <input id="f-nome" autocomplete="off" autocapitalize="words" placeholder="Es. Mario Rossi">
@@ -748,39 +809,22 @@ button.s-riga:first-child { border-top: 0; }
       <div class="trovati" id="f-trovati" hidden></div>
       <div class="scelto" id="f-scelto" hidden></div>
 
+      <!-- 2. Dove -->
       <label class="campo" id="campo-dove">
-        <span>Indirizzo <small>· dove andare</small></span>
+        <span>Indirizzo</span>
         <input id="f-dove" autocomplete="off" autocapitalize="words" placeholder="Es. Via Roma 10">
       </label>
 
       <!-- Il lavoro: solo in "Nuovo cliente" -->
       <div class="f-lavoro" id="f-lavoro">
-        <!-- 1. Giorno (prima) -->
-        <div class="campo">
-          <div class="q-quattro" id="f-quando"></div>
-          <p class="q-info" id="q-info" hidden></p>
-        </div>
-
-        <!-- 2. Tempi del lavoro -->
-        <div class="campo">
-          <span class="campo-sottotitolo">Tempi del lavoro</span>
-          <div class="drum-contenitore"><div class="drum-scorribile" id="f-durata" aria-label="Quanto dura il lavoro"></div></div>
-          <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
-            <div class="ora-pill" id="ora-pill"></div>
-            <button class="ora-voce" type="button" data-o="mattina">Mattina</button>
-            <button class="ora-voce" type="button" data-o="">Qualsiasi</button>
-            <button class="ora-voce" type="button" data-o="pomeriggio">Pomeriggio</button>
-          </div>
-        </div>
-
-        <!-- 3. Cosa c'è da fare: textarea prima, poi bottoni veloci uniformi -->
+        <!-- 3. Cosa -->
         <label class="campo">
           <span>Cosa c'è da fare <small>· tocca o scrivi</small></span>
           <textarea id="f-cosa" rows="1" autocapitalize="sentences" placeholder="Es. Taglio prato e siepe"></textarea>
           <span class="chips piccoli chips-uniform" id="f-comuni"></span>
         </label>
 
-        <!-- 4. Prezzo con rotella -->
+        <!-- 4. Quanto -->
         <div class="campo">
           <span>Prezzo <small>· tieni premuto per il dettaglio</small></span>
           <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="f-prezzo-drum" aria-label="Prezzo del lavoro"></div></div>
@@ -790,45 +834,87 @@ button.s-riga:first-child { border-top: 0; }
           </div>
           <input type="hidden" id="f-prezzo">
         </div>
-      </div>
 
-      <!-- Telefono: per ultimo, fuori dalla parte del lavoro (così c'è anche in "Modifica cliente") -->
-      <label class="campo">
-        <span>Telefono <small>· facoltativo</small></span>
-        <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
-      </label>
-
-      <!-- Paga ogni X mesi: solo per i condomini, fuori dalle impostazioni avanzate -->
-      <div class="campo" id="campo-semestrale" hidden>
-        <div class="notifica-testa">
-          <span><strong>Paga ogni 6 mesi</strong><small id="f-sem-desc">A giugno e a dicembre</small></span>
-          <div class="sem-destra">
-            <button type="button" class="sem-btn-cfg" id="f-sem-cfg" aria-label="Modifica mesi di pagamento" hidden>✏ Mesi</button>
-            <button type="button" class="interruttore" id="f-semestrale" role="switch" aria-checked="false" aria-label="Paga ogni 6 mesi"><i></i></button>
-          </div>
+        <!-- 5. Quando -->
+        <div class="campo">
+          <div class="q-quattro" id="f-quando"></div>
+          <p class="q-info" id="q-info" hidden></p>
         </div>
-        <div class="sem-mesi" id="f-sem-mesi" hidden></div>
       </div>
 
-      <!-- Altre impostazioni del cliente: chiuse, si aprono con un tocco -->
+      <!-- Impostazioni avanzate: tutto a tendina -->
       <details class="avanzate" id="f-avanzate">
-        <summary>Altre impostazioni</summary>
+        <summary>Impostazioni avanzate</summary>
         <div class="avanzate-corpo">
-          <div class="campo">
-            <span>Etichetta <small>· colore del bordo della sua carta nel calendario</small></span>
-            <div class="colori" id="f-colore" role="radiogroup" aria-label="Etichetta del cliente"></div>
-          </div>
-          <div class="campo">
-            <div class="notifica-testa"><span><strong>Si ripete</strong></span>
-              <button type="button" class="interruttore" id="f-ripeti-toggle" role="switch" aria-checked="false" aria-label="Si ripete"><i></i></button></div>
-            <div class="ripeti-opzioni" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete" hidden></div>
-            <small class="nota-campo" id="f-ripeti-nota"></small>
+
+          <details class="avanzate-sotto">
+            <summary>Tipo cliente</summary>
+            <div class="campo" id="campo-tipo">
+              <div class="chips" id="f-tipo" role="radiogroup" aria-label="Tipo di cliente"></div>
+            </div>
+          </details>
+
+          <details class="avanzate-sotto">
+            <summary>Durata e orario</summary>
+            <div class="campo">
+              <div class="drum-contenitore"><div class="drum-scorribile" id="f-durata" aria-label="Quanto dura il lavoro"></div></div>
+              <div class="prezzo-edit-panel" id="durata-edit-panel" hidden>
+                <input type="number" id="durata-edit-input" inputmode="decimal" min="1" step="0.5" placeholder="Es. 9">
+                <button type="button" id="durata-unita" class="chip attivo">ore</button>
+              </div>
+              <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
+                <div class="ora-pill" id="ora-pill"></div>
+                <button class="ora-voce" type="button" data-o="mattina">Mattina</button>
+                <button class="ora-voce" type="button" data-o="">Qualsiasi</button>
+                <button class="ora-voce" type="button" data-o="pomeriggio">Pomeriggio</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="avanzate-sotto">
+            <summary>Telefono</summary>
+            <div class="campo" id="f-tel-wrap">
+              <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
+              <button type="button" class="tel-aggiungi" id="f-tel-add">+ Aggiungi numero</button>
+            </div>
+          </details>
+
+          <div id="campo-semestrale" hidden>
+            <details class="avanzate-sotto">
+              <summary>Paga ogni:</summary>
+              <div class="campo">
+                <div id="f-sem-mesi" class="sem-mesi-griglia"></div>
+                <small class="nota-campo" id="f-sem-desc"></small>
+              </div>
+            </details>
           </div>
 
-          <label class="campo">
-            <span>Note personali</span>
-            <textarea id="f-note" rows="2" autocapitalize="sentences" placeholder="Es. codice cancello 1234, c'è il cane"></textarea>
-          </label>
+          <details class="avanzate-sotto">
+            <summary>Si ripete</summary>
+            <div class="campo">
+              <div class="notifica-testa">
+                <span><strong>Si ripete</strong></span>
+                <button type="button" class="interruttore" id="f-ripeti-toggle" role="switch" aria-checked="false" aria-label="Si ripete"><i></i></button>
+              </div>
+              <div class="ripeti-opzioni" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete" hidden></div>
+              <small class="nota-campo" id="f-ripeti-nota"></small>
+            </div>
+          </details>
+
+          <details class="avanzate-sotto">
+            <summary>Etichetta colore</summary>
+            <div class="campo">
+              <div class="colori" id="f-colore" role="radiogroup" aria-label="Etichetta del cliente"></div>
+            </div>
+          </details>
+
+          <details class="avanzate-sotto">
+            <summary>Note personali</summary>
+            <label class="campo">
+              <textarea id="f-note" rows="2" autocapitalize="sentences" placeholder="Es. codice cancello 1234, c'è il cane"></textarea>
+            </label>
+          </details>
+
         </div>
       </details>
     </div>
@@ -1036,7 +1122,7 @@ const TELEFONI = { 'Villa Sangalli': '339 412 7781', 'Giorgio Pozzi': '347 220 1
 
 // Altre impostazioni di ogni cliente: telefoni, colore, ogni quanto si ripete il lavoro
 const extra = {};
-const prendiExtra = nome => extra[nome] || (extra[nome] = { tel: '', colore: '', ripeti: 'no', note: '', mesiSemestrale: [6, 12] });
+const prendiExtra = nome => extra[nome] || (extra[nome] = { tel: '', colore: '', ripeti: 'no', note: '', mesiSemestrale: [] });
 for (const [n, t] of Object.entries(TELEFONI)) prendiExtra(n).tel = t;
 prendiExtra('Villa Sangalli').colore = '#8a5cc7';      // nella prova: due clienti già colorati
 prendiExtra('Condominio Aurora').colore = '#3b82c4';
@@ -1373,7 +1459,7 @@ function disegnaTipo() {
   $('f-tipo').innerHTML = TIPI.map(t => `<button class="chip${t === tipo ? ' attivo' : ''}" role="radio" aria-checked="${t === tipo}" data-t="${t}">${t}</button>`).join('');
   $('f-tipo').querySelectorAll('.chip').forEach(b => { b.onclick = () => {
     tipo = b.dataset.t;
-    if (modoFoglio === 'nuovo') { semestrale = tipo === 'Condominio'; mesiSemestrale = [6, 12]; semCfgAperto = false; disegnaSemestrale(); }
+    if (modoFoglio === 'nuovo') { semestrale = false; mesiSemestrale = []; semCfgAperto = false; disegnaSemestrale(); }
     disegnaTipo();
   }; });
   $('campo-semestrale').hidden = tipo !== 'Condominio' || !!clienteScelto;
@@ -1399,11 +1485,12 @@ function apriFoglio(giorno, perCliente) {
   notaInCorso = null;
   // Giorno già scelto: quello toccato sul calendario; altrimenti il primo dei giorni migliori
   const g = giorno || (scelto > tra(0) ? scelto : null);
-  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = [6, 12]; semCfgAperto = false; prezzoFine = false; prezzoFineCentro = null;
+  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = []; semCfgAperto = false; prezzoFine = false; prezzoFineCentro = null;
   quandoFisso = !!g;
   quando = g || giorniMigliori()[0];
   dateScelte = []; allineaDate();
   for (const id of ['f-nome', 'f-dove', 'f-tel', 'f-note', 'f-cosa', 'f-prezzo']) $(id).value = '';
+  $('f-tel-wrap').querySelectorAll('input:not(#f-tel)').forEach(i => i.remove());
   $('f-avanzate').open = false;
   disegnaTipo(); disegnaDurata(); disegnaPrezzoDrum(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
   // Dalla scheda cliente: cliente già scelto, e il suo ultimo lavoro già scritto (cosa, prezzo, durata)
@@ -1424,8 +1511,13 @@ function apriModifica(nome) {
   preparaFoglio('modifica');
   nomeInModifica = nome;
   const c = datiCliente(nome);
-  tipo = c.tipo; colore = c.colore; ripeti = c.ripeti; semestrale = !!c.semestrale; mesiSemestrale = c.mesiSemestrale || [6, 12]; semCfgAperto = false; disegnaSemestrale();
-  $('f-nome').value = c.nome; $('f-dove').value = c.dove; $('f-tel').value = c.tel; $('f-note').value = c.note;
+  tipo = c.tipo; colore = c.colore; ripeti = c.ripeti; semestrale = !!c.semestrale; mesiSemestrale = c.mesiSemestrale || []; semCfgAperto = false; disegnaSemestrale();
+  $('f-nome').value = c.nome; $('f-dove').value = c.dove; $('f-note').value = c.note;
+  const telsM = (c.tel || '').split('\n').filter(Boolean);
+  const wrapM = $('f-tel-wrap');
+  wrapM.querySelectorAll('input:not(#f-tel)').forEach(i => i.remove());
+  $('f-tel').value = telsM[0] || '';
+  telsM.slice(1).forEach(t => { const inp = aggiungiTelInput(wrapM); inp.value = t; });
   $('f-avanzate').open = true;
   disegnaTipo(); disegnaColori(); disegnaRipeti();
   aggiornaCliente();
@@ -1570,7 +1662,7 @@ function aggiornaCliente() {
 }
 
 // ---- A che ora (facoltativo): mattina, pomeriggio o un'ora precisa ----
-let ora = '', semestrale = false, mesiSemestrale = [6, 12], semCfgAperto = false, prezzoFine = false, prezzoFineCentro = null;
+let ora = '', semestrale = false, mesiSemestrale = [], semCfgAperto = false, prezzoFine = false, prezzoFineCentro = null;
 const nomeOra = o => o === 'mattina' ? 'Mattina' : o === 'pomeriggio' ? 'Pomeriggio' : o;
 const minutiOra = o => !o ? 9999 : o === 'mattina' ? 480 : o === 'pomeriggio' ? 840 : (+o.slice(0, 2)) * 60 + (+o.slice(3, 5));
 function disegnaOra() {
@@ -1592,36 +1684,21 @@ function disegnaOra() {
 const MESI_BREVI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
 const MESI_ESTESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 function disegnaSemestrale() {
-  const b = $('f-semestrale'), cfgBtn = $('f-sem-cfg'), cfgPanel = $('f-sem-mesi'), desc = $('f-sem-desc');
-  if (!b) return;
-  b.classList.toggle('acceso', semestrale); b.setAttribute('aria-checked', String(semestrale));
-  // Descrizione dinamica
-  const nomiM = mesiSemestrale.slice().sort((a, x) => a - x).map(m => MESI_ESTESI[m - 1]);
-  desc.textContent = nomiM.length <= 2 ? 'A ' + nomiM.join(' e a ') : 'A ' + nomiM.slice(0, -1).join(', ') + ' e a ' + nomiM[nomiM.length - 1];
-  // Bottone Modifica: visibile solo quando il toggle è ON
-  cfgBtn.hidden = !semestrale;
-  if (!semestrale) { semCfgAperto = false; cfgPanel.hidden = true; cfgBtn.classList.remove('aperto'); }
-  // Pannello mesi
-  if (semCfgAperto) {
-    cfgPanel.hidden = false;
-    cfgPanel.innerHTML = MESI_BREVI.map((n, i) => {
-      const m = i + 1, att = mesiSemestrale.includes(m);
-      return `<button type="button" class="sem-mese${att ? ' attivo' : ''}" data-m="${m}">${n}</button>`;
-    }).join('');
-    cfgPanel.querySelectorAll('.sem-mese').forEach(chip => {
-      chip.onclick = () => {
-        const m = +chip.dataset.m;
-        if (mesiSemestrale.includes(m)) { if (mesiSemestrale.length > 1) mesiSemestrale = mesiSemestrale.filter(x => x !== m); }
-        else mesiSemestrale = [...mesiSemestrale, m].sort((a, x) => a - x);
-        disegnaSemestrale();
-      };
-    });
-  }
-  if (!b.dataset.init) {
-    b.dataset.init = '1';
-    b.onclick = () => { semestrale = !semestrale; disegnaSemestrale(); };
-    cfgBtn.onclick = () => { semCfgAperto = !semCfgAperto; cfgBtn.classList.toggle('aperto', semCfgAperto); disegnaSemestrale(); };
-  }
+  const cfgPanel = $('f-sem-mesi'), desc = $('f-sem-desc');
+  if (!cfgPanel) return;
+  cfgPanel.innerHTML = MESI_BREVI.map((m, i) => {
+    const n = i + 1, sel = mesiSemestrale.includes(n);
+    return `<button type="button" class="sem-chip${sel ? ' attivo' : ''}" data-m="${n}">${m}</button>`;
+  }).join('');
+  cfgPanel.querySelectorAll('.sem-chip').forEach(chip => {
+    chip.onclick = () => {
+      const m = +chip.dataset.m;
+      mesiSemestrale = mesiSemestrale.includes(m) ? mesiSemestrale.filter(x => x !== m) : [...mesiSemestrale, m].sort((a, b) => a - b);
+      semestrale = mesiSemestrale.length > 0;
+      disegnaSemestrale();
+    };
+  });
+  desc.textContent = mesiSemestrale.length === 0 ? 'Tocca i mesi per attivare' : mesiSemestrale.map(m => MESI_ESTESI[m-1]).join(', ');
 }
 
 // ---- Quanto dura: in ore. Serve a capire quanto è pieno un giorno ----
@@ -1751,21 +1828,42 @@ function disegnaDurata() {
   const drum = $('f-durata');
   if (drum.dataset.init) { scorriDrum(); return; }
   drum.dataset.init = '1';
-  drum.innerHTML = DRUM_VALORI.map(v => {
-    const gg = Math.floor(v / oreGiornata), hh = v % oreGiornata;
-    const num = v < oreGiornata ? v : (hh === 0 ? gg : v);
-    const unit = v < oreGiornata ? (v === 1 ? 'ora' : 'ore') : (hh === 0 ? (gg === 1 ? 'giornata' : 'giorni') : 'ore');
-    return `<div class="drum-voce" data-v="${v}"><b>${num}</b><small>${unit}</small></div>`;
-  }).join('');
+  drum.innerHTML = `<div class="drum-voce drum-spec" data-v="edit">${SVG_MATITA}<small>Durata</small></div>` +
+    DRUM_VALORI.map(v => {
+      const gg = Math.floor(v / oreGiornata), hh = v % oreGiornata;
+      const num = v < oreGiornata ? v : (hh === 0 ? gg : v);
+      const unit = v < oreGiornata ? (v === 1 ? 'ora' : 'ore') : (hh === 0 ? (gg === 1 ? 'giornata' : 'giorni') : 'ore');
+      return `<div class="drum-voce" data-v="${v}"><b>${num}</b><small>${unit}</small></div>`;
+    }).join('');
   scorriDrum();
+  $('durata-unita').onclick = () => {
+    const btn = $('durata-unita');
+    btn.textContent = btn.textContent === 'ore' ? 'giorni' : 'ore';
+    const v = parseFloat($('durata-edit-input').value);
+    if (v > 0) {
+      const gg = btn.textContent === 'giorni';
+      durata = Math.round(v * (gg ? oreGiornata : 1));
+      durataSolita = durata; dateScelte = []; allineaDate();
+      if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
+    }
+  };
+  $('durata-edit-input').oninput = () => {
+    const v = parseFloat($('durata-edit-input').value);
+    if (v > 0) {
+      const gg = $('durata-unita').textContent === 'giorni';
+      durata = Math.round(v * (gg ? oreGiornata : 1));
+      durataSolita = durata; dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
+    }
+  };
   const aggiorna = () => {
     const i = Math.round(drum.scrollLeft / DRUM_W);
-    const v = DRUM_VALORI[Math.max(0, Math.min(i, DRUM_VALORI.length - 1))];
-    if (v !== durata) {
-      durata = v; durataSolita = v;
-      if (!quandoFisso) quando = giorniMigliori()[0] || quando;
-      dateScelte = []; allineaDate();
-      disegnaQuando();
+    if (i === 0) {
+      $('durata-edit-panel').hidden = false;
+      setTimeout(() => $('durata-edit-input').focus(), 80);
+    } else {
+      $('durata-edit-panel').hidden = true;
+      const v = DRUM_VALORI[Math.max(0, Math.min(i - 1, DRUM_VALORI.length - 1))];
+      if (v !== durata) { durata = v; durataSolita = v; dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando(); }
     }
   };
   drum.addEventListener('scrollend', aggiorna);
@@ -1774,8 +1872,7 @@ function disegnaDurata() {
 function scorriDrum() {
   const drum = $('f-durata');
   const idx = DRUM_VALORI.indexOf(durata);
-  if (idx < 0) return;
-  const imposta = () => { drum.scrollLeft = idx * DRUM_W; };
+  const imposta = () => { drum.scrollLeft = (idx < 0 ? 1 : idx + 1) * DRUM_W; };
   imposta(); requestAnimationFrame(imposta);
 }
 
@@ -2007,7 +2104,7 @@ function salva() {
   if (n > 1) nuovo.date = dateOrdinate();
   lavori.push(nuovo);
   const e = prendiExtra(nome);
-  if (!clienteScelto) { e.tel = $('f-tel').value.trim(); e.colore = colore; e.note = $('f-note').value.trim(); e.semestrale = semestrale; e.mesiSemestrale = mesiSemestrale; }
+  if (!clienteScelto) { e.tel = leggiTelefoni(); e.colore = colore; e.note = $('f-note').value.trim(); e.semestrale = semestrale; e.mesiSemestrale = mesiSemestrale; }
   let ripetuti = 0;
   if (ripeti !== 'no') { e.ripeti = ripeti; togliRipetuti(nome); ripetuti = generaSerie(nuovo, ripeti); }
   setTimeout(() => {
@@ -2038,7 +2135,7 @@ function salvaModifica() {
   }
   for (const p of pagamenti) if (p.nome === vecchio) p.nome = nuovo;
   delete extra[vecchio];
-  extra[nuovo] = { ...e, tel: $('f-tel').value.trim(), note: $('f-note').value.trim(), colore, ripeti, semestrale, mesiSemestrale };
+  extra[nuovo] = { ...e, tel: leggiTelefoni(), note: $('f-note').value.trim(), colore, ripeti, semestrale, mesiSemestrale };
   let ripetuti = 0;
   if (ripeti !== ripetiPrima) {
     togliRipetuti(nuovo);
@@ -2209,6 +2306,21 @@ $('prova-usa').onclick = () => compila($('prova-frase').value);
 
 $('f-nome').addEventListener('input', aggiornaCliente);
 
+// ---- Barra AI: icone categoria ----
+$('ai-cat-cliente').onclick = () => apriFoglio();
+
+// ---- Microfono globale AI ----
+$('ai-mic').onclick = () => {
+  const btn = $('ai-mic');
+  if (btn.classList.contains('ascolta')) {
+    btn.classList.remove('ascolta');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg> Parla`;
+  } else {
+    btn.classList.add('ascolta');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg> In ascolto…`;
+  }
+};
+
 // Costi rapidi: con un tocco si aggiunge la voce e si scrive l'importo. Si cambiano dalle Impostazioni.
 // "Personale" è sempre il primo ed è speciale: ore × costo all'ora.
 const COSTI_RAPIDI = ['Terra', 'Piante', 'Concime', 'Attrezzature', 'Noleggio', 'Carburante', 'Smaltimento'];
@@ -2216,7 +2328,7 @@ let costoOrario = 15;   // costo all'ora del personale, già proposto
 
 // Lavori più comuni: un tocco li aggiunge a "Cosa c'è da fare", un altro tocco li toglie.
 // In futuro si potranno cambiare dalle Impostazioni.
-const LAVORI_COMUNI = ['Taglio erba', 'Potatura', 'Taglio siepe', 'Manutenzione verde', 'Raccolta foglie', 'Pulizia giardino'];
+const LAVORI_COMUNI = ['Taglio erba', 'Potatura', 'Taglio siepe', 'Irrigazione', 'Raccolta foglie', 'Pulizia giardino', 'Vigneto', 'Manutenzione verde'];
 const pezziCosa = () => $('f-cosa').value.split(',').map(s => s.trim()).filter(Boolean);
 function disegnaComuni() {
   const pezzi = pezziCosa().map(normalizza);
@@ -2237,6 +2349,18 @@ function disegnaComuni() {
   });
 }
 $('f-cosa').addEventListener('input', disegnaComuni);
+function aggiungiTelInput(wrap) {
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.inputMode = 'tel'; inp.autocomplete = 'off';
+  inp.placeholder = 'Es. 333 123 4567';
+  wrap.insertBefore(inp, $('f-tel-add'));
+  return inp;
+}
+function leggiTelefoni() {
+  return Array.from($('f-tel-wrap').querySelectorAll('input[type="text"]'))
+    .map(i => i.value.trim()).filter(Boolean).join('\n');
+}
+$('f-tel-add').onclick = () => { aggiungiTelInput($('f-tel-wrap')).focus(); };
 $('f-salva').onclick = salva;
 $('f-chiudi').onclick = chiudiFoglio;
 $('foglio').addEventListener('click', e => { if (e.target === $('foglio')) chiudiFoglio(); });
@@ -2922,7 +3046,6 @@ function disegnaAzioni() {
   const nuovo = '<button type="button" class="nuovo a-nuovo"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button>';
   const note = `<button type="button" class="a-piccolo a-note" aria-label="Note: ${nNote}">${ICONA_NOTA}<small>Note</small>${numerino(nNote)}</button>`;
   const ind = `<button type="button" class="a-piccolo a-indietro${nInd ? ' da-vedere' : ''}" aria-label="Rimasti indietro: ${nInd}">${ICONA_INDIETRO}<small>Indietro</small>${numerino(nInd)}</button>`;
-  $('azioni-cal').innerHTML = nuovo + note + ind;
   $('azioni-cli').innerHTML = nuovo + note;
   document.querySelectorAll('.a-nuovo').forEach(b => { b.onclick = () => apriFoglio(); });
   document.querySelectorAll('.a-note').forEach(b => { b.onclick = apriNota; });
