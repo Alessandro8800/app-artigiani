@@ -283,7 +283,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .riprogramma.pioggia { background: var(--pioggia-2); color: var(--goccia); }
 .riprogramma.attivo { background: var(--foglia); color: var(--sul-foglia); }
 .sposta-qui { color: var(--foglia); cursor: pointer; border: 2px solid var(--foglia-chiara); }
-.sposta-qui input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
 
 /* Conti */
 .k-periodo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
@@ -1170,9 +1169,9 @@ function cartaLavoro(l, parte = 1, di = 1, sposta = false) {
       ${l.dove ? `<span class="dove"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>${sicuro(l.dove)}</span>` : ''}
       <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo != null ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
     </button>
-    ${sposta ? `<label class="spunta sposta-qui" aria-label="Scegli il nuovo giorno per ${sicuro(l.nome)}">
+    ${sposta ? `<button type="button" class="spunta sposta-qui" data-sp="${l.id}" aria-label="Scegli il nuovo giorno per ${sicuro(l.nome)}">
       <svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <small>Sposta</small><input type="date" data-sp="${l.id}" min="${tra(0)}" value="${l.data}"></label>` : `<button class="spunta" aria-label="Segna come fatto">
+      <small>Sposta</small></button>` : `<button class="spunta" aria-label="Segna come fatto">
       <svg class="anelli" viewBox="0 0 62 62"><circle class="anello-base" cx="31" cy="31" r="28"/><circle class="anello" cx="31" cy="31" r="28" pathLength="100"/></svg>
       <svg class="segno-svg" width="24" height="24" viewBox="0 0 24 24"><path class="segno" d="M5 12.5l4.5 4.5L19 7.5" pathLength="100"/></svg>
       <small>Fatto</small>
@@ -1205,7 +1204,7 @@ function disegnaAgenda() {
   }).join('');
   document.querySelectorAll('.lavoro .spunta').forEach(b => { b.onclick = () => segnaFatto(b.closest('.lavoro')); });
   document.querySelectorAll('#agenda .riprogramma').forEach(b => { b.onclick = () => { riprogramma = riprogramma === b.dataset.rip ? null : b.dataset.rip; disegnaAgenda(); }; });
-  document.querySelectorAll('#agenda .sposta-qui input').forEach(i => { i.onchange = () => { if (i.value && i.value !== lavori[+i.dataset.sp].data) spostaLavoro(lavori[+i.dataset.sp], i.value); }; });
+  document.querySelectorAll('#agenda .sposta-qui').forEach(b => { b.onclick = () => apriCalSposta(+b.dataset.sp); });
   // Tocco sul lavoro: si apre la scheda del cliente
   document.querySelectorAll('.lavoro .testo').forEach(b => { b.onclick = () => apriLavoro(+b.closest('.lavoro').dataset.id); });
   // Giorno vuoto: "Nuovo cliente" apre il foglio con quel giorno già scelto
@@ -1582,13 +1581,29 @@ $('q-cal').onclick = () => apriCalFoglio();
 let vistaCal = 'giorni';   // 'giorni' | 'mesi' | 'anni'
 const fmtMeseSolo = new Intl.DateTimeFormat('it-IT', { month: 'long' });
 const fmtMeseCorto = new Intl.DateTimeFormat('it-IT', { month: 'short' });
+// Il calendario a finestra serve anche a spostare un lavoro: si tocca il giorno e il lavoro va lì
+let calSposta = null, calDa = null;   // id del lavoro da spostare; da dove si è aperto ('indietro' o null)
+function apriCalSposta(id, da = null) {
+  calSposta = id; calDa = da;
+  const d = daIso(lavori[id].data < tra(0) ? tra(0) : lavori[id].data);
+  meseFoglio = new Date(d.getFullYear(), d.getMonth(), 1);
+  vistaCal = 'giorni';
+  if (da === 'indietro') $('indietro-pop').hidden = true;
+  disegnaCalFoglio();
+  $('q-pop').hidden = false;
+}
 function apriCalFoglio() {
+  calSposta = null; calDa = null;
   meseFoglio = new Date(daIso(quando).getFullYear(), daIso(quando).getMonth(), 1);
   vistaCal = 'giorni';
   disegnaCalFoglio();
   $('q-pop').hidden = false;
 }
-function chiudiCalFoglio() { $('q-pop').hidden = true; }
+function chiudiCalFoglio() {
+  $('q-pop').hidden = true;
+  if (calDa === 'indietro') { calDa = null; apriIndietro(); }   // si torna alla lista "Indietro"
+  calSposta = null;
+}
 function disegnaCalFoglio() {
   const a = meseFoglio.getFullYear(), m = meseFoglio.getMonth();
   $('q-mese').textContent = maiuscola(fmtMeseSolo.format(meseFoglio));
@@ -1598,7 +1613,14 @@ function disegnaCalFoglio() {
   $('q-prima').style.visibility = $('q-dopo').style.visibility = vistaCal === 'anni' ? 'hidden' : '';
   const g = $('q-griglia');
   g.className = vistaCal === 'giorni' ? 'griglia' : 'q-scelte';
-  if (vistaCal === 'giorni') {
+  if (vistaCal === 'giorni' && calSposta != null) {
+    const l = lavori[calSposta];
+    $('q-titolo').textContent = `Sposta: ${l.nome}`;
+    riempiGriglia(g, meseFoglio, l.data, giorno => {
+      spostaLavoro(l, giorno); disegnaCalFoglio();
+      setTimeout(chiudiCalFoglio, 250);   // si vede il giorno scelto, poi la finestra si chiude
+    }, true);
+  } else if (vistaCal === 'giorni') {
     const n = quantiGiorni();
     $('q-titolo').textContent = n > 1 ? `Scegli ${n} giorni (${dateScelte.length} di ${n})` : 'Scegli il giorno';
     riempiGriglia(g, meseFoglio, n > 1 ? dateScelte : quando, s => {
@@ -2588,7 +2610,7 @@ function disegnaIndietro() {
   $('ri-elenco').innerHTML = el.length ? el.map(l => `<div class="ri-voce">
       <div class="ri-testa"><span><strong>${sicuro(l.nome)}</strong><small>${nomeGiorno(l.data)} · ${sicuro(l.cosa || 'Lavoro')}${l.prezzo != null ? ' · ' + euro(l.prezzo) : ''}</small></span><button type="button" class="chip attivo" data-fatto="${l.id}">Fatto</button></div>
       <div class="sposta"><small>Sposta a</small><button type="button" class="chip" data-sp="${l.id}" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-sp="${l.id}" data-a="${tra(1)}">Domani</button>
-        <label class="chip">Altro giorno<input type="date" data-sp="${l.id}" min="${tra(0)}" aria-label="Scegli il giorno"></label></div></div>`).join('')
+        <button type="button" class="chip" data-cal="${l.id}">Altro giorno</button></div></div>`).join('')
     : '<p class="imp-testo">Niente di rimasto indietro.</p>';
   $('ri-elenco').querySelectorAll('[data-fatto]').forEach(b => {
     b.onclick = () => {
@@ -2599,7 +2621,7 @@ function disegnaIndietro() {
     };
   });
   $('ri-elenco').querySelectorAll('button[data-sp]').forEach(b => { b.onclick = () => { spostaLavoro(lavori[+b.dataset.sp], b.dataset.a); disegnaIndietro(); }; });
-  $('ri-elenco').querySelectorAll('input[data-sp]').forEach(i => { i.onchange = () => { if (i.value) { spostaLavoro(lavori[+i.dataset.sp], i.value); disegnaIndietro(); } }; });
+  $('ri-elenco').querySelectorAll('[data-cal]').forEach(b => { b.onclick = () => apriCalSposta(+b.dataset.cal, 'indietro'); });
 }
 $('ri-chiudi').onclick = () => { $('indietro-pop').hidden = true; };
 $('indietro-pop').addEventListener('click', e => { if (e.target === $('indietro-pop')) $('indietro-pop').hidden = true; });
