@@ -13,7 +13,7 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online).
 
 ---
 
-## Stato attuale (sessione al 2026-11-18)
+## Stato attuale (sessione al 2026-11-19)
 
 ### Schermata principale
 - Calendario settimana in cima con giorno selezionato
@@ -37,6 +37,11 @@ Poi `<details class="avanzate">` con `›` come icona (si ruota quando aperto):
 - **Si ripete** — toggle on/off → opzioni: settimanale, ogni 2 sett., mensile, personalizzato (apre calendario app)
 - **Etichetta colore** — 6 colori
 - **Note personali** — textarea
+
+### Microfono globale AI
+- Colore neutro di default; diventa rosso pulsante quando in ascolto
+- Al click per fermare la registrazione, aggiunge automaticamente un item simulato nell'inbox Note (funzione `aggiungiItemSimulato()`)
+- Se il mic è usato dentro una scheda specifica (es. Note), andrà collegato solo a quella categoria (da fare quando arriverà l'AI vera)
 
 ### Barra AI (sopra agenda)
 ```html
@@ -66,6 +71,15 @@ Poi `<details class="avanzate">` con `›` come icona (si ruota quando aperto):
 | `disegnaRipeti()` | Disegna opzioni ripeti |
 | `apriCalRipeti()` | Apre calendario app per scegliere data "personalizzato" |
 | `prendiExtra(nome)` | Restituisce/crea dati extra cliente (tel, colore, ripeti, mesiSemestrale) |
+| `apriModificaInboxCliente(card, item)` | Apre foglio pre-compilato per confermare nuovo cliente dall'inbox |
+| `indietroInboxCliente()` | Chiude foglio e torna alla scheda "Nuovi clienti" |
+| `confermaInboxCliente()` | Anima card come ok, chiude foglio |
+| `apriRiprogrammaInbox(card, item)` | Apre popup calendario con info cliente+data vecchia per riprogrammare |
+| `disegnaRiprCalendario()` | Disegna la griglia del popup riprogramma |
+| `aggiungiItemSimulato()` | Aggiunge item fake all'inbox Note (simulazione registrazione vocale) |
+| `stepperCambia(btn, delta)` | Incrementa/decrementa il valore nel campo stepper (+/-) |
+| `cercaClienteInbox(input)` | Filtra l'elenco clienti fake mentre si digita |
+| `tipoCostoScegli(btn, tipo)` | Alterna tra costo Personale / Di un cliente |
 
 ---
 
@@ -82,9 +96,18 @@ Defaults in `apriFoglio`: `mesiSemestrale = []`, `semestrale = false`, `ripeti =
 
 ## Cosa manca / prossimi passi
 
-### Form manuale (priorità media)
-- [ ] Schermata notifiche AI: quando ci sono notifiche, mostrare lista "da confermare" + tasto nuovo in fondo
-- [ ] Schermate manuali per le altre 4 categorie AI: Note, Riprogramma, Costi, Pagamento
+### Inbox AI — stato
+- [x] Layout "Tutte le notifiche" corretto (flex-shrink)
+- [x] Microfono: neutro → rosso quando ascolta, aggiunge item simulato
+- [x] Bottoni Conferma/Scarta 30px
+- [x] Nuovi clienti: Modifica → foglio completo pre-compilato (Conferma/Indietro)
+- [x] Note: textarea auto-espansa verso il basso
+- [x] Riprogramma: Modifica → popup calendario con cliente e vecchia data
+- [x] Costi: stepper + −, toggle Personale/Di un cliente, ricerca cliente
+- [x] Pagamenti: stepper importo, ricerca cliente
+- [ ] Collegare logica reale: pagamenti e costi ai lavori già segnati
+- [ ] Mic per scheda specifica → aggiunge solo alla categoria corrente
+- [ ] AI vocale vera (Web Speech API + Haiku)
 
 ### AI vocale (versione commerciale)
 - [ ] Web Speech API per trascrizione
