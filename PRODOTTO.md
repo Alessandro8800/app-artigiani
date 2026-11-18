@@ -318,6 +318,28 @@ separata dalle schermate.
   lavoro preciso; copre i lavori partendo dal più vecchio. "Pagato" dalla lista = paga tutto.
   Non si può segnare più di quanto deve.
 
+## Da fare — idee di Alessandro (18/11 sera), da sistemare nella prova
+
+Prima pagina (Calendario):
+1. **Via la sezione "Da sistemare" in cima**: aprendo l'app si vede **subito il calendario**.
+2. **"Rimasti indietro" meno in evidenza**: ora non è una priorità.
+3. **Il tasto grande "Nuovo cliente" davanti non piace**: va messo in un altro posto.
+4. **"Piove? Sposta tutto" e il suo "Annulla" di 3 secondi: tolti.** Al loro posto, accanto a
+   ogni titolo di giorno (Oggi, Domani, …) un **tastino "Riprogramma"**. Toccandolo, sulle carte
+   di quel giorno il cerchio "Fatto" diventa un'**icona calendario**: toccandola si sceglie il
+   nuovo giorno per quel lavoro.
+
+Domande aperte su queste idee: vedi la conversazione del 18/11 sera.
+
+## Squadra di agenti (decisa il 18/11, da creare il 19/11)
+
+Rapporto: `reports/Squadra di agenti per la v1.md`. Un solo **costruttore** che scrive il codice
+(la sessione principale) + **revisore** (solo lettura, confronta con PRODOTTO.md e la prova) +
+**collaudatore** (build, test, foto a misura di telefono, tasti grandi, contrasto) +
+**esploratore** (ricerche). Sicurezza come ruolo a parte solo con server e account.
+Ordine: frasi di "fatto" approvate → dati e calcoli con test → colori e pezzi comuni → schermate
+una alla volta → offline e installazione → prova sul telefono.
+
 ## Da decidere
 
 - **18/11 — Deciso da Alessandro: dopo la beta l'app avrà un server.** Quindi dove si salvano
