@@ -2544,14 +2544,27 @@ let _inboxCard = null; // card da animare dopo conferma
 
 function apriModificaInboxCliente(card, item) {
   _inboxCard = card;
+  // Init completo come apriFoglio (senza mostraFoglio) per disegnare tutti i drum
+  notaInCorso = null;
+  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = '';
+  semestrale = false; mesiSemestrale = []; semCfgAperto = false;
+  prezzoFine = false; prezzoFineCentro = null;
+  quandoFisso = false; quando = giorniMigliori()[0]; dateScelte = []; allineaDate();
   preparaFoglio('nuovo');
+  for (const id of ['f-nome','f-dove','f-tel','f-note','f-cosa','f-prezzo']) $(id).value = '';
+  $('f-tel-wrap').querySelectorAll('.tel-riga:not(:first-child)').forEach(r => r.remove());
+  aggiornaPlusTel(); $('f-avanzate').open = false;
+  disegnaTipo(); disegnaDurata(); disegnaPrezzoDrum(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
+  // Pre-compila i campi dall'item inbox
   const get = (l) => (item.campi.find(([k]) => k === l) || [])[1] || '';
   $('f-nome').value = get('Nome');
   $('f-dove').value = get('Indirizzo');
   const lavoro = get('Lavoro');
   if (lavoro) $('f-cosa').value = lavoro;
   const prezzo = get('Prezzo');
-  if (prezzo) $('f-prezzo').value = prezzo;
+  if (prezzo) { $('f-prezzo').value = prezzo; scorriPrezzoDrum(); }
+  aggiornaCliente(); disegnaQuando();
+  // Footer Indietro / Conferma
   modoFoglio = 'conferma-inbox';
   $('f-titolo').textContent = 'Conferma nuovo cliente';
   $('f-piede').innerHTML = `<p class="errore" id="f-errore" hidden></p>
