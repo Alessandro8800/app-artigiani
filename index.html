@@ -279,7 +279,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .ri-testa small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
 /* Impostazioni avanzate a tendina */
 .avanzate-sotto { border-bottom: 1px solid var(--linea); }
-.avanzate-sotto:last-child { border-bottom: none; }
+.avanzate-corpo > .avanzate-sotto:last-child { border-bottom: none; }
 .avanzate-sotto > summary { font-size: 15px; font-weight: 700; color: var(--testo); cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
 .avanzate-sotto > summary::-webkit-details-marker { display: none; }
 .avanzate-sotto > summary::after { content: '›'; font-size: 20px; color: var(--testo-2); display: inline-block; transition: transform .2s; line-height: 1; }
@@ -638,7 +638,10 @@ button.s-riga:first-child { border-top: 0; }
 .sem-chip { border-radius: 10px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); font-size: 14px; font-weight: 700; min-height: 40px; cursor: pointer; }
 .sem-chip.attivo { border-color: var(--foglia); background: var(--foglia-chiara); color: var(--foglia); }
 /* Telefoni multipli */
-.tel-aggiungi { margin-top: 6px; background: none; border: 1.5px dashed var(--linea); border-radius: 10px; color: var(--foglia); font-size: 14px; font-weight: 700; min-height: 40px; width: 100%; cursor: pointer; }
+.tel-riga { display: flex; align-items: center; gap: 8px; }
+.tel-riga input { flex: 1; }
+.tel-riga + .tel-riga { margin-top: 8px; }
+.tel-piu { width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1.5px solid var(--linea); background: none; color: var(--foglia); font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
 /* Si ripete: meno spaziatura */
 .ripeti-opz { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; background: var(--sfondo); font-weight: 700; font-size: 15px; cursor: pointer; }
 .colori { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -874,8 +877,10 @@ button.s-riga:first-child { border-top: 0; }
           <details class="avanzate-sotto">
             <summary>Telefono</summary>
             <div class="campo" id="f-tel-wrap">
-              <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
-              <button type="button" class="tel-aggiungi" id="f-tel-add">+ Aggiungi numero</button>
+              <div class="tel-riga">
+                <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
+                <button type="button" class="tel-piu" id="f-tel-add">+</button>
+              </div>
             </div>
           </details>
 
@@ -892,11 +897,7 @@ button.s-riga:first-child { border-top: 0; }
           <details class="avanzate-sotto">
             <summary>Si ripete</summary>
             <div class="campo">
-              <div class="notifica-testa">
-                <span><strong>Si ripete</strong></span>
-                <button type="button" class="interruttore" id="f-ripeti-toggle" role="switch" aria-checked="false" aria-label="Si ripete"><i></i></button>
-              </div>
-              <div class="ripeti-opzioni" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete" hidden></div>
+              <div class="ripeti-opzioni" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete"></div>
               <small class="nota-campo" id="f-ripeti-nota"></small>
             </div>
           </details>
@@ -1490,7 +1491,8 @@ function apriFoglio(giorno, perCliente) {
   quando = g || giorniMigliori()[0];
   dateScelte = []; allineaDate();
   for (const id of ['f-nome', 'f-dove', 'f-tel', 'f-note', 'f-cosa', 'f-prezzo']) $(id).value = '';
-  $('f-tel-wrap').querySelectorAll('input:not(#f-tel)').forEach(i => i.remove());
+  $('f-tel-wrap').querySelectorAll('.tel-riga:not(:first-child)').forEach(r => r.remove());
+  aggiornaPlusTel();
   $('f-avanzate').open = false;
   disegnaTipo(); disegnaDurata(); disegnaPrezzoDrum(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
   // Dalla scheda cliente: cliente già scelto, e il suo ultimo lavoro già scritto (cosa, prezzo, durata)
@@ -1515,9 +1517,10 @@ function apriModifica(nome) {
   $('f-nome').value = c.nome; $('f-dove').value = c.dove; $('f-note').value = c.note;
   const telsM = (c.tel || '').split('\n').filter(Boolean);
   const wrapM = $('f-tel-wrap');
-  wrapM.querySelectorAll('input:not(#f-tel)').forEach(i => i.remove());
+  wrapM.querySelectorAll('.tel-riga:not(:first-child)').forEach(r => r.remove());
   $('f-tel').value = telsM[0] || '';
-  telsM.slice(1).forEach(t => { const inp = aggiungiTelInput(wrapM); inp.value = t; });
+  telsM.slice(1).forEach(t => { const inp = aggiungiTelInput(); if (inp) inp.value = t; });
+  aggiornaPlusTel();
   $('f-avanzate').open = true;
   disegnaTipo(); disegnaColori(); disegnaRipeti();
   aggiornaCliente();
@@ -1587,24 +1590,16 @@ $('pal-salva').onclick = () => {
 };
 $('pal-pop').addEventListener('click', e => { if (e.target === $('pal-pop')) $('pal-pop').hidden = true; });
 
-// Si ripete: toggle on/off + lista verticale
+// Si ripete: opzioni dirette, senza toggle
 const fmtCorta = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', year: '2-digit' });
 const ripetiBase = () => ripeti.startsWith('custom:') ? 'custom' : ripeti;
 const ripetiDataCustom = () => ripeti.startsWith('custom:') ? ripeti.slice(7) : '';
 function disegnaRipeti() {
-  const toggle = $('f-ripeti-toggle');
   const elenco = $('f-ripeti');
-  const acceso = ripeti !== 'no';
-  toggle.classList.toggle('acceso', acceso); toggle.setAttribute('aria-checked', String(acceso));
-  elenco.hidden = !acceso;
-  if (!toggle.dataset.init) {
-    toggle.dataset.init = '1';
-    toggle.onclick = () => { ripeti = ripeti === 'no' ? 'sett' : 'no'; disegnaRipeti(); };
-  }
-  if (!acceso) { $('f-ripeti-nota').hidden = true; return; }
   const m = modoFoglio === 'modifica' ? modelloRipetizione(nomeInModifica) : null;
   const partenza = modoFoglio === 'nuovo' ? quando : m && m.data;
   const opzioni = [
+    ['no', 'Non si ripete', ''],
     ['sett', 'Ogni settimana', partenza ? 'prossima: ' + fmtCorta.format(volta(partenza, 'sett', 1)) : ''],
     ['mese', 'Ogni mese', partenza ? 'prossima: ' + fmtCorta.format(volta(partenza, 'mese', 1)) : ''],
     ['anno', 'Ogni anno', partenza ? 'prossima: ' + fmtCorta.format(volta(partenza, 'anno', 1)) : ''],
@@ -1621,7 +1616,8 @@ function disegnaRipeti() {
   const dataBt = elenco.querySelector('.ripeti-data-btn');
   if (dataBt) dataBt.onclick = () => apriCalRipeti();
   let nota = '';
-  if (base === 'custom') {
+  if (base === 'no') { nota = ''; }
+  else if (base === 'custom') {
     nota = dataC ? `Prossima volta: ${fmtCorta.format(daIso(dataC))}.` : 'Scegli la prossima data.';
   } else {
     nota = modoFoglio === 'nuovo' ? 'Lo segno nel calendario per i prossimi 12 mesi.'
@@ -2349,18 +2345,40 @@ function disegnaComuni() {
   });
 }
 $('f-cosa').addEventListener('input', disegnaComuni);
-function aggiungiTelInput(wrap) {
+function aggiornaPlusTel() {
+  const wrap = $('f-tel-wrap');
+  const righe = wrap.querySelectorAll('.tel-riga');
+  const max = righe.length >= 3;
+  righe.forEach((riga, i) => {
+    let btn = riga.querySelector('.tel-piu');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'tel-piu'; btn.textContent = '+';
+      btn.onclick = () => { const r = aggiungiTelInput(); if (r) r.focus(); };
+      riga.appendChild(btn);
+    }
+    btn.hidden = max || i < righe.length - 1;
+  });
+}
+function aggiungiTelInput() {
+  const wrap = $('f-tel-wrap');
+  if (wrap.querySelectorAll('.tel-riga').length >= 3) return null;
+  const riga = document.createElement('div');
+  riga.className = 'tel-riga';
   const inp = document.createElement('input');
   inp.type = 'text'; inp.inputMode = 'tel'; inp.autocomplete = 'off';
   inp.placeholder = 'Es. 333 123 4567';
-  wrap.insertBefore(inp, $('f-tel-add'));
+  riga.appendChild(inp);
+  wrap.appendChild(riga);
+  aggiornaPlusTel();
   return inp;
 }
 function leggiTelefoni() {
-  return Array.from($('f-tel-wrap').querySelectorAll('input[type="text"]'))
+  return Array.from($('f-tel-wrap').querySelectorAll('.tel-riga input'))
     .map(i => i.value.trim()).filter(Boolean).join('\n');
 }
-$('f-tel-add').onclick = () => { aggiungiTelInput($('f-tel-wrap')).focus(); };
+$('f-tel-add').onclick = () => { const r = aggiungiTelInput(); if (r) r.focus(); };
+aggiornaPlusTel();
 $('f-salva').onclick = salva;
 $('f-chiudi').onclick = chiudiFoglio;
 $('foglio').addEventListener('click', e => { if (e.target === $('foglio')) chiudiFoglio(); });
