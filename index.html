@@ -591,6 +591,16 @@ button.s-riga:first-child { border-top: 0; }
 .sem-mesi { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .sem-mese { flex: 0 0 calc(25% - 5px); border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); color: var(--testo-2); font-size: 14px; font-weight: 700; padding: 8px 4px; cursor: pointer; text-align: center; }
 .sem-mese.attivo { background: var(--foglia-chiara); color: var(--foglia); border-color: var(--foglia); }
+/* Pulsante data personalizzata (ripeti) */
+.ripeti-data-btn { background: var(--foglia-chiara); border: 1.5px solid var(--foglia); border-radius: 10px; padding: 9px 14px; font-size: 15px; font-weight: 700; color: var(--foglia); cursor: pointer; margin-top: 4px; width: 100%; text-align: left; }
+/* Drum prezzo: celle speciali (edit/torna) e pannello importo digitato */
+.drum-spec b, .drum-spec svg { color: var(--foglia); }
+.drum-prezzo-contenitore .drum-spec svg { color: var(--ambra); }
+.drum-prezzo-contenitore .drum-spec small { color: var(--ambra); }
+.prezzo-edit-panel { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; background: var(--carta); border: 1.5px solid var(--ambra); margin-top: 6px; }
+.prezzo-edit-panel input[type=number] { flex: 1; border: none; background: none; font-size: 22px; font-weight: 800; color: var(--testo); outline: none; min-width: 0; }
+.prezzo-edit-panel input[type=number]::-webkit-inner-spin-button, .prezzo-edit-panel input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.prezzo-edit-panel span { font-size: 22px; font-weight: 800; color: var(--ambra); }
 .q-giorno strong { font-size: 16px; }
 .q-giorno small { font-size: 13px; }
 .avanzate { border-top: 1px solid var(--linea); padding-top: 4px; }
@@ -772,8 +782,12 @@ button.s-riga:first-child { border-top: 0; }
 
         <!-- 4. Prezzo con rotella -->
         <div class="campo">
-          <span>Prezzo <small>· lascia su — se non lo sai</small></span>
+          <span>Prezzo <small>· tieni premuto per il dettaglio</small></span>
           <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="f-prezzo-drum" aria-label="Prezzo del lavoro"></div></div>
+          <div class="prezzo-edit-panel" id="prezzo-edit-panel" hidden>
+            <input type="number" id="prezzo-edit-input" inputmode="decimal" min="1" step="1" placeholder="Es. 125">
+            <span>€</span>
+          </div>
           <input type="hidden" id="f-prezzo">
         </div>
       </div>
@@ -781,7 +795,7 @@ button.s-riga:first-child { border-top: 0; }
       <!-- Telefono: per ultimo, fuori dalla parte del lavoro (così c'è anche in "Modifica cliente") -->
       <label class="campo">
         <span>Telefono <small>· facoltativo</small></span>
-        <input id="f-tel" type="tel" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
+        <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
       </label>
 
       <!-- Paga ogni X mesi: solo per i condomini, fuori dalle impostazioni avanzate -->
@@ -1385,7 +1399,7 @@ function apriFoglio(giorno, perCliente) {
   notaInCorso = null;
   // Giorno già scelto: quello toccato sul calendario; altrimenti il primo dei giorni migliori
   const g = giorno || (scelto > tra(0) ? scelto : null);
-  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = [6, 12]; semCfgAperto = false;
+  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = [6, 12]; semCfgAperto = false; prezzoFine = false; prezzoFineCentro = null;
   quandoFisso = !!g;
   quando = g || giorniMigliori()[0];
   dateScelte = []; allineaDate();
@@ -1510,10 +1524,10 @@ function disegnaRipeti() {
       <input type="radio" name="f-ripeti-r" value="${k}"${base === k ? ' checked' : ''}>
       <span>${n}${hint ? ` <small style="font-weight:600;color:var(--testo-2)">${hint}</small>` : ''}</span>
     </label>
-    ${k === 'custom' && base === 'custom' ? `<input type="date" class="ripeti-data-input" value="${dataC}" min="${tra(1)}" aria-label="Data personalizzata">` : ''}`).join('');
-  elenco.querySelectorAll('input[type=radio]').forEach(r => { r.onchange = () => { ripeti = r.value; disegnaRipeti(); }; });
-  const dataInp = elenco.querySelector('.ripeti-data-input');
-  if (dataInp) dataInp.onchange = e => { ripeti = 'custom:' + e.target.value; disegnaRipeti(); };
+    ${k === 'custom' && base === 'custom' && dataC ? `<button type="button" class="ripeti-data-btn">📅 ${nomeGiorno(dataC)}</button>` : ''}`).join('');
+  elenco.querySelectorAll('input[type=radio]').forEach(r => { r.onchange = () => { ripeti = r.value; disegnaRipeti(); if (r.value === 'custom') apriCalRipeti(); }; });
+  const dataBt = elenco.querySelector('.ripeti-data-btn');
+  if (dataBt) dataBt.onclick = () => apriCalRipeti();
   let nota = '';
   if (base === 'custom') {
     nota = dataC ? `Prossima volta: ${fmtCorta.format(daIso(dataC))}.` : 'Scegli la prossima data.';
@@ -1556,7 +1570,7 @@ function aggiornaCliente() {
 }
 
 // ---- A che ora (facoltativo): mattina, pomeriggio o un'ora precisa ----
-let ora = '', semestrale = false, mesiSemestrale = [6, 12], semCfgAperto = false;
+let ora = '', semestrale = false, mesiSemestrale = [6, 12], semCfgAperto = false, prezzoFine = false, prezzoFineCentro = null;
 const nomeOra = o => o === 'mattina' ? 'Mattina' : o === 'pomeriggio' ? 'Pomeriggio' : o;
 const minutiOra = o => !o ? 9999 : o === 'mattina' ? 480 : o === 'pomeriggio' ? 840 : (+o.slice(0, 2)) * 60 + (+o.slice(3, 5));
 function disegnaOra() {
@@ -1624,38 +1638,113 @@ function nomeDurata(ore) {
 }
 const DRUM_VALORI = [1,2,3,4,5,6,7,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192,200,208,216,224,232,240];
 // ---- Rotella prezzo ----
-const PREZZO_VALORI = [null,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,180,200,220,250,280,300,350,400,450,500,600,700,800,1000,1200,1500,2000,3000,5000];
-const PREZZO_DEFAULT_IDX = PREZZO_VALORI.indexOf(100);
+const PREZZO_COARSE = [null, 20, 50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 1000, 1200, 1500, 2000, 3000, 5000];
 const PREZZO_W = 80;
+const PREZZO_DEFAULT_IDX = 4; // 100€: edit(0) —(1) 20(2) 50(3) 100(4)
+
+function valoriPrezzoFine(centro) {
+  const passo = centro >= 1000 ? 25 : 5;
+  const vals = new Set();
+  for (let i = -15; i <= 15; i++) {
+    const v = Math.round((centro + i * passo) / passo) * passo;
+    if (v >= 5) vals.add(v);
+  }
+  return ['torna', ...[...vals].sort((a, b) => a - b)];
+}
+
+const SVG_MATITA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const SVG_INDIETRO_P = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`;
+
 function disegnaPrezzoDrum() {
   const drum = $('f-prezzo-drum');
   if (!drum) return;
-  if (drum.dataset.init) { scorriPrezzoDrum(); return; }
+  const valori = prezzoFine ? valoriPrezzoFine(prezzoFineCentro) : ['edit', ...PREZZO_COARSE];
+  const curValue = $('f-prezzo').value.trim();
+  const curV = curValue === '' ? null : Number(curValue);
+  drum.innerHTML = valori.map(v => {
+    if (v === 'edit') return `<div class="drum-voce drum-spec" data-v="edit">${SVG_MATITA}<small>Importo</small></div>`;
+    if (v === 'torna') return `<div class="drum-voce drum-spec" data-v="torna">${SVG_INDIETRO_P}<small>Tutti</small></div>`;
+    if (v === null) return `<div class="drum-voce" data-v="null"><b>—</b><small>senza</small></div>`;
+    return `<div class="drum-voce" data-v="${v}"><b>${v}</b><small>€</small></div>`;
+  }).join('');
   drum.dataset.init = '1';
-  drum.innerHTML = PREZZO_VALORI.map((v, i) =>
-    v == null
-      ? `<div class="drum-voce" data-i="${i}"><b>—</b><small>senza</small></div>`
-      : `<div class="drum-voce" data-i="${i}"><b>${v}</b><small>€</small></div>`
-  ).join('');
-  scorriPrezzoDrum();
-  const aggiorna = () => {
-    const i = Math.round(drum.scrollLeft / PREZZO_W);
-    const v = PREZZO_VALORI[Math.max(0, Math.min(i, PREZZO_VALORI.length - 1))];
-    $('f-prezzo').value = v == null ? '' : String(v);
-  };
-  drum.addEventListener('scrollend', aggiorna);
-  let t; drum.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(aggiorna, 150); });
+  // Scroll to current value
+  let idx;
+  if (prezzoFine) {
+    const fi = valori.indexOf(curV);
+    idx = fi > 0 ? fi : Math.floor(valori.length / 2);
+  } else {
+    idx = curV == null ? PREZZO_DEFAULT_IDX : valori.indexOf(curV);
+    if (idx <= 0 && curV != null) {
+      const nums = PREZZO_COARSE.filter(x => x != null);
+      const nearest = nums.reduce((b, x) => Math.abs(x - curV) < Math.abs(b - curV) ? x : b, nums[0]);
+      idx = valori.indexOf(nearest);
+    }
+    if (idx <= 0) idx = PREZZO_DEFAULT_IDX;
+  }
+  const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
+  imposta(); requestAnimationFrame(imposta);
+  // Event listeners: una sola volta per il drum container
+  if (!drum.dataset.events) {
+    drum.dataset.events = '1';
+    $('prezzo-edit-input').oninput = () => {
+      const v = parseFloat($('prezzo-edit-input').value);
+      if (v > 0) $('f-prezzo').value = String(Math.round(v));
+    };
+    const aggiornaSuFermo = () => {
+      const i = Math.round(drum.scrollLeft / PREZZO_W);
+      const cell = drum.querySelectorAll('.drum-voce')[i];
+      if (!cell) return;
+      const v = cell.dataset.v;
+      if (v === 'edit') {
+        $('prezzo-edit-panel').hidden = false;
+        $('f-prezzo').value = '';
+        setTimeout(() => $('prezzo-edit-input').focus(), 80);
+      } else if (v === 'torna') {
+        prezzoFine = false; prezzoFineCentro = null;
+        $('prezzo-edit-panel').hidden = true;
+        disegnaPrezzoDrum();
+      } else {
+        $('prezzo-edit-panel').hidden = true;
+        $('f-prezzo').value = v === 'null' ? '' : v;
+      }
+    };
+    drum.addEventListener('scrollend', aggiornaSuFermo);
+    let st; drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiornaSuFermo, 160); }, { passive: true });
+    // Long press per zoom in
+    let lpTimer = null;
+    drum.addEventListener('touchstart', e => {
+      const cell = e.target.closest('.drum-voce');
+      if (!cell || ['edit', 'torna', 'null'].includes(cell.dataset.v) || prezzoFine) return;
+      lpTimer = setTimeout(() => {
+        lpTimer = null;
+        const v = +cell.dataset.v;
+        if (navigator.vibrate) navigator.vibrate(30);
+        prezzoFine = true; prezzoFineCentro = v;
+        $('f-prezzo').value = String(v); $('prezzo-edit-panel').hidden = true;
+        disegnaPrezzoDrum();
+      }, 900);
+    }, { passive: true });
+    drum.addEventListener('touchmove', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
+    drum.addEventListener('touchend', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
+    drum.addEventListener('touchcancel', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
+  }
 }
 function scorriPrezzoDrum() {
   const drum = $('f-prezzo-drum');
-  if (!drum || !drum.dataset.init) return;
+  if (!drum || !drum.dataset.init || prezzoFine) return;
   const raw = $('f-prezzo').value.trim();
   const v = raw === '' ? null : Number(raw.replace(',', '.'));
-  let idx = v == null ? PREZZO_DEFAULT_IDX : PREZZO_VALORI.indexOf(v);
-  if (idx < 0) idx = PREZZO_VALORI.reduce((best, pv, i) =>
-    pv != null && Math.abs(pv - v) < Math.abs((PREZZO_VALORI[best] ?? 999999) - v) ? i : best, PREZZO_DEFAULT_IDX);
+  const valori = ['edit', ...PREZZO_COARSE];
+  let idx = v == null ? PREZZO_DEFAULT_IDX : valori.indexOf(v);
+  if (idx <= 0 && v != null) {
+    const nums = PREZZO_COARSE.filter(x => x != null);
+    const nearest = nums.reduce((b, x) => Math.abs(x - v) < Math.abs(b - v) ? x : b, nums[0]);
+    idx = valori.indexOf(nearest);
+  }
+  if (idx <= 0) idx = PREZZO_DEFAULT_IDX;
   const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
-  imposta(); requestAnimationFrame(imposta);  // doppio per quando l'elemento diventa visibile
+  imposta(); requestAnimationFrame(imposta);
 }
 const DRUM_W = 80;
 function disegnaDurata() {
@@ -1800,7 +1889,16 @@ let vistaCal = 'giorni';   // 'giorni' | 'mesi' | 'anni'
 const fmtMeseSolo = new Intl.DateTimeFormat('it-IT', { month: 'long' });
 const fmtMeseCorto = new Intl.DateTimeFormat('it-IT', { month: 'short' });
 // Il calendario a finestra serve anche a spostare un lavoro: si tocca il giorno e il lavoro va lì
-let calSposta = null, calDa = null;   // id del lavoro da spostare; da dove si è aperto ('indietro' o null)
+let calSposta = null, calDa = null, calRipeti = false;
+function apriCalRipeti() {
+  calSposta = null; calDa = null; calRipeti = true;
+  const data = ripeti.startsWith('custom:') ? ripeti.slice(7) : quando;
+  const d = daIso(data);
+  meseFoglio = new Date(d.getFullYear(), d.getMonth(), 1);
+  vistaCal = 'giorni';
+  disegnaCalFoglio();
+  $('q-pop').hidden = false;
+}
 function apriCalSposta(id, da = null) {
   calSposta = id; calDa = da;
   const d = daIso(lavori[id].data < tra(0) ? tra(0) : lavori[id].data);
@@ -1819,8 +1917,8 @@ function apriCalFoglio() {
 }
 function chiudiCalFoglio() {
   $('q-pop').hidden = true;
-  if (calDa === 'indietro') { calDa = null; apriIndietro(); }   // si torna alla lista "Indietro"
-  calSposta = null;
+  if (calDa === 'indietro') { calDa = null; apriIndietro(); }
+  calSposta = null; calRipeti = false;
 }
 function disegnaCalFoglio() {
   const a = meseFoglio.getFullYear(), m = meseFoglio.getMonth();
@@ -1836,8 +1934,15 @@ function disegnaCalFoglio() {
     $('q-titolo').textContent = `Sposta: ${l.nome}`;
     riempiGriglia(g, meseFoglio, l.data, giorno => {
       spostaLavoro(l, giorno); disegnaCalFoglio();
-      setTimeout(chiudiCalFoglio, 250);   // si vede il giorno scelto, poi la finestra si chiude
+      setTimeout(chiudiCalFoglio, 250);
     }, true);
+  } else if (vistaCal === 'giorni' && calRipeti) {
+    $('q-titolo').textContent = 'Scegli la data';
+    const dataRip = ripeti.startsWith('custom:') ? ripeti.slice(7) : quando;
+    riempiGriglia(g, meseFoglio, dataRip, giorno => {
+      ripeti = 'custom:' + giorno; disegnaRipeti();
+      setTimeout(chiudiCalFoglio, 250);
+    }, false);
   } else if (vistaCal === 'giorni') {
     const n = quantiGiorni();
     $('q-titolo').textContent = n > 1 ? `Scegli ${n} giorni (${dateScelte.length} di ${n})` : 'Scegli il giorno';
