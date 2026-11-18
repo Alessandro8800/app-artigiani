@@ -569,6 +569,21 @@ button.s-riga:first-child { border-top: 0; }
 .q-info.manca { color: var(--ambra); }
 .q-giorno { min-height: 54px; padding: 7px 12px; border-radius: 12px; }
 .q-cal-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 54px; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--carta); color: var(--foglia); font-size: 12px; font-weight: 800; padding: 7px 12px; }
+/* Sottotitolo sezione (es. "Tempi del lavoro") */
+.campo-sottotitolo { font-size: 13px; font-weight: 800; color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
+/* Chips uniformi: tutti stessa larghezza, testo lungo scorre */
+.chips-uniform .chip { flex: 0 0 100px; overflow: hidden; position: relative; }
+.chips-uniform .chip .cht { display: inline-block; white-space: nowrap; }
+.chips-uniform .chip.scorri .cht { animation: scorri-cht 3.5s ease-in-out infinite; }
+@keyframes scorri-cht { 0%,20%{ transform:translateX(0) } 65%,80%{ transform:translateX(calc(-100% + 76px)) } 100%{ transform:translateX(0) } }
+/* Rotella prezzo */
+.drum-prezzo-contenitore::after { border-color: var(--ambra); background: var(--ambra-chiara); }
+/* Si ripete: toggle + lista verticale */
+.ripeti-opzioni { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.ripeti-opz { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--sfondo); font-weight: 700; font-size: 15px; cursor: pointer; }
+.ripeti-opz input[type=radio] { accent-color: var(--foglia); width: 18px; height: 18px; flex: none; }
+.ripeti-opz.attivo { background: var(--foglia-chiara); color: var(--foglia); }
+.ripeti-data-input { margin-top: 6px; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--foglia); background: var(--carta); font-size: 15px; font-weight: 700; width: 100%; color: var(--testo); }
 .q-giorno strong { font-size: 16px; }
 .q-giorno small { font-size: 13px; }
 .avanzate { border-top: 1px solid var(--linea); padding-top: 4px; }
@@ -723,8 +738,15 @@ button.s-riga:first-child { border-top: 0; }
 
       <!-- Il lavoro: solo in "Nuovo cliente" -->
       <div class="f-lavoro" id="f-lavoro">
+        <!-- 1. Giorno (prima) -->
         <div class="campo">
-          <span class="campo-testa">Quando</span>
+          <div class="q-quattro" id="f-quando"></div>
+          <p class="q-info" id="q-info" hidden></p>
+        </div>
+
+        <!-- 2. Tempi del lavoro -->
+        <div class="campo">
+          <span class="campo-sottotitolo">Tempi del lavoro</span>
           <div class="drum-contenitore"><div class="drum-scorribile" id="f-durata" aria-label="Quanto dura il lavoro"></div></div>
           <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
             <div class="ora-pill" id="ora-pill"></div>
@@ -732,20 +754,21 @@ button.s-riga:first-child { border-top: 0; }
             <button class="ora-voce" type="button" data-o="">Qualsiasi</button>
             <button class="ora-voce" type="button" data-o="pomeriggio">Pomeriggio</button>
           </div>
-          <div class="q-quattro" id="f-quando"></div>
-          <p class="q-info" id="q-info" hidden></p>
         </div>
 
+        <!-- 3. Cosa c'è da fare: textarea prima, poi bottoni veloci uniformi -->
         <label class="campo">
           <span>Cosa c'è da fare <small>· tocca o scrivi</small></span>
-          <span class="chips piccoli" id="f-comuni"></span>
-          <textarea id="f-cosa" rows="2" autocapitalize="sentences" placeholder="Es. Taglio prato e siepe"></textarea>
+          <textarea id="f-cosa" rows="1" autocapitalize="sentences" placeholder="Es. Taglio prato e siepe"></textarea>
+          <span class="chips piccoli chips-uniform" id="f-comuni"></span>
         </label>
 
-        <label class="campo">
-          <span>Prezzo <small>· se non lo sai, lascia vuoto</small></span>
-          <span class="con-euro"><input id="f-prezzo" inputmode="decimal" autocomplete="off" placeholder="Es. 80"></span>
-        </label>
+        <!-- 4. Prezzo con rotella -->
+        <div class="campo">
+          <span>Prezzo <small>· lascia su — se non lo sai</small></span>
+          <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="f-prezzo-drum" aria-label="Prezzo del lavoro"></div></div>
+          <input type="hidden" id="f-prezzo">
+        </div>
       </div>
 
       <!-- Telefono: per ultimo, fuori dalla parte del lavoro (così c'è anche in "Modifica cliente") -->
@@ -763,8 +786,9 @@ button.s-riga:first-child { border-top: 0; }
             <div class="colori" id="f-colore" role="radiogroup" aria-label="Etichetta del cliente"></div>
           </div>
           <div class="campo">
-            <span>Si ripete</span>
-            <div class="q-quattro" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete"></div>
+            <div class="notifica-testa"><span><strong>Si ripete</strong></span>
+              <button type="button" class="interruttore" id="f-ripeti-toggle" role="switch" aria-checked="false" aria-label="Si ripete"><i></i></button></div>
+            <div class="ripeti-opzioni" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete" hidden></div>
             <small class="nota-campo" id="f-ripeti-nota"></small>
           </div>
           <div class="campo"><div class="notifica-testa"><span><strong>Paga ogni 6 mesi</strong><small>A giugno e a dicembre, come i condomini: prima non risulta in ritardo.</small></span>
@@ -998,6 +1022,12 @@ function volta(partenza, regola, k) {
 }
 // Lavoro che si ripete: copie dello stesso lavoro nei prossimi 12 mesi
 function generaSerie(modello, regola) {
+  if (regola && regola.startsWith('custom:')) {
+    const data = regola.slice(7);
+    if (!data) return 0;
+    lavori.push({ ...modello, id: lavori.length, data, fatto: false, ripetuto: true });
+    return 1;
+  }
   if (!RIPETI[regola] || regola === 'no') return 0;
   const fine = daIso(tra(365));
   let n = 0;
@@ -1334,13 +1364,13 @@ function apriFoglio(giorno, perCliente) {
   dateScelte = []; allineaDate();
   for (const id of ['f-nome', 'f-dove', 'f-tel', 'f-note', 'f-cosa', 'f-prezzo']) $(id).value = '';
   $('f-avanzate').open = false;
-  disegnaTipo(); disegnaDurata(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
+  disegnaTipo(); disegnaDurata(); disegnaPrezzoDrum(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
   // Dalla scheda cliente: cliente già scelto, e il suo ultimo lavoro già scritto (cosa, prezzo, durata)
   if (perCliente) {
     clienteScelto = datiCliente(perCliente);
     const ultimo = lavori.filter(l => l.nome === perCliente && !l.iniziale).sort((a, b) => b.data.localeCompare(a.data))[0];
     if (ultimo) { $('f-cosa').value = ultimo.cosa || ''; $('f-prezzo').value = ultimo.prezzo != null ? String(ultimo.prezzo).replace('.', ',') : ''; durata = ultimo.durata || durataSolita; }
-    disegnaDurata(); disegnaComuni();
+    disegnaDurata(); disegnaPrezzoDrum(); disegnaComuni();
     if (!quandoFisso) quando = giorniMigliori()[0] || quando;
     dateScelte = []; allineaDate();
   }
@@ -1424,19 +1454,46 @@ $('pal-salva').onclick = () => {
 };
 $('pal-pop').addEventListener('click', e => { if (e.target === $('pal-pop')) $('pal-pop').hidden = true; });
 
-// Si ripete: 4 riquadri come i giorni, ognuno con la prossima data
+// Si ripete: toggle on/off + lista verticale
 const fmtCorta = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', year: '2-digit' });
+const ripetiBase = () => ripeti.startsWith('custom:') ? 'custom' : ripeti;
+const ripetiDataCustom = () => ripeti.startsWith('custom:') ? ripeti.slice(7) : '';
 function disegnaRipeti() {
+  const toggle = $('f-ripeti-toggle');
+  const elenco = $('f-ripeti');
+  const acceso = ripeti !== 'no';
+  toggle.classList.toggle('acceso', acceso); toggle.setAttribute('aria-checked', String(acceso));
+  elenco.hidden = !acceso;
+  if (!toggle.dataset.init) {
+    toggle.dataset.init = '1';
+    toggle.onclick = () => { ripeti = ripeti === 'no' ? 'sett' : 'no'; disegnaRipeti(); };
+  }
+  if (!acceso) { $('f-ripeti-nota').hidden = true; return; }
   const m = modoFoglio === 'modifica' ? modelloRipetizione(nomeInModifica) : null;
   const partenza = modoFoglio === 'nuovo' ? quando : m && m.data;
-  $('f-ripeti').innerHTML = Object.entries(RIPETI).map(([k, r]) => {
-    const sotto = k === 'no' ? 'una volta sola' : partenza ? 'poi ' + fmtCorta.format(volta(partenza, k, 1)) : '—';
-    return `<button type="button" class="q-giorno${k === ripeti ? ' attivo' : ''}" data-r="${k}" role="radio" aria-checked="${k === ripeti}"><span><strong>${r.nome}</strong><small>${sotto}</small></span></button>`;
-  }).join('');
-  $('f-ripeti').querySelectorAll('.q-giorno').forEach(b => { b.onclick = () => { ripeti = b.dataset.r; disegnaRipeti(); }; });
+  const opzioni = [
+    ['sett', 'Ogni settimana', partenza ? 'prossima: ' + fmtCorta.format(volta(partenza, 'sett', 1)) : ''],
+    ['mese', 'Ogni mese', partenza ? 'prossima: ' + fmtCorta.format(volta(partenza, 'mese', 1)) : ''],
+    ['anno', 'Ogni anno', partenza ? 'prossima: ' + fmtCorta.format(volta(partenza, 'anno', 1)) : ''],
+    ['custom', 'Personalizzato', ''],
+  ];
+  const base = ripetiBase(), dataC = ripetiDataCustom();
+  elenco.innerHTML = opzioni.map(([k, n, hint]) => `
+    <label class="ripeti-opz${base === k ? ' attivo' : ''}">
+      <input type="radio" name="f-ripeti-r" value="${k}"${base === k ? ' checked' : ''}>
+      <span>${n}${hint ? ` <small style="font-weight:600;color:var(--testo-2)">${hint}</small>` : ''}</span>
+    </label>
+    ${k === 'custom' && base === 'custom' ? `<input type="date" class="ripeti-data-input" value="${dataC}" min="${tra(1)}" aria-label="Data personalizzata">` : ''}`).join('');
+  elenco.querySelectorAll('input[type=radio]').forEach(r => { r.onchange = () => { ripeti = r.value; disegnaRipeti(); }; });
+  const dataInp = elenco.querySelector('.ripeti-data-input');
+  if (dataInp) dataInp.onchange = e => { ripeti = 'custom:' + e.target.value; disegnaRipeti(); };
   let nota = '';
-  if (ripeti !== 'no') nota = modoFoglio === 'nuovo' ? 'Lo segno nel calendario per i prossimi 12 mesi.'
-    : m ? `Ripete «${m.cosa || 'Lavoro'}», per i prossimi 12 mesi.` : 'Serve almeno un lavoro di questo cliente da ripetere.';
+  if (base === 'custom') {
+    nota = dataC ? `Prossima volta: ${fmtCorta.format(daIso(dataC))}.` : 'Scegli la prossima data.';
+  } else {
+    nota = modoFoglio === 'nuovo' ? 'Lo segno nel calendario per i prossimi 12 mesi.'
+      : m ? `Ripete «${m.cosa || 'Lavoro'}», per i prossimi 12 mesi.` : 'Serve almeno un lavoro di questo cliente da ripetere.';
+  }
   $('f-ripeti-nota').textContent = nota; $('f-ripeti-nota').hidden = !nota;
 }
 // Il lavoro da ripetere: il prossimo da fare (non già ripetuto), altrimenti l'ultimo fatto
@@ -1509,6 +1566,40 @@ function nomeDurata(ore) {
   return g === 1 ? '1 giornata' : `${g} giorni`;
 }
 const DRUM_VALORI = [1,2,3,4,5,6,7,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192,200,208,216,224,232,240];
+// ---- Rotella prezzo ----
+const PREZZO_VALORI = [null,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,180,200,220,250,280,300,350,400,450,500,600,700,800,1000,1200,1500,2000,3000,5000];
+const PREZZO_DEFAULT_IDX = PREZZO_VALORI.indexOf(100);
+const PREZZO_W = 80;
+function disegnaPrezzoDrum() {
+  const drum = $('f-prezzo-drum');
+  if (!drum) return;
+  if (drum.dataset.init) { scorriPrezzoDrum(); return; }
+  drum.dataset.init = '1';
+  drum.innerHTML = PREZZO_VALORI.map((v, i) =>
+    v == null
+      ? `<div class="drum-voce" data-i="${i}"><b>—</b><small>senza</small></div>`
+      : `<div class="drum-voce" data-i="${i}"><b>${v}</b><small>€</small></div>`
+  ).join('');
+  scorriPrezzoDrum();
+  const aggiorna = () => {
+    const i = Math.round(drum.scrollLeft / PREZZO_W);
+    const v = PREZZO_VALORI[Math.max(0, Math.min(i, PREZZO_VALORI.length - 1))];
+    $('f-prezzo').value = v == null ? '' : String(v);
+  };
+  drum.addEventListener('scrollend', aggiorna);
+  let t; drum.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(aggiorna, 150); });
+}
+function scorriPrezzoDrum() {
+  const drum = $('f-prezzo-drum');
+  if (!drum || !drum.dataset.init) return;
+  const raw = $('f-prezzo').value.trim();
+  const v = raw === '' ? null : Number(raw.replace(',', '.'));
+  let idx = v == null ? PREZZO_DEFAULT_IDX : PREZZO_VALORI.indexOf(v);
+  if (idx < 0) idx = PREZZO_VALORI.reduce((best, pv, i) =>
+    pv != null && Math.abs(pv - v) < Math.abs((PREZZO_VALORI[best] ?? 999999) - v) ? i : best, PREZZO_DEFAULT_IDX);
+  const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
+  imposta(); requestAnimationFrame(imposta);  // doppio per quando l'elemento diventa visibile
+}
 const DRUM_W = 80;
 function disegnaDurata() {
   const drum = $('f-durata');
@@ -1537,7 +1628,9 @@ function disegnaDurata() {
 function scorriDrum() {
   const drum = $('f-durata');
   const idx = DRUM_VALORI.indexOf(durata);
-  if (idx >= 0) drum.scrollLeft = idx * DRUM_W;
+  if (idx < 0) return;
+  const imposta = () => { drum.scrollLeft = idx * DRUM_W; };
+  imposta(); requestAnimationFrame(imposta);
 }
 
 // I giorni occupati da un lavoro, con le ore di ciascuno. Un lavoro lungo continua
@@ -1937,7 +2030,7 @@ function compila(frase) {
     if (r.dove) { $('f-dove').value = r.dove; segna('f-dove'); }
   }
   if (r.cosa) { $('f-cosa').value = r.cosa; segna('f-cosa'); disegnaComuni(); }
-  if (r.prezzo) { $('f-prezzo').value = r.prezzo; segna('f-prezzo'); }
+  if (r.prezzo) { $('f-prezzo').value = r.prezzo; scorriPrezzoDrum(); segna('f-prezzo'); }
   if (r.durata) { durata = r.durata; disegnaDurata(); }
   if (r.quando) { quando = r.quando; quandoFisso = true; dateScelte = []; }
   if (r.durata || r.quando) { if (r.durata) dateScelte = []; allineaDate(); disegnaQuando(); }
@@ -1965,7 +2058,10 @@ const LAVORI_COMUNI = ['Taglio erba', 'Potatura', 'Taglio siepe', 'Manutenzione 
 const pezziCosa = () => $('f-cosa').value.split(',').map(s => s.trim()).filter(Boolean);
 function disegnaComuni() {
   const pezzi = pezziCosa().map(normalizza);
-  $('f-comuni').innerHTML = LAVORI_COMUNI.map(l => `<button type="button" class="chip${pezzi.includes(normalizza(l)) ? ' attivo' : ''}" data-l="${l}">${l}</button>`).join('');
+  $('f-comuni').innerHTML = LAVORI_COMUNI.map(l => {
+    const lungo = l.length > 11, attivo = pezzi.includes(normalizza(l));
+    return `<button type="button" class="chip${attivo ? ' attivo' : ''}${lungo ? ' scorri' : ''}" data-l="${l}"><span class="cht">${l}</span></button>`;
+  }).join('');
   $('f-comuni').querySelectorAll('.chip').forEach(b => {
     b.onclick = e => {
       e.preventDefault();
@@ -2158,7 +2254,7 @@ function disegnaScheda() {
         const cifre = t.replace(/\D/g, '');
         return `<span>${TEL}${sicuro(t)}<span class="s-contatti"><a href="tel:${cifre}">Chiama</a><a href="https://wa.me/39${cifre}" target="_blank" rel="noopener">WhatsApp</a></span></span>`;
       }).join('')}
-      ${c.ripeti !== 'no' ? `<span>↻ Si ripete: ${RIPETI[c.ripeti].nome.toLowerCase()}</span>` : ''}
+      ${c.ripeti && c.ripeti !== 'no' ? `<span>↻ Si ripete: ${c.ripeti.startsWith('custom:') ? 'personalizzato' : (RIPETI[c.ripeti]?.nome || c.ripeti).toLowerCase()}</span>` : ''}
       ${c.note ? `<span class="s-note">${sicuro(c.note)}</span>` : ''}
     </div>
     ${dovuto}
