@@ -584,6 +584,13 @@ button.s-riga:first-child { border-top: 0; }
 .ripeti-opz input[type=radio] { accent-color: var(--foglia); width: 18px; height: 18px; flex: none; }
 .ripeti-opz.attivo { background: var(--foglia-chiara); color: var(--foglia); }
 .ripeti-data-input { margin-top: 6px; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--foglia); background: var(--carta); font-size: 15px; font-weight: 700; width: 100%; color: var(--testo); }
+/* Paga ogni X mesi: config mesi */
+.sem-destra { display: flex; align-items: center; gap: 8px; }
+.sem-btn-cfg { background: none; border: 1.5px solid var(--linea); border-radius: 8px; padding: 4px 10px; cursor: pointer; color: var(--testo-2); font-size: 13px; font-weight: 700; min-height: 34px; }
+.sem-btn-cfg.aperto { background: var(--foglia-chiara); color: var(--foglia); border-color: var(--foglia); }
+.sem-mesi { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.sem-mese { flex: 0 0 calc(25% - 5px); border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); color: var(--testo-2); font-size: 14px; font-weight: 700; padding: 8px 4px; cursor: pointer; text-align: center; }
+.sem-mese.attivo { background: var(--foglia-chiara); color: var(--foglia); border-color: var(--foglia); }
 .q-giorno strong { font-size: 16px; }
 .q-giorno small { font-size: 13px; }
 .avanzate { border-top: 1px solid var(--linea); padding-top: 4px; }
@@ -777,6 +784,18 @@ button.s-riga:first-child { border-top: 0; }
         <input id="f-tel" type="tel" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
       </label>
 
+      <!-- Paga ogni X mesi: solo per i condomini, fuori dalle impostazioni avanzate -->
+      <div class="campo" id="campo-semestrale" hidden>
+        <div class="notifica-testa">
+          <span><strong>Paga ogni 6 mesi</strong><small id="f-sem-desc">A giugno e a dicembre</small></span>
+          <div class="sem-destra">
+            <button type="button" class="sem-btn-cfg" id="f-sem-cfg" aria-label="Modifica mesi di pagamento" hidden>✏ Mesi</button>
+            <button type="button" class="interruttore" id="f-semestrale" role="switch" aria-checked="false" aria-label="Paga ogni 6 mesi"><i></i></button>
+          </div>
+        </div>
+        <div class="sem-mesi" id="f-sem-mesi" hidden></div>
+      </div>
+
       <!-- Altre impostazioni del cliente: chiuse, si aprono con un tocco -->
       <details class="avanzate" id="f-avanzate">
         <summary>Altre impostazioni</summary>
@@ -791,8 +810,7 @@ button.s-riga:first-child { border-top: 0; }
             <div class="ripeti-opzioni" id="f-ripeti" role="radiogroup" aria-label="Ogni quanto si ripete" hidden></div>
             <small class="nota-campo" id="f-ripeti-nota"></small>
           </div>
-          <div class="campo"><div class="notifica-testa"><span><strong>Paga ogni 6 mesi</strong><small>A giugno e a dicembre, come i condomini: prima non risulta in ritardo.</small></span>
-            <button type="button" class="interruttore" id="f-semestrale" role="switch" aria-checked="false" aria-label="Paga ogni 6 mesi"><i></i></button></div></div>
+
           <label class="campo">
             <span>Note personali</span>
             <textarea id="f-note" rows="2" autocapitalize="sentences" placeholder="Es. codice cancello 1234, c'è il cane"></textarea>
@@ -1004,7 +1022,7 @@ const TELEFONI = { 'Villa Sangalli': '339 412 7781', 'Giorgio Pozzi': '347 220 1
 
 // Altre impostazioni di ogni cliente: telefoni, colore, ogni quanto si ripete il lavoro
 const extra = {};
-const prendiExtra = nome => extra[nome] || (extra[nome] = { tel: '', colore: '', ripeti: 'no', note: '' });
+const prendiExtra = nome => extra[nome] || (extra[nome] = { tel: '', colore: '', ripeti: 'no', note: '', mesiSemestrale: [6, 12] });
 for (const [n, t] of Object.entries(TELEFONI)) prendiExtra(n).tel = t;
 prendiExtra('Villa Sangalli').colore = '#8a5cc7';      // nella prova: due clienti già colorati
 prendiExtra('Condominio Aurora').colore = '#3b82c4';
@@ -1103,7 +1121,11 @@ function conto(nome) {
   let scadenza = null;
   if (daPagare.length && prendiExtra(nome).semestrale) {
     const d = daIso(daPagare[0].data);
-    scadenza = d.getMonth() < 6 ? new Date(d.getFullYear(), 5, 30) : new Date(d.getFullYear(), 11, 31);
+    const mesiPag = (prendiExtra(nome).mesiSemestrale || [6, 12]).slice().sort((a, b) => a - b);
+    const meseData = d.getMonth() + 1; // 1-based
+    const prossimoMese = mesiPag.find(m => m >= meseData) || mesiPag[0];
+    const annoScad = prossimoMese < meseData ? d.getFullYear() + 1 : d.getFullYear();
+    scadenza = new Date(annoScad, prossimoMese, 0); // ultimo giorno del mese (es. 30 giugno, 31 dicembre)
     giorni = Math.max(0, Math.round((OGGI - scadenza) / 86400000));
   }
   return { fatti, ricevuti, daPagare, saldati, dovuto, giorni, scadenza };
@@ -1335,7 +1357,12 @@ let tipo = TIPI[0];
 
 function disegnaTipo() {
   $('f-tipo').innerHTML = TIPI.map(t => `<button class="chip${t === tipo ? ' attivo' : ''}" role="radio" aria-checked="${t === tipo}" data-t="${t}">${t}</button>`).join('');
-  $('f-tipo').querySelectorAll('.chip').forEach(b => { b.onclick = () => { tipo = b.dataset.t; if (modoFoglio === 'nuovo') { semestrale = tipo === 'Condominio'; disegnaSemestrale(); } disegnaTipo(); }; });
+  $('f-tipo').querySelectorAll('.chip').forEach(b => { b.onclick = () => {
+    tipo = b.dataset.t;
+    if (modoFoglio === 'nuovo') { semestrale = tipo === 'Condominio'; mesiSemestrale = [6, 12]; semCfgAperto = false; disegnaSemestrale(); }
+    disegnaTipo();
+  }; });
+  $('campo-semestrale').hidden = tipo !== 'Condominio' || !!clienteScelto;
 }
 
 // Lo stesso foglio serve per "Nuovo cliente" e per "Modifica cliente"
@@ -1358,7 +1385,7 @@ function apriFoglio(giorno, perCliente) {
   notaInCorso = null;
   // Giorno già scelto: quello toccato sul calendario; altrimenti il primo dei giorni migliori
   const g = giorno || (scelto > tra(0) ? scelto : null);
-  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false;
+  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = [6, 12]; semCfgAperto = false;
   quandoFisso = !!g;
   quando = g || giorniMigliori()[0];
   dateScelte = []; allineaDate();
@@ -1383,7 +1410,7 @@ function apriModifica(nome) {
   preparaFoglio('modifica');
   nomeInModifica = nome;
   const c = datiCliente(nome);
-  tipo = c.tipo; colore = c.colore; ripeti = c.ripeti; semestrale = !!c.semestrale; disegnaSemestrale();
+  tipo = c.tipo; colore = c.colore; ripeti = c.ripeti; semestrale = !!c.semestrale; mesiSemestrale = c.mesiSemestrale || [6, 12]; semCfgAperto = false; disegnaSemestrale();
   $('f-nome').value = c.nome; $('f-dove').value = c.dove; $('f-tel').value = c.tel; $('f-note').value = c.note;
   $('f-avanzate').open = true;
   disegnaTipo(); disegnaColori(); disegnaRipeti();
@@ -1510,7 +1537,8 @@ function aggiornaCliente() {
   $('f-scelto').hidden = !clienteScelto;
   $('campo-dove').hidden = !!clienteScelto;
   // Telefoni e colore sono del cliente: se è già tuo, si cambiano da "Modifica cliente"
-  for (const id of ['f-tel', 'f-colore', 'f-note', 'f-semestrale']) $(id).closest('.campo').hidden = !!clienteScelto;
+  for (const id of ['f-tel', 'f-colore', 'f-note']) $(id).closest('.campo').hidden = !!clienteScelto;
+  $('campo-semestrale').hidden = !!clienteScelto || tipo !== 'Condominio';
   if (modoFoglio === 'modifica') { $('f-trovati').hidden = true; return; }
   if (clienteScelto) {
     $('f-scelto').innerHTML = `<span><strong>${sicuro(clienteScelto.nome)}</strong><small>${sicuro(clienteScelto.dove || '')} · cliente già tuo</small></span><button id="f-cambia">Cambia</button>`;
@@ -1528,7 +1556,7 @@ function aggiornaCliente() {
 }
 
 // ---- A che ora (facoltativo): mattina, pomeriggio o un'ora precisa ----
-let ora = '', semestrale = false;
+let ora = '', semestrale = false, mesiSemestrale = [6, 12], semCfgAperto = false;
 const nomeOra = o => o === 'mattina' ? 'Mattina' : o === 'pomeriggio' ? 'Pomeriggio' : o;
 const minutiOra = o => !o ? 9999 : o === 'mattina' ? 480 : o === 'pomeriggio' ? 840 : (+o.slice(0, 2)) * 60 + (+o.slice(3, 5));
 function disegnaOra() {
@@ -1547,10 +1575,39 @@ function disegnaOra() {
     toggle.querySelectorAll('.ora-voce').forEach(b => { b.onclick = () => { ora = b.dataset.o; disegnaOra(); }; });
   }
 }
+const MESI_BREVI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const MESI_ESTESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 function disegnaSemestrale() {
-  const b = $('f-semestrale');
-  b.classList.toggle('acceso', semestrale); b.setAttribute('aria-checked', semestrale);
-  b.onclick = () => { semestrale = !semestrale; disegnaSemestrale(); };
+  const b = $('f-semestrale'), cfgBtn = $('f-sem-cfg'), cfgPanel = $('f-sem-mesi'), desc = $('f-sem-desc');
+  if (!b) return;
+  b.classList.toggle('acceso', semestrale); b.setAttribute('aria-checked', String(semestrale));
+  // Descrizione dinamica
+  const nomiM = mesiSemestrale.slice().sort((a, x) => a - x).map(m => MESI_ESTESI[m - 1]);
+  desc.textContent = nomiM.length <= 2 ? 'A ' + nomiM.join(' e a ') : 'A ' + nomiM.slice(0, -1).join(', ') + ' e a ' + nomiM[nomiM.length - 1];
+  // Bottone Modifica: visibile solo quando il toggle è ON
+  cfgBtn.hidden = !semestrale;
+  if (!semestrale) { semCfgAperto = false; cfgPanel.hidden = true; cfgBtn.classList.remove('aperto'); }
+  // Pannello mesi
+  if (semCfgAperto) {
+    cfgPanel.hidden = false;
+    cfgPanel.innerHTML = MESI_BREVI.map((n, i) => {
+      const m = i + 1, att = mesiSemestrale.includes(m);
+      return `<button type="button" class="sem-mese${att ? ' attivo' : ''}" data-m="${m}">${n}</button>`;
+    }).join('');
+    cfgPanel.querySelectorAll('.sem-mese').forEach(chip => {
+      chip.onclick = () => {
+        const m = +chip.dataset.m;
+        if (mesiSemestrale.includes(m)) { if (mesiSemestrale.length > 1) mesiSemestrale = mesiSemestrale.filter(x => x !== m); }
+        else mesiSemestrale = [...mesiSemestrale, m].sort((a, x) => a - x);
+        disegnaSemestrale();
+      };
+    });
+  }
+  if (!b.dataset.init) {
+    b.dataset.init = '1';
+    b.onclick = () => { semestrale = !semestrale; disegnaSemestrale(); };
+    cfgBtn.onclick = () => { semCfgAperto = !semCfgAperto; cfgBtn.classList.toggle('aperto', semCfgAperto); disegnaSemestrale(); };
+  }
 }
 
 // ---- Quanto dura: in ore. Serve a capire quanto è pieno un giorno ----
@@ -1845,7 +1902,7 @@ function salva() {
   if (n > 1) nuovo.date = dateOrdinate();
   lavori.push(nuovo);
   const e = prendiExtra(nome);
-  if (!clienteScelto) { e.tel = $('f-tel').value.trim(); e.colore = colore; e.note = $('f-note').value.trim(); e.semestrale = semestrale; }
+  if (!clienteScelto) { e.tel = $('f-tel').value.trim(); e.colore = colore; e.note = $('f-note').value.trim(); e.semestrale = semestrale; e.mesiSemestrale = mesiSemestrale; }
   let ripetuti = 0;
   if (ripeti !== 'no') { e.ripeti = ripeti; togliRipetuti(nome); ripetuti = generaSerie(nuovo, ripeti); }
   setTimeout(() => {
@@ -1876,7 +1933,7 @@ function salvaModifica() {
   }
   for (const p of pagamenti) if (p.nome === vecchio) p.nome = nuovo;
   delete extra[vecchio];
-  extra[nuovo] = { ...e, tel: $('f-tel').value.trim(), note: $('f-note').value.trim(), colore, ripeti, semestrale };
+  extra[nuovo] = { ...e, tel: $('f-tel').value.trim(), note: $('f-note').value.trim(), colore, ripeti, semestrale, mesiSemestrale };
   let ripetuti = 0;
   if (ripeti !== ripetiPrima) {
     togliRipetuti(nuovo);
