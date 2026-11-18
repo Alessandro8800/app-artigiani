@@ -550,18 +550,25 @@ button.s-riga:first-child { border-top: 0; }
 .f-lavoro { display: flex; flex-direction: column; gap: 14px; }
 .campo-testa { display: flex; align-items: center; justify-content: space-between; }
 .link { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--foglia-chiara); color: var(--foglia); font-weight: 800; font-size: 14px; border-radius: 10px; padding: 7px 12px; }
-.durata-riga { display: flex; align-items: flex-start; gap: 10px; }
-.durata-riga small { padding-top: 10px; }
-#f-durata { flex: 1; }
-#f-durata .chip { min-height: 34px; padding: 0 10px; }
-.durata-riga small { font-size: 13px; font-weight: 700; color: var(--testo-2); }
-.segmenti { flex: 1; display: flex; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 11px; padding: 3px; }
-.segmenti button { flex: 1; border: 0; background: none; border-radius: 8px; min-height: 34px; font-size: 14px; font-weight: 700; color: var(--testo-2); }
-.segmenti button.attivo { background: var(--foglia-chiara); color: var(--foglia); }
+/* Rotella durata */
+.drum-contenitore { position: relative; border-radius: 14px; overflow: hidden; background: var(--carta); border: 1.5px solid var(--linea); }
+.drum-scorribile { overflow-x: auto; display: flex; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; height: 68px; align-items: center; padding: 0 calc(50% - 40px); }
+.drum-scorribile::-webkit-scrollbar { display: none; }
+.drum-voce { flex: 0 0 80px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: center; gap: 1px; user-select: none; }
+.drum-voce b { font-size: 18px; font-weight: 800; color: var(--testo); line-height: 1; }
+.drum-voce small { font-size: 11px; font-weight: 700; color: var(--testo-2); }
+.drum-contenitore::after { content: ''; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 80px; transform: translateX(-50%); border: 2px solid var(--foglia); border-radius: 10px; background: var(--foglia-chiara); pointer-events: none; opacity: .55; }
+/* Barra ora */
+.ora-toggle { position: relative; display: flex; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 12px; padding: 3px; }
+.ora-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); background: var(--foglia-chiara); border: 1.5px solid var(--foglia); border-radius: 9px; transition: left .18s ease; pointer-events: none; }
+.ora-voce { flex: 1; min-height: 38px; border: 0; background: none; font-size: 14px; font-weight: 700; color: var(--testo-2); border-radius: 9px; cursor: pointer; z-index: 1; }
+.ora-voce.attivo { color: var(--foglia); }
+/* Griglia giorni: calendario + 3 giorni */
 .q-quattro { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .q-info { margin: 0; font-size: 14px; font-weight: 700; color: var(--foglia); }
 .q-info.manca { color: var(--ambra); }
 .q-giorno { min-height: 54px; padding: 7px 12px; border-radius: 12px; }
+.q-cal-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 54px; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--carta); color: var(--foglia); font-size: 12px; font-weight: 800; padding: 7px 12px; }
 .q-giorno strong { font-size: 16px; }
 .q-giorno small { font-size: 13px; }
 .avanzate { border-top: 1px solid var(--linea); padding-top: 4px; }
@@ -717,11 +724,14 @@ button.s-riga:first-child { border-top: 0; }
       <!-- Il lavoro: solo in "Nuovo cliente" -->
       <div class="f-lavoro" id="f-lavoro">
         <div class="campo">
-          <span class="campo-testa">Quando
-            <button class="link" id="q-cal" type="button"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Calendario</button>
-          </span>
-          <div class="durata-riga"><small>Dura</small><div class="chips piccoli" id="f-durata" role="radiogroup" aria-label="Quanto dura il lavoro"></div></div>
-          <div class="durata-riga"><small>Ora</small><div class="chips piccoli" id="f-ora" role="radiogroup" aria-label="A che ora"></div></div>
+          <span class="campo-testa">Quando</span>
+          <div class="drum-contenitore"><div class="drum-scorribile" id="f-durata" aria-label="Quanto dura il lavoro"></div></div>
+          <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
+            <div class="ora-pill" id="ora-pill"></div>
+            <button class="ora-voce" type="button" data-o="mattina">Mattina</button>
+            <button class="ora-voce" type="button" data-o="">Qualsiasi</button>
+            <button class="ora-voce" type="button" data-o="pomeriggio">Pomeriggio</button>
+          </div>
           <div class="q-quattro" id="f-quando"></div>
           <p class="q-info" id="q-info" hidden></p>
         </div>
@@ -1465,11 +1475,20 @@ let ora = '', semestrale = false;
 const nomeOra = o => o === 'mattina' ? 'Mattina' : o === 'pomeriggio' ? 'Pomeriggio' : o;
 const minutiOra = o => !o ? 9999 : o === 'mattina' ? 480 : o === 'pomeriggio' ? 840 : (+o.slice(0, 2)) * 60 + (+o.slice(3, 5));
 function disegnaOra() {
-  const precisa = ora && ora !== 'mattina' && ora !== 'pomeriggio';
-  $('f-ora').innerHTML = [['', 'Qualsiasi'], ['mattina', 'Mattina'], ['pomeriggio', 'Pomeriggio']].map(([k, n]) => `<button type="button" class="chip${ora === k ? ' attivo' : ''}" data-o="${k}">${n}</button>`).join('')
-    + `<label class="chip${precisa ? ' attivo' : ''}">${precisa ? ora : 'Alle…'}<input type="time" id="f-ora-precisa" value="${precisa ? ora : '08:00'}" aria-label="Ora precisa"></label>`;
-  $('f-ora').querySelectorAll('button').forEach(b => { b.onclick = () => { ora = b.dataset.o; disegnaOra(); }; });
-  $('f-ora-precisa').onchange = e => { ora = e.target.value; disegnaOra(); };
+  const toggle = $('f-ora-toggle');
+  if (!toggle) return;
+  const ORA_VOCI = ['mattina', '', 'pomeriggio'];
+  const idx = ORA_VOCI.indexOf(ora) < 0 ? 1 : ORA_VOCI.indexOf(ora);
+  const pill = $('ora-pill');
+  pill.style.left = `calc(${idx} * (100% - 6px) / 3 + 3px)`;
+  toggle.querySelectorAll('.ora-voce').forEach((b, i) => {
+    b.classList.toggle('attivo', i === idx);
+    b.setAttribute('aria-checked', String(i === idx));
+  });
+  if (!toggle.dataset.init) {
+    toggle.dataset.init = '1';
+    toggle.querySelectorAll('.ora-voce').forEach(b => { b.onclick = () => { ora = b.dataset.o; disegnaOra(); }; });
+  }
 }
 function disegnaSemestrale() {
   const b = $('f-semestrale');
@@ -1489,16 +1508,36 @@ function nomeDurata(ore) {
   const g = ore / oreGiornata;
   return g === 1 ? '1 giornata' : `${g} giorni`;
 }
+const DRUM_VALORI = [1,2,3,4,5,6,7,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192,200,208,216,224,232,240];
+const DRUM_W = 80;
 function disegnaDurata() {
-  const voci = DURATE.includes(durata) ? DURATE : [...DURATE, durata].sort((a, b) => a - b);
-  $('f-durata').innerHTML = voci.map(o => `<button type="button" class="chip${o === durata ? ' attivo' : ''}" role="radio" aria-checked="${o === durata}" data-o="${o}">${nomeDurata(o)}</button>`).join('');
-  $('f-durata').querySelectorAll('.chip').forEach(b => { b.onclick = () => {
-    durata = +b.dataset.o; disegnaDurata();
-    // Se il giorno l'ho proposto io, ne propongo uno dove il lavoro ci sta davvero
-    if (!quandoFisso) quando = giorniMigliori()[0] || quando;
-    dateScelte = []; allineaDate();
-    disegnaQuando();
-  }; });
+  const drum = $('f-durata');
+  if (drum.dataset.init) { scorriDrum(); return; }
+  drum.dataset.init = '1';
+  drum.innerHTML = DRUM_VALORI.map(v => {
+    const gg = Math.floor(v / oreGiornata), hh = v % oreGiornata;
+    const num = v < oreGiornata ? v : (hh === 0 ? gg : v);
+    const unit = v < oreGiornata ? (v === 1 ? 'ora' : 'ore') : (hh === 0 ? (gg === 1 ? 'giornata' : 'giorni') : 'ore');
+    return `<div class="drum-voce" data-v="${v}"><b>${num}</b><small>${unit}</small></div>`;
+  }).join('');
+  scorriDrum();
+  const aggiorna = () => {
+    const i = Math.round(drum.scrollLeft / DRUM_W);
+    const v = DRUM_VALORI[Math.max(0, Math.min(i, DRUM_VALORI.length - 1))];
+    if (v !== durata) {
+      durata = v; durataSolita = v;
+      if (!quandoFisso) quando = giorniMigliori()[0] || quando;
+      dateScelte = []; allineaDate();
+      disegnaQuando();
+    }
+  };
+  drum.addEventListener('scrollend', aggiorna);
+  let t; drum.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(aggiorna, 150); });
+}
+function scorriDrum() {
+  const drum = $('f-durata');
+  const idx = DRUM_VALORI.indexOf(durata);
+  if (idx >= 0) drum.scrollLeft = idx * DRUM_W;
 }
 
 // I giorni occupati da un lavoro, con le ore di ciascuno. Un lavoro lungo continua
@@ -1575,24 +1614,28 @@ function giorniTuttiLiberi(m) {
 }
 const breveGiorno = s => s === tra(0) ? 'Oggi' : s === tra(1) ? 'Domani' : maiuscola(fmtSettBreve.format(daIso(s)));
 
+const SVG_CAL = `<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function calBtn() { return `<button type="button" class="q-cal-btn" id="q-cal">${SVG_CAL}<span>Altro giorno</span></button>`; }
 function disegnaQuando() {
   if (quantiGiorni() > 1) return disegnaQuandoPiuGiorni();
   $('q-info').hidden = true;
   const migliori = giorniMigliori();
-  // 4 riquadri: i giorni più liberi; se il giorno scelto non è tra questi, prende il primo posto
-  const giorni = (migliori.includes(quando) ? migliori : [quando, ...migliori.slice(0, 3)]).sort();
-  const breve = breveGiorno, m = mappaGiorni();
-  $('f-quando').innerHTML = giorni.map(s => `<button type="button" class="q-giorno${s === quando ? ' attivo' : ''}" data-s="${s}" aria-pressed="${s === quando}">
-      <span><strong>${breve(s)}${livelloPioggia(s) ? GOCCIA : ''}</strong><small>${pienezza(s, m)}${testoPioggia(s) ? ' · ' + testoPioggia(s).toLowerCase() : ''}</small></span></button>`).join('');
+  // Griglia: calendario in alto a sinistra + 3 giorni migliori
+  const giorni = (migliori.includes(quando) ? migliori.slice(0, 3) : [quando, ...migliori.slice(0, 2)]).sort();
+  const m = mappaGiorni();
+  $('f-quando').innerHTML = calBtn() + giorni.map(s => `<button type="button" class="q-giorno${s === quando ? ' attivo' : ''}" data-s="${s}" aria-pressed="${s === quando}">
+      <span><strong>${breveGiorno(s)}${livelloPioggia(s) ? GOCCIA : ''}</strong><small>${pienezza(s, m)}${testoPioggia(s) ? ' · ' + testoPioggia(s).toLowerCase() : ''}</small></span></button>`).join('');
+  $('f-quando').querySelector('#q-cal').onclick = () => apriCalFoglio();
   $('f-quando').querySelectorAll('.q-giorno').forEach(b => { b.onclick = () => { quando = b.dataset.s; quandoFisso = true; disegnaQuando(); }; });
-  if (modoFoglio === 'nuovo') disegnaRipeti();   // le date di "si ripete" partono dal giorno scelto
+  if (modoFoglio === 'nuovo') disegnaRipeti();
 }
 function disegnaQuandoPiuGiorni() {
   const m = mappaGiorni(), n = quantiGiorni(), scelte = dateOrdinate();
   const altri = giorniTuttiLiberi(m).filter(s => !scelte.includes(s));
-  const giorni = [...scelte, ...altri].slice(0, Math.max(4, scelte.length)).sort();
-  $('f-quando').innerHTML = giorni.map(s => `<button type="button" class="q-giorno${scelte.includes(s) ? ' attivo' : ''}" data-s="${s}" aria-pressed="${scelte.includes(s)}">
+  const giorni = [...scelte, ...altri].slice(0, Math.max(3, scelte.length)).sort();
+  $('f-quando').innerHTML = calBtn() + giorni.map(s => `<button type="button" class="q-giorno${scelte.includes(s) ? ' attivo' : ''}" data-s="${s}" aria-pressed="${scelte.includes(s)}">
       <span><strong>${breveGiorno(s)}${livelloPioggia(s) ? GOCCIA : ''}</strong><small>${pienezza(s, m)}${testoPioggia(s) ? ' · ' + testoPioggia(s).toLowerCase() : ''}</small></span></button>`).join('');
+  $('f-quando').querySelector('#q-cal').onclick = () => apriCalFoglio();
   $('f-quando').querySelectorAll('.q-giorno').forEach(b => { b.onclick = () => { tocca(b.dataset.s); disegnaQuando(); }; });
   const mancano = n - scelte.length;
   $('q-info').hidden = false;
@@ -1600,7 +1643,6 @@ function disegnaQuandoPiuGiorni() {
   $('q-info').textContent = mancano > 0 ? `Scegli ${n} giorni: ne manca ${mancano === 1 ? '1' : mancano}` : `${n} giorni: ${scelte.map(breveGiorno).join(', ')}`;
   if (modoFoglio === 'nuovo') disegnaRipeti();
 }
-$('q-cal').onclick = () => apriCalFoglio();
 
 // Calendario a finestra, davanti al foglio: niente da scorrere
 // Si vedono i giorni del mese; toccando il mese si vedono tutti i mesi, toccando l'anno tutti gli anni
