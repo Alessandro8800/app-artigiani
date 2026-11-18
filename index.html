@@ -331,6 +331,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-stepper button { width: 38px; height: 42px; border: none; background: none; color: var(--testo); font-size: 20px; font-weight: 300; cursor: pointer; flex-shrink: 0; }
 .inbox-stepper button:active { background: var(--linea); }
 .inbox-stepper input { flex: 1; border: none; background: none; color: var(--testo); font-size: 15px; font-weight: 700; text-align: center; padding: 0; min-width: 0; }
+.inbox-stepper input[type=number]::-webkit-inner-spin-button,
+.inbox-stepper input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.inbox-stepper input[type=number] { -moz-appearance: textfield; }
 .inbox-tipo-row { display: flex; gap: 6px; }
 .inbox-tipo-btn { flex: 1; height: 34px; border-radius: 9px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .12s, color .12s; }
 .inbox-tipo-btn.attivo { background: var(--foglia); color: var(--sul-foglia); border-color: var(--foglia); }
@@ -341,6 +344,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-cerca-risultati button:last-child { border-bottom: none; }
 .inbox-cerca-risultati button:active { background: var(--foglia-chiara); }
 .ripr-info { font-size: 15px; font-weight: 800; color: #fff; padding: 10px 0 14px; text-align: center; }
+.ripr-info-row { display: flex; align-items: center; padding: 10px 0 14px; gap: 10px; }
+.ripr-nome-input { flex: 1; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.3); border-radius: 9px; color: #fff; font-size: 15px; font-weight: 700; padding: 7px 12px; min-width: 0; }
+.ripr-nome-input::placeholder { color: rgba(255,255,255,.45); }
+.ripr-data-vec { font-size: 13px; color: rgba(255,255,255,.65); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
 .inbox-btn-indietro { height: 30px; padding: 0 14px; border-radius: 9px; background: none; border: 1.5px solid rgba(255,255,255,.35); color: rgba(255,255,255,.85); font-size: 13px; font-weight: 700; cursor: pointer; }
 .f-piede-indietro { display: flex; gap: 10px; }
 .f-piede-indietro .secondario { height: 50px; padding: 0 20px; border-radius: 14px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 16px; font-weight: 700; cursor: pointer; }
@@ -986,7 +993,10 @@ button.s-riga:first-child { border-top: 0; }
 <div class="q-pop" id="ripr-pop" hidden>
   <div class="q-pop-box" role="dialog" aria-modal="true" aria-label="Scegli nuovo giorno">
     <div class="q-pop-testa">
-      <strong id="ripr-info" class="ripr-info">Cliente - Data</strong>
+      <div class="ripr-info-row">
+        <input type="text" id="ripr-nome" class="ripr-nome-input" placeholder="Nome cliente">
+        <span id="ripr-data-vec" class="ripr-data-vec"></span>
+      </div>
       <button class="chiudi" id="ripr-chiudi" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
     </div>
     <div class="calendario">
@@ -1104,14 +1114,13 @@ button.s-riga:first-child { border-top: 0; }
       <button class="chiudi" id="ai-inbox-chiudi" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
       <h2 id="ai-inbox-titolo">Notifiche</h2>
       <div class="inbox-header-azioni">
+        <button class="inbox-ic" id="ai-inbox-add" aria-label="Aggiungi" title="Aggiungi" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <button class="inbox-ic" id="ai-inbox-edit" aria-label="Modifica" title="Modifica"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
         <button class="inbox-ic" id="ai-inbox-mic" aria-label="Parla" title="Aggiungi con voce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg></button>
       </div>
     </header>
     <div class="f-corpo gutter" id="ai-inbox-lista"></div>
-    <footer class="f-piede gutter" id="ai-inbox-footer" hidden>
-      <button class="salva" id="ai-inbox-nuovo" onclick="chiudiInbox(); apriFoglio();">+ Nuovo cliente</button>
-    </footer>
+    <footer class="f-piede gutter" id="ai-inbox-footer" hidden></footer>
   </div>
 </div>
 
@@ -2507,9 +2516,9 @@ function inbox_cardHtml(item, cat) {
   // Pulsante "Modifica": per cliente e riprogramma apre una schermata; per gli altri espande panel inline
   let expandBtn = '';
   if (cat === 'cliente') {
-    expandBtn = `<button class="inbox-expand" onclick="apriModificaInboxCliente(this.closest('.inbox-card'), ${JSON.stringify(item)})">Modifica</button>`;
+    expandBtn = `<button class="inbox-expand" onclick="apriModificaInboxCliente(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')})">Modifica</button>`;
   } else if (cat === 'riprogramma') {
-    expandBtn = `<button class="inbox-expand" onclick="apriRiprogrammaInbox(this.closest('.inbox-card'), ${JSON.stringify(item)})">Modifica</button>`;
+    expandBtn = `<button class="inbox-expand" onclick="apriRiprogrammaInbox(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')})">Modifica</button>`;
   } else if (campiHtml) {
     expandBtn = `<button class="inbox-expand" aria-expanded="false" onclick="
       const p=this.previousElementSibling;
@@ -2574,7 +2583,8 @@ function apriRiprogrammaInbox(card, item) {
   const get = (l) => (item.campi.find(([k]) => k === l) || [])[1] || '';
   const cliente = get('Cliente');
   const da = get('Da');
-  $('ripr-info').textContent = `${cliente} — ${da}`;
+  $('ripr-nome').value = cliente;
+  $('ripr-data-vec').textContent = da;
   _riprogrammaMese = new Date();
   disegnaRiprCalendario();
   $('ripr-pop').hidden = false;
@@ -2665,6 +2675,19 @@ function apriInbox(key) {
   const lista = $('ai-inbox-lista');
   lista.classList.remove('edit-mode');
   $('ai-inbox-edit').classList.remove('attivo');
+  const addBtn = $('ai-inbox-add');
+  if (key === 'cliente') {
+    addBtn.hidden = false;
+    addBtn.onclick = () => { chiudiInbox(); apriFoglio(); };
+  } else if (key === 'nota') {
+    addBtn.hidden = false;
+    addBtn.onclick = () => aggiungiItemSimulato();
+  } else if (key === 'costo') {
+    addBtn.hidden = false;
+    addBtn.onclick = () => {};
+  } else {
+    addBtn.hidden = true;
+  }
   let html = '<p class="inbox-nota-sim">Simulazione — questi arriverebbero dall\'assistente vocale</p>';
   if (key === 'tutto') {
     Object.values(INBOX_ESEMPI).forEach(cfg => {
@@ -2678,7 +2701,7 @@ function apriInbox(key) {
     if (!cfg) return;
     $('ai-inbox-titolo').textContent = cfg.titolo;
     html += cfg.voci.map(v => inbox_cardHtml(v, cfg.cat)).join('');
-    $('ai-inbox-footer').hidden = key !== 'cliente';
+    $('ai-inbox-footer').hidden = true;
   }
   lista.innerHTML = html;
   $('ai-inbox').hidden = false;
