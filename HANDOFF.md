@@ -1,6 +1,12 @@
 # Handoff — app-artigiani
 
-Leggi questo file all'inizio di ogni nuova sessione prima di toccare codice.
+Leggi questo file all'inizio di ogni nuova sessione **prima di toccare codice**.
+
+---
+
+## Regola numero 1
+
+**Tocca solo `index.html`.** È l'unico file della prova grafica. Non toccare `src/`, `prima-versione/`, né altri file a meno che il titolare non lo chieda esplicitamente.
 
 ---
 
@@ -8,116 +14,198 @@ Leggi questo file all'inizio di ogni nuova sessione prima di toccare codice.
 
 PWA Android per un giardiniere (artigiano che lavora da solo).
 Un unico file: `index.html` — prova grafica approvata, dati inventati, si azzera a ogni apertura.
-Stack: HTML + CSS + JS vanilla (Vite 6 solo per build/PWA). Database: Dexie (IndexedDB).
-La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online).
+Stack: HTML + CSS + JS vanilla (Vite 6 solo per build/PWA). Database futuro: Dexie (IndexedDB).
+La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). Non servono.
 
 ---
 
-## Stato attuale (sessione al 2026-11-19)
+## Struttura dello schermo principale
 
-### Schermata principale
-- Calendario settimana in cima con giorno selezionato
-- Agenda sotto: lista lavori del giorno, giorni liberi, 2 mesi avanti
-- Barra AI sotto l'agenda: 5 icone categoria + tasto microfono rosso pulsante
-- Barra azioni rimossa dalla parte superiore
-
-### Scheda "Nuovo cliente" (foglio dal basso)
-5 campi principali visibili subito:
-1. **Nome** — testo libero
-2. **Indirizzo** — testo libero
-3. **Cosa c'è da fare** — chips (8 lavori: Taglio erba, Potatura, Taglio siepe, Irrigazione, Raccolta foglie, Pulizia giardino, Vigneto, Manutenzione verde) + campo testo
-4. **Prezzo** — drum orizzontale con cella edit (matita) per importo personalizzato
-5. **Quando** — giorno/settimana con possibilità di aprire calendario
-
-Poi `<details class="avanzate">` con `›` come icona (si ruota quando aperto):
-- **Tipo cliente** — chips: Privato / Condominio / Fabbrica
-- **Durata e orario** — drum ore/giorni + toggle `ore`/`giorni` per valore personalizzato
-- **Telefono** — input + "Aggiungi numero" per più numeri (salvati con `\n` come separatore)
-- **Paga ogni:** (solo Condominio) — griglia 12 mesi cliccabili; `semestrale = mesiSemestrale.length > 0`
-- **Si ripete** — toggle on/off → opzioni: settimanale, ogni 2 sett., mensile, personalizzato (apre calendario app)
-- **Etichetta colore** — 6 colori
-- **Note personali** — textarea
-
-### Microfono globale AI
-- Colore neutro di default; diventa rosso pulsante quando in ascolto
-- Al click per fermare la registrazione, aggiunge automaticamente un item simulato nell'inbox Note (funzione `aggiungiItemSimulato()`)
-- Se il mic è usato dentro una scheda specifica (es. Note), andrà collegato solo a quella categoria (da fare quando arriverà l'AI vera)
-
-### Barra AI (sopra agenda)
-```html
-<div class="ai-barra">
-  <div class="ai-barra-cat">5 icone categoria</div>
-  <button class="ai-ic-tutto" id="ai-tutto">campanella</button>
-</div>
-<button class="ai-microfono" id="ai-mic">🎤 Parla</button>
 ```
-- Onclick icona cliente: `apriFoglio()` (apre il form manuale)
-- Onclick microfono: toglie/aggiunge classe `ascolta` sul button
+┌──────────────────────────────┐
+│  Calendario settimana        │  ← giorno selezionato evidenziato
+│  Agenda (lavori del giorno)  │  ← lista lavori, giorni liberi, 2 mesi avanti
+│  Barra AI                    │  ← 5 icone categoria + campanella "tutte"
+│  Bottone microfono           │  ← grande, in fondo
+└──────────────────────────────┘
+```
+
+**Barra AI — id degli elementi:**
+| Element | id | Ruolo |
+|---|---|---|
+| Icona nuovi clienti | `ai-cat-cliente` | Badge: `ai-b-cliente` |
+| Icona note | `ai-cat-nota` | Badge: `ai-b-nota` |
+| Icona riprogramma | `ai-cat-sposta` | Badge: `ai-b-sposta` |
+| Icona costi | `ai-cat-costo` | Badge: `ai-b-costo` |
+| Icona pagamenti | `ai-cat-paga` | Badge: `ai-b-paga` |
+| Campanella "tutte" | `ai-tutto` | Badge: `ai-b-tutto` |
+| Microfono globale | `ai-mic` | Classe `ascolta` = sta registrando |
+
+---
+
+## Struttura inbox AI (`#ai-inbox`)
+
+```html
+<div class="foglio-sfondo" id="ai-inbox" hidden>
+  <div class="foglio">
+    <header>
+      <button id="ai-inbox-chiudi">×</button>
+      <h2 id="ai-inbox-titolo">Notifiche</h2>
+      <div class="inbox-header-azioni">
+        <button id="ai-inbox-edit">  ← matita, attiva edit mode
+        <button id="ai-inbox-mic">   ← mic specifico per la scheda
+      </div>
+    </header>
+    <div class="f-corpo gutter" id="ai-inbox-lista"></div>  ← qui va l'HTML delle card
+    <footer id="ai-inbox-footer" hidden>  ← visibile solo nella scheda "cliente"
+      <button id="ai-inbox-nuovo">+ Nuovo cliente</button>
+    </footer>
+  </div>
+</div>
+```
+
+**Edit mode:** `#ai-inbox-lista.classList.toggle('edit-mode')` → mostra il bottone "Modifica ›" su ogni card.
+
+---
+
+## Dati inbox: `INBOX_ESEMPI`
+
+```js
+const INBOX_ESEMPI = {
+  cliente:     { titolo: 'Nuovi clienti',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [...] },
+  nota:        { titolo: 'Note',           cat: 'nota',        badge: 'ai-b-nota',    voci: [...] },
+  riprogramma: { titolo: 'Riprogramma',    cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [...] },
+  costo:       { titolo: 'Costi',          cat: 'costo',       badge: 'ai-b-costo',   voci: [...] },
+  paga:        { titolo: 'Pagamenti',      cat: 'paga',        badge: 'ai-b-paga',    voci: [...] },
+};
+```
+
+Ogni voce in `voci[]` ha: `{ testa, dati, campi: [[label, valore], ...] }`.
+Le voci riprogramma hanno anche `cal: true`.
+
+**Badge:** `aggiornaBadge()` — rilegge `INBOX_ESEMPI` e aggiorna tutti i badge numerici.
+
+---
+
+## Card inbox: comportamento per categoria
+
+Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat)`.
+
+| Categoria | Click "Modifica" | Comportamento |
+|---|---|---|
+| `cliente` | `apriModificaInboxCliente(card, item)` | Apre il foglio completo pre-compilato |
+| `riprogramma` | `apriRiprogrammaInbox(card, item)` | Apre popup calendario `#ripr-pop` |
+| `nota` | Espande panel inline | Textarea auto-espansa |
+| `costo` | Espande panel inline | Stepper ± importo, toggle Personale/Cliente |
+| `paga` | Espande panel inline | Stepper ± importo, ricerca cliente |
+
+**Animazione card:** `animaCard(card, 'ok')` → slide destra verde + collassa. `animaCard(card, 'no')` → cade giù.
+
+---
+
+## Foglio "Nuovo cliente" (`#foglio`)
+
+**Id importanti:**
+- `f-titolo` — titolo del foglio (es. "Nuovo cliente" / "Modifica cliente" / "Conferma nuovo cliente")
+- `f-nome`, `f-dove`, `f-cosa`, `f-prezzo`, `f-tel`, `f-note` — campi principali
+- `f-tel-wrap` — contenitore righe telefono
+- `f-piede` — footer del foglio (**ha id**, usalo con `$('f-piede')`)
+- `f-salva`, `f-micro`, `f-errore` — bottone salva, mic, messaggio errore
+
+**`modoFoglio`** — valori possibili:
+- `'nuovo'` — form vuoto per creare un cliente
+- `'modifica'` — form pre-compilato per modificare cliente esistente
+- `'conferma-inbox'` — aperto da inbox, footer personalizzato (← Indietro / ✓ Conferma)
+
+**Attenzione:** in `modoFoglio === 'conferma-inbox'`, `f-salva` e `f-micro` **non esistono nel DOM** (il footer è stato sostituito con bottoni custom). `chiudiFoglio()` li ripristina automaticamente.
+
+---
+
+## Popup calendario
+
+Ci sono **due** popup calendario distinti:
+
+| id | Usato da | Quando |
+|---|---|---|
+| `#q-pop` | `apriCalFoglio()` | Foglio "Nuovo cliente" per scegliere il giorno |
+| `#ripr-pop` | `apriRiprogrammaInbox()` | Inbox "Riprogramma" per scegliere nuovo giorno |
+
+`#ripr-pop` ha: `ripr-info` (testo cliente+data), `ripr-mese`, `ripr-anno`, `ripr-prima`, `ripr-dopo`, `ripr-griglia`, `ripr-chiudi`.
 
 ---
 
 ## Funzioni JS chiave
 
+### Form cliente
 | Funzione | Cosa fa |
 |---|---|
-| `apriFoglio(giorno?, perCliente?)` | Apre form nuovo cliente |
+| `apriFoglio(giorno?, perCliente?)` | Apre form nuovo cliente, resetta tutto |
 | `apriModifica(nome)` | Apre form modifica cliente esistente |
-| `salva()` | Salva nuovo cliente / chiama `salvaModifica()` |
-| `salvaModifica()` | Salva modifiche cliente |
-| `leggiTelefoni()` | Legge tutti gli input tel e restituisce stringa con `\n` |
-| `aggiungiTelInput(wrap)` | Crea e inserisce nuovo input tel |
-| `disegnaDurata()` | Disegna drum durata (con cella edit a idx 0) |
-| `disegnaSemestrale()` | Disegna griglia mesi per "Paga ogni" |
-| `disegnaRipeti()` | Disegna opzioni ripeti |
-| `apriCalRipeti()` | Apre calendario app per scegliere data "personalizzato" |
-| `prendiExtra(nome)` | Restituisce/crea dati extra cliente (tel, colore, ripeti, mesiSemestrale) |
-| `apriModificaInboxCliente(card, item)` | Apre foglio pre-compilato per confermare nuovo cliente dall'inbox |
-| `indietroInboxCliente()` | Chiude foglio e torna alla scheda "Nuovi clienti" |
-| `confermaInboxCliente()` | Anima card come ok, chiude foglio |
-| `apriRiprogrammaInbox(card, item)` | Apre popup calendario con info cliente+data vecchia per riprogrammare |
-| `disegnaRiprCalendario()` | Disegna la griglia del popup riprogramma |
-| `aggiungiItemSimulato()` | Aggiunge item fake all'inbox Note (simulazione registrazione vocale) |
-| `stepperCambia(btn, delta)` | Incrementa/decrementa il valore nel campo stepper (+/-) |
-| `cercaClienteInbox(input)` | Filtra l'elenco clienti fake mentre si digita |
-| `tipoCostoScegli(btn, tipo)` | Alterna tra costo Personale / Di un cliente |
+| `chiudiFoglio()` | Chiude foglio, ripristina footer se era in `conferma-inbox` |
+| `salva()` | Salva nuovo cliente |
+| `salvaModifica()` | Salva modifiche cliente esistente |
+| `preparaFoglio(modo)` | Reset interno prima di aprire il foglio |
+| `mostraFoglio()` | Rende visibile `#foglio` |
+
+### Inbox
+| Funzione | Cosa fa |
+|---|---|
+| `apriInbox(key)` | Apre inbox con una categoria (`'cliente'`, `'nota'`, `'riprogramma'`, `'costo'`, `'paga'`, `'tutto'`) |
+| `chiudiInbox()` | Chiude `#ai-inbox` |
+| `aggiornaBadge()` | Ricalcola tutti i badge numerici da `INBOX_ESEMPI` |
+| `animaCard(card, tipo)` | Anima e collassa la card (`'ok'` o `'no'`) |
+| `inbox_cardHtml(item, cat)` | Genera HTML di una card |
+| `inboxCampiHtml(item, cat)` | Genera HTML del pannello di modifica inline |
+| `apriModificaInboxCliente(card, item)` | Apre foglio pre-compilato per confermare nuovo cliente |
+| `indietroInboxCliente()` | Dal foglio, torna alla scheda "Nuovi clienti" |
+| `confermaInboxCliente()` | Anima card ok, chiude foglio |
+| `apriRiprogrammaInbox(card, item)` | Apre popup `#ripr-pop` con info cliente e data |
+| `disegnaRiprCalendario()` | Ridisegna griglia `#ripr-griglia` |
+| `aggiungiItemSimulato()` | Aggiunge item fake all'inbox Note (simulazione mic) |
+| `stepperCambia(btn, delta)` | Incrementa/decrementa valore stepper ±1 |
+| `cercaClienteInbox(input)` | Filtra `CLIENTI_FAKE` mentre si digita |
+| `tipoCostoScegli(btn, tipo)` | Alterna Personale / Di un cliente in costi |
+
+### Calendario e altri
+| Funzione | Cosa fa |
+|---|---|
+| `apriCalFoglio()` | Apre `#q-pop` (calendario per il foglio) |
+| `chiudiCalFoglio()` | Chiude `#q-pop` |
+| `disegnaCalFoglio()` | Ridisegna `#q-pop` |
+| `apriCalRipeti()` | Apre `#q-pop` per scegliere data "personalizzato" in Si ripete |
+| `prendiExtra(nome)` | Legge/crea dati extra cliente |
+| `disegnaDurata()` | Disegna drum durata |
+| `disegnaSemestrale()` | Disegna griglia mesi "Paga ogni" |
+| `disegnaRipeti()` | Disegna opzioni ripetizione |
 
 ---
 
-## Variabili stato foglio
+## Variabili di stato principali
 
 ```js
+// Foglio nuovo cliente
 let tipo, durata, colore, ripeti, ora, semestrale, mesiSemestrale, quando, quandoFisso
 let clienteScelto, modoFoglio, nomeInModifica
-```
+// Defaults in apriFoglio: mesiSemestrale = [], semestrale = false, ripeti = 'no'
 
-Defaults in `apriFoglio`: `mesiSemestrale = []`, `semestrale = false`, `ripeti = 'no'`
+// Inbox
+let _inboxCard        // card da animare dopo confermaInboxCliente()
+let _riprogrammaCard  // card da animare dopo scelta data in ripr-pop
+let _riprogrammaMese  // Date() del mese corrente in ripr-pop
+
+// Clienti fake per ricerca simulata
+const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condominio Le Palme', 'Marta Ferri', 'Condominio Aurora']
+```
 
 ---
 
-## Cosa manca / prossimi passi
+## Prossimi passi (in ordine di priorità)
 
-### Inbox AI — stato
-- [x] Layout "Tutte le notifiche" corretto (flex-shrink)
-- [x] Microfono: neutro → rosso quando ascolta, aggiunge item simulato
-- [x] Bottoni Conferma/Scarta 30px
-- [x] Nuovi clienti: Modifica → foglio completo pre-compilato (Conferma/Indietro)
-- [x] Note: textarea auto-espansa verso il basso
-- [x] Riprogramma: Modifica → popup calendario con cliente e vecchia data
-- [x] Costi: stepper + −, toggle Personale/Di un cliente, ricerca cliente
-- [x] Pagamenti: stepper importo, ricerca cliente
-- [ ] Collegare logica reale: pagamenti e costi ai lavori già segnati
-- [ ] Mic per scheda specifica → aggiunge solo alla categoria corrente
-- [ ] AI vocale vera (Web Speech API + Haiku)
-
-### AI vocale (versione commerciale)
-- [ ] Web Speech API per trascrizione
-- [ ] Haiku per interpretazione → inbox "Da confermare"
-- [ ] 5 mansioni: nuovo cliente, note, riprogramma, costi, segna pagamento
-- [ ] Flusso: parla → inbox → la sera si conferma → si salva
-
-### Infrastruttura (dopo beta)
-- [ ] Server, account utente, abbonamento
-- [ ] Sincronizzazione dati tra dispositivi
+1. **Collegare pagamenti e costi ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente; i costi "Di un cliente" pure. Per ora la ricerca usa `CLIENTI_FAKE`, da sostituire con i dati reali di Dexie.
+2. **Mic per scheda specifica** — se il mic dentro l'inbox "Note" registra, l'item simulato va in Note; se è dentro "Costi", va in Costi. Ora va sempre in Note.
+3. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente. Nessun giorno specifico, basta il mese. Va implementato con il sistema notifiche.
+4. **AI vocale reale** — Web Speech API per trascrizione + Haiku per interpretare → inbox da confermare. Vedi `PRODOTTO.md` per le decisioni di architettura complete.
+5. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
 
 ---
 
@@ -125,6 +213,7 @@ Defaults in `apriFoglio`: `mesiSemestrale = []`, `semestrale = false`, `ripeti =
 
 - Spiegazioni in italiano semplice (il titolare non sa programmare)
 - Build prima di ogni commit: `npm run build`
-- Nessun push finché il titolare non lo chiede
-- Dati solo su telefono (IndexedDB, no server in beta)
-- Vedi `PRODOTTO.md` per le decisioni di prodotto estese
+- Nessun push finché il titolare non lo chiede esplicitamente
+- Dati solo sul telefono (IndexedDB via Dexie, no server in beta)
+- Decisioni di prodotto estese: vedi `PRODOTTO.md`
+- Decisioni AI vocale: vedi `PRODOTTO.md` sezione AI
