@@ -284,7 +284,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .giorno-testa span { white-space: nowrap; }
 .giorno-sotto { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; }
 .giorno-sotto .meteo-giorno { margin: 0; }
-.giorno-sotto .riprogramma { margin-left: auto; }
+/* Titolo del giorno, Riprogramma e conteggio sulla stessa riga */
+.giorno-testa { align-items: center; justify-content: flex-start; gap: 8px; }
+.giorno-testa h2 { font-size: 19px; white-space: nowrap; }
+.giorno-testa .riprogramma { font-size: 12px; padding: 4px 10px; margin-left: auto; }
+.conteggio { color: var(--testo-2); font-weight: 700; font-size: 13px; }
 .riprogramma { border: 0; border-radius: 99px; background: var(--foglia-chiara); color: var(--foglia); font-family: var(--font-testo); font-size: 13px; font-weight: 800; padding: 5px 11px; }
 .riprogramma.pioggia { background: var(--pioggia-2); color: var(--goccia); }
 .riprogramma.attivo { background: var(--foglia); color: var(--sul-foglia); }
@@ -1209,7 +1213,8 @@ function disegnaAgenda() {
     const inSposta = riprogramma === s;
     const tastoRip = daFare.length ? `<button type="button" class="riprogramma${inSposta ? ' attivo' : ''}${livelloPioggia(s) ? ' pioggia' : ''}" data-rip="${s}">${inSposta ? 'Fine' : 'Riprogramma'}</button>` : '';
     const meteoGiorno = testoPioggia(s) ? `<div class="meteo-giorno livello-${livelloPioggia(s)}">${GOCCIA}${testoPioggia(s)}</div>` : '';
-    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2><span>${daFare.length ? `${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}` : ''}</span></div>${meteoGiorno || tastoRip ? `<div class="giorno-sotto">${meteoGiorno}${tastoRip}</div>` : ''}`;
+    const conteggio = daFare.length ? `<span class="conteggio">${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}</span>` : '';
+    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2>${tastoRip}</div>${meteoGiorno || conteggio ? `<div class="giorno-sotto">${conteggio}${meteoGiorno}</div>` : ''}`;
     const corpo = daFare.length
       ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di, inSposta)).join('')}</div>`
       : tutti.length ? `<div class="vuoto tutto-fatto">Tutto fatto</div>`
