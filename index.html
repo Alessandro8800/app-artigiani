@@ -56,7 +56,7 @@ button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--foglia); outline-offset: 2px; }
 
-.app { max-width: 480px; margin: 0 auto; padding-bottom: calc(var(--barra) + 96px + env(safe-area-inset-bottom, 0px)); }
+.app { max-width: 480px; margin: 0 auto; padding-bottom: calc(var(--barra) + 24px + env(safe-area-inset-bottom, 0px)); }
 .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .esempio { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); text-align: center; padding-block: 8px; }
 
@@ -89,7 +89,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .meteo-giorno { display: inline-flex; align-items: center; gap: 5px; margin: -6px 0 8px; font-size: 13px; font-weight: 800; color: var(--goccia); background: var(--pioggia-1); border-radius: 99px; padding: 3px 10px; }
 .meteo-giorno.livello-2 { background: var(--pioggia-2); }
 .meteo-giorno .goccia { color: var(--goccia); }
-.piove.forte { background: var(--pioggia-2); color: var(--goccia); border-radius: 10px; padding: 6px 12px; margin-left: 8px; }
 .pallini { display: flex; gap: 3px; height: 6px; }
 .pallini i { width: 6px; height: 6px; border-radius: 50%; background: var(--ambra); }
 .pallini i.fatto { background: var(--foglia); }
@@ -139,9 +138,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .lavoro.via { transition: opacity .25s, max-height .3s .15s, padding .3s .15s, margin .3s .15s, border-width .3s .15s; opacity: 0; max-height: 0; padding-block: 0; margin-top: -10px; border-width: 0; }
 
 /* Tasto nuovo + barra */
-.azioni-basso { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); bottom: calc(var(--barra) + 14px + env(safe-area-inset-bottom, 0px)); width: min(448px, calc(100% - 32px)); display: flex; gap: 8px; }
-.nota-veloce { flex: none; width: 66px; height: 62px; border-radius: 20px; border: 1.5px solid var(--foglia); background: var(--carta); color: var(--foglia); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; box-shadow: 0 8px 22px rgba(20, 60, 30, .18); }
-.nota-veloce small { font-size: 12px; font-weight: 800; }
 .nuovo { flex: 1; min-width: 0; height: 62px; border: 0; border-radius: 20px; background: var(--foglia); color: var(--sul-foglia); font-size: 19px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 8px 22px rgba(20, 60, 30, .28); }
 .barra { position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; background: var(--carta); border-top: 1px solid var(--linea); display: flex; justify-content: center; padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .barra button { flex: 1; max-width: 200px; height: var(--barra); border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 700; color: var(--testo-2); }
@@ -236,18 +232,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .banner strong { font-size: 15px; }
 .banner small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
 .banner .salva { width: auto; height: 42px; padding: 0 16px; font-size: 15px; border-radius: 12px; }
-.banner-tasti { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.link-piccolo { border: 0; background: none; font-weight: 800; color: var(--testo-2); padding: 8px; }
-.da-sistemare .giorno-testa { margin-bottom: 6px; }
 .nota-riga { display: flex; gap: 6px; align-items: stretch; background: var(--carta); border: 1.5px dashed var(--foglia); border-radius: 14px; padding: 4px; margin-bottom: 6px; }
 .nota-testo { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
 .nota-testo span { font-weight: 700; font-size: 16px; }
 .nota-testo small { font-size: 13px; color: var(--foglia); font-weight: 700; }
 .nv-testo, .pp-importo { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--sfondo); font-size: 17px; font-weight: 600; resize: none; }
 .pp-importo { min-height: 52px; padding-right: 40px; }
-.giorno.indietro h2 { color: var(--rosso); }
-.indietro-voce { display: flex; flex-direction: column; gap: 6px; overflow: hidden; max-height: 400px; }
-.indietro-voce.via { transition: opacity .25s, max-height .3s .15s; opacity: 0; max-height: 0; }
 .sposta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 4px 6px; }
 .sposta small { font-size: 13px; font-weight: 700; color: var(--testo-2); margin-right: 2px; }
 .sposta .chip { min-height: 36px; padding: 0 12px; font-size: 14px; }
@@ -267,13 +257,33 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .s-sollecito { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; font-size: 14px; font-weight: 700; color: var(--testo-2); }
 .s-sollecito span { flex: 1 1 100%; }
 .ora-pill { display: inline-block; font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: var(--sfondo); color: var(--testo); margin-right: 2px; }
-.piove { margin: -4px 0 8px; border: 0; background: none; color: var(--foglia); font-weight: 800; font-size: 14px; padding: 4px 0; }
 .l-sposta { padding: 0; margin-top: -6px; }
 .k-tasse { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--linea); font-size: 14px; font-weight: 700; color: var(--testo-2); }
 .k-tasse b { color: var(--testo); font-variant-numeric: tabular-nums; }
 .k-tasse b.utile { color: var(--foglia); font-size: 18px; }
 .imp-input { width: 100%; padding: 10px 12px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--sfondo); font-size: 16px; font-weight: 600; resize: none; }
 .contatore span small { font-weight: 600; color: var(--testo-2); }
+
+/* Riga di tasti al centro: Nuovo cliente (metà), Note, Rimasti indietro */
+.azioni-centro { display: flex; gap: 8px; margin-top: 12px; }
+.azioni-centro .nuovo { flex: 2; min-width: 0; height: 56px; border-radius: 16px; font-size: 16px; box-shadow: none; gap: 6px; white-space: nowrap; padding: 0 8px; }
+.a-piccolo { flex: 1; min-width: 0; position: relative; height: 56px; border-radius: 16px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.a-piccolo small { font-size: 12px; font-weight: 800; color: var(--testo-2); }
+.a-indietro.da-vedere { color: var(--ambra); border-color: var(--ambra-chiara); }
+.numerino { position: absolute; top: 5px; right: 8px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--foglia); color: var(--sul-foglia); font-size: 12px; display: grid; place-items: center; }
+.a-indietro .numerino { background: var(--ambra); color: #fff; }
+.nv-elenco { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow-y: auto; }
+.ri-voce { background: var(--sfondo); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.ri-testa { display: flex; align-items: center; gap: 8px; }
+.ri-testa span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ri-testa small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
+/* Riprogramma */
+.giorno-testa h2 { display: flex; align-items: center; gap: 8px; }
+.riprogramma { border: 0; border-radius: 99px; background: var(--foglia-chiara); color: var(--foglia); font-family: var(--font-testo); font-size: 13px; font-weight: 800; padding: 5px 11px; }
+.riprogramma.pioggia { background: var(--pioggia-2); color: var(--goccia); }
+.riprogramma.attivo { background: var(--foglia); color: var(--sul-foglia); }
+.sposta-qui { color: var(--foglia); cursor: pointer; border: 2px solid var(--foglia-chiara); }
+.sposta-qui input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
 
 /* Conti */
 .k-periodo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
@@ -605,6 +615,8 @@ button.s-riga:first-child { border-top: 0; }
         </div>
         <div class="griglia" id="griglia"></div>
       </div>
+      <!-- Al centro dello schermo, il posto più comodo col pollice -->
+      <div class="azioni-centro" id="azioni-cal"></div>
       <div id="agenda"></div>
     </div>
   </section>
@@ -623,6 +635,7 @@ button.s-riga:first-child { border-top: 0; }
       <svg width="20" height="20" viewBox="0 0 24 24"><path d="M11 18a7 7 0 100-14 7 7 0 000 14zM20 20l-4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       <input id="c-cerca" type="search" autocomplete="off" placeholder="Cerca un cliente" aria-label="Cerca un cliente">
     </label>
+    <div class="azioni-centro" id="azioni-cli"></div>
     <div id="c-elenco"></div>
   </section>
 
@@ -646,10 +659,6 @@ button.s-riga:first-child { border-top: 0; }
   </section>
 </div>
 
-<div class="azioni-basso" id="azioni-basso">
-  <button class="nuovo" id="nuovo"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button>
-  <button class="nota-veloce" id="nota-veloce" aria-label="Nota veloce: scrivi o detta, sistemi dopo"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Nota</small></button>
-</div>
 
 <nav class="barra">
   <button class="attiva" data-vista="calendario">
@@ -815,10 +824,19 @@ button.s-riga:first-child { border-top: 0; }
 <!-- Nota veloce: un tocco, scrivi o detta, sistemi dopo -->
 <div class="q-pop" id="nota-pop" hidden>
   <div class="q-pop-box pal-box" role="dialog" aria-modal="true" aria-labelledby="nv-titolo">
-    <strong class="pal-titolo" id="nv-titolo">Nota veloce</strong>
-    <p class="imp-testo">Scrivi o detta col microfono della tastiera, come viene. La sistemi dopo con calma.</p>
-    <textarea id="nv-testo" rows="3" class="nv-testo" placeholder="Es. Rossi via Manzoni, siepe, giovedì, 80"></textarea>
-    <div class="s-azioni"><button type="button" class="secondario" id="nv-annulla">Annulla</button><button type="button" class="salva" id="nv-salva">Salva</button></div>
+    <div class="q-pop-testa"><strong class="pal-titolo" id="nv-titolo">Note</strong><button class="chiudi" id="nv-annulla" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button></div>
+    <textarea id="nv-testo" rows="2" class="nv-testo" placeholder="Scrivi o detta, come viene. Es. Rossi via Manzoni, siepe, giovedì, 80"></textarea>
+    <button type="button" class="salva" id="nv-salva">Salva la nota</button>
+    <div class="nv-elenco" id="nv-elenco"></div>
+  </div>
+</div>
+
+<!-- Rimasti indietro: lavori di giorni passati non segnati "Fatto" -->
+<div class="q-pop" id="indietro-pop" hidden>
+  <div class="q-pop-box pal-box" role="dialog" aria-modal="true" aria-labelledby="ri-titolo">
+    <div class="q-pop-testa"><strong class="pal-titolo" id="ri-titolo">Rimasti indietro</strong><button class="chiudi" id="ri-chiudi" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button></div>
+    <p class="imp-testo">Lavori di giorni passati non segnati "Fatto": segnali o spostali.</p>
+    <div class="nv-elenco" id="ri-elenco"></div>
   </div>
 </div>
 
@@ -1143,7 +1161,7 @@ function riempiGriglia(g, meseVisto, scelto, alTocco, soloFuturi) {
   }
 }
 
-function cartaLavoro(l, parte = 1, di = 1) {
+function cartaLavoro(l, parte = 1, di = 1, sposta = false) {
   const c = prendiExtra(l.nome).colore;   // colore del cliente: bordo a sinistra
   const giorni = di > 1 ? `<span class="etichetta piu-giorni">giorno ${parte} di ${di}</span>` : '';
   return `<article class="lavoro${c ? ' colorato' : ''}" data-id="${l.id}"${c ? ` style="--c:${c}"` : ''}>
@@ -1152,11 +1170,13 @@ function cartaLavoro(l, parte = 1, di = 1) {
       ${l.dove ? `<span class="dove"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>${sicuro(l.dove)}</span>` : ''}
       <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo != null ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
     </button>
-    <button class="spunta" aria-label="Segna come fatto">
+    ${sposta ? `<label class="spunta sposta-qui" aria-label="Scegli il nuovo giorno per ${sicuro(l.nome)}">
+      <svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <small>Sposta</small><input type="date" data-sp="${l.id}" min="${tra(0)}" value="${l.data}"></label>` : `<button class="spunta" aria-label="Segna come fatto">
       <svg class="anelli" viewBox="0 0 62 62"><circle class="anello-base" cx="31" cy="31" r="28"/><circle class="anello" cx="31" cy="31" r="28" pathLength="100"/></svg>
       <svg class="segno-svg" width="24" height="24" viewBox="0 0 24 24"><path class="segno" d="M5 12.5l4.5 4.5L19 7.5" pathLength="100"/></svg>
       <small>Fatto</small>
-    </button>
+    </button>`}
   </article>`;
 }
 
@@ -1167,29 +1187,25 @@ function disegnaAgenda() {
   if (scelto < tra(0) || scelto > tra(6)) giorni.push(scelto);
   for (let i = 0; i <= 6; i++) giorni.push(tra(i));
   const mappa = mappaGiorni();
-  const indietro = rimastiIndietro();
-  const sezioneIndietro = indietro.length ? `<section class="giorno indietro"><div class="giorno-testa"><h2>Rimasti indietro</h2><span>${indietro.length === 1 ? '1 lavoro non segnato' : indietro.length + ' lavori non segnati'}</span></div>
-    <div class="lista">${indietro.map(l => `<div class="indietro-voce">${cartaLavoro(l)}<div class="sposta"><small>${nomeGiorno(l.data)} · sposta a</small>
-      <button type="button" class="chip" data-sp="${l.id}" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-sp="${l.id}" data-a="${tra(1)}">Domani</button>
-      <label class="chip">Altro giorno<input type="date" data-sp="${l.id}" min="${tra(0)}" aria-label="Scegli il giorno"></label></div></div>`).join('')}</div></section>` : '';
-  document.getElementById('agenda').innerHTML = sezioneIndietro + giorni.map(s => {
+  document.getElementById('agenda').innerHTML = giorni.map(s => {
     const tutti = (mappa[s] || { lavori: [] }).lavori;
     const daFare = tutti.filter(v => !v.l.fatto).sort((a, b) => minutiOra(a.l.ora) - minutiOra(b.l.ora));
     const totale = daFare.reduce((t, v) => t + (v.parte === 1 ? v.l.prezzo || 0 : 0), 0);
-    const piove = s === tra(0) && daFare.length ? `<button type="button" class="piove${livelloPioggia(s) ? ' forte' : ''}" id="piove">Piove? Sposta tutto</button>` : '';
+    // "Riprogramma": i lavori di questo giorno mostrano un calendario al posto di "Fatto" (azzurro se è prevista pioggia)
+    const inSposta = riprogramma === s;
+    const tastoRip = daFare.length ? `<button type="button" class="riprogramma${inSposta ? ' attivo' : ''}${livelloPioggia(s) ? ' pioggia' : ''}" data-rip="${s}">${inSposta ? 'Fine' : 'Riprogramma'}</button>` : '';
     const meteoGiorno = testoPioggia(s) ? `<div class="meteo-giorno livello-${livelloPioggia(s)}">${GOCCIA}${testoPioggia(s)}</div>` : '';
-    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2><span>${daFare.length ? `${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}` : ''}</span></div>${meteoGiorno}${piove}`;
+    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}${tastoRip}</h2><span>${daFare.length ? `${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}` : ''}</span></div>${meteoGiorno}`;
     const corpo = daFare.length
-      ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di)).join('')}</div>`
+      ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di, inSposta)).join('')}</div>`
       : tutti.length ? `<div class="vuoto tutto-fatto">Tutto fatto</div>`
       : s >= tra(0) ? `<div class="vuoto con-tasto">Nessun lavoro<button class="aggiungi-qui" data-s="${s}"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button></div>`
       : `<div class="vuoto">Nessun lavoro</div>`;
     return `<section class="giorno" id="g-${s}">${testa}${corpo}</section>`;
   }).join('');
   document.querySelectorAll('.lavoro .spunta').forEach(b => { b.onclick = () => segnaFatto(b.closest('.lavoro')); });
-  if ($('piove')) $('piove').onclick = spostaTuttoOggi;
-  document.querySelectorAll('.sposta button[data-sp]').forEach(b => { b.onclick = () => spostaLavoro(lavori[+b.dataset.sp], b.dataset.a); });
-  document.querySelectorAll('.sposta input[data-sp]').forEach(i => { i.onchange = () => { if (i.value) spostaLavoro(lavori[+i.dataset.sp], i.value); }; });
+  document.querySelectorAll('#agenda .riprogramma').forEach(b => { b.onclick = () => { riprogramma = riprogramma === b.dataset.rip ? null : b.dataset.rip; disegnaAgenda(); }; });
+  document.querySelectorAll('#agenda .sposta-qui input').forEach(i => { i.onchange = () => { if (i.value && i.value !== lavori[+i.dataset.sp].data) spostaLavoro(lavori[+i.dataset.sp], i.value); }; });
   // Tocco sul lavoro: si apre la scheda del cliente
   document.querySelectorAll('.lavoro .testo').forEach(b => { b.onclick = () => apriLavoro(+b.closest('.lavoro').dataset.id); });
   // Giorno vuoto: "Nuovo cliente" apre il foglio con quel giorno già scelto
@@ -1207,7 +1223,7 @@ function segnaFatto(carta, prezzoChiesto) {
   const voce = carta.closest('.indietro-voce') || carta;
   setTimeout(() => voce.classList.add('via'), 800);   // 2. la carta si chiude
   setTimeout(() => {                                    // 3. sparisce dalla lista
-    disegnaAgenda();
+    disegnaAgenda(); disegnaAzioni();   // anche i numerini di Note e Indietro
     avvisa(`${l.nome}: fatto`, { etichetta: 'Annulla', fai: () => { l.fatto = false; tutto(); } }, { etichetta: 'Costi', fai: () => apriLavoro(l.id, 'costi') });
   }, 1250);
 }
@@ -2525,22 +2541,68 @@ $('in-salva').onclick = () => {
 };
 
 // ======== 2. Dati al sicuro: chiedo al telefono di non cancellarli, e ricordo la copia ========
-let datiProtetti = null, copiaRimandata = false;
+let datiProtetti = null;
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().then(v => { datiProtetti = v; }).catch(() => {});
-const giorniDaCopia = () => ultimaCopia ? Math.round((OGGI - daIso(ultimaCopia)) / 86400000) : null;
 
 // ======== 3. Nota veloce: si scrive o si detta in un tocco, si sistema dopo ========
 const daSistemare = [{ id: 1, testo: 'Bianchi via Leopardi 4, potare ulivo, la prossima settimana', data: tra(0) }];
 let notaInCorso = null;
-function apriNota() { $('nv-testo').value = ''; $('nota-pop').hidden = false; setTimeout(() => $('nv-testo').focus(), 50); }
-$('nota-veloce').onclick = apriNota;
+function apriNota() { $('nv-testo').value = ''; disegnaNote(); $('nota-pop').hidden = false; }
+function disegnaNote() {
+  $('nv-elenco').innerHTML = daSistemare.length
+    ? daSistemare.map(n => `<div class="nota-riga"><button type="button" class="nota-testo" data-n="${n.id}"><span>${sicuro(n.testo)}</span><small>${nomeGiorno(n.data)} · tocca per farne un lavoro</small></button><button type="button" class="togli" data-t="${n.id}" aria-label="Togli la nota">✕</button></div>`).join('')
+    : '<p class="imp-testo">Nessuna nota salvata.</p>';
+  $('nv-elenco').querySelectorAll('.nota-testo').forEach(b => { b.onclick = () => { $('nota-pop').hidden = true; sistemaNota(daSistemare.find(n => n.id === +b.dataset.n)); }; });
+  $('nv-elenco').querySelectorAll('.nota-riga .togli').forEach(b => {
+    b.onclick = () => { const i = daSistemare.findIndex(n => n.id === +b.dataset.t), tolta = daSistemare.splice(i, 1)[0]; disegnaNote(); disegnaAzioni(); avvisa('Nota tolta', { etichetta: 'Annulla', fai: () => { daSistemare.splice(i, 0, tolta); disegnaNote(); disegnaAzioni(); } }); };
+  });
+}
 $('nv-annulla').onclick = () => { $('nota-pop').hidden = true; };
 $('nv-salva').onclick = () => {
   const t = $('nv-testo').value.trim();
   if (!t) return $('nv-testo').focus();
   daSistemare.unshift({ id: Date.now(), testo: t, data: tra(0) });
-  $('nota-pop').hidden = true; disegnaAvvisiHome(); avvisa('Nota salvata in "Da sistemare"');
+  $('nv-testo').value = ''; disegnaNote(); disegnaAzioni(); avvisa('Nota salvata');
 };
+
+// Riga di tasti al centro: Nuovo cliente (metà), Note e Rimasti indietro con il loro numero
+const ICONA_NOTA = '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICONA_INDIETRO = '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 7v5l3 2M3.5 12a8.5 8.5 0 102.5-6M3 4v4h4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const numerino = n => n ? `<b class="numerino">${n}</b>` : '';
+function disegnaAzioni() {
+  const nNote = daSistemare.length, nInd = rimastiIndietro().length;
+  const nuovo = '<button type="button" class="nuovo a-nuovo"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button>';
+  const note = `<button type="button" class="a-piccolo a-note" aria-label="Note: ${nNote}">${ICONA_NOTA}<small>Note</small>${numerino(nNote)}</button>`;
+  const ind = `<button type="button" class="a-piccolo a-indietro${nInd ? ' da-vedere' : ''}" aria-label="Rimasti indietro: ${nInd}">${ICONA_INDIETRO}<small>Indietro</small>${numerino(nInd)}</button>`;
+  $('azioni-cal').innerHTML = nuovo + note + ind;
+  $('azioni-cli').innerHTML = nuovo + note;
+  document.querySelectorAll('.a-nuovo').forEach(b => { b.onclick = () => apriFoglio(); });
+  document.querySelectorAll('.a-note').forEach(b => { b.onclick = apriNota; });
+  document.querySelectorAll('.a-indietro').forEach(b => { b.onclick = apriIndietro; });
+}
+
+// Finestra "Rimasti indietro": Fatto oppure sposta a Oggi / Domani / Altro giorno
+function apriIndietro() { disegnaIndietro(); $('indietro-pop').hidden = false; }
+function disegnaIndietro() {
+  const el = rimastiIndietro();
+  $('ri-elenco').innerHTML = el.length ? el.map(l => `<div class="ri-voce">
+      <div class="ri-testa"><span><strong>${sicuro(l.nome)}</strong><small>${nomeGiorno(l.data)} · ${sicuro(l.cosa || 'Lavoro')}${l.prezzo != null ? ' · ' + euro(l.prezzo) : ''}</small></span><button type="button" class="chip attivo" data-fatto="${l.id}">Fatto</button></div>
+      <div class="sposta"><small>Sposta a</small><button type="button" class="chip" data-sp="${l.id}" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-sp="${l.id}" data-a="${tra(1)}">Domani</button>
+        <label class="chip">Altro giorno<input type="date" data-sp="${l.id}" min="${tra(0)}" aria-label="Scegli il giorno"></label></div></div>`).join('')
+    : '<p class="imp-testo">Niente di rimasto indietro.</p>';
+  $('ri-elenco').querySelectorAll('[data-fatto]').forEach(b => {
+    b.onclick = () => {
+      const carta = document.createElement('article'); carta.dataset.id = b.dataset.fatto;   // segnaFatto lavora su una "carta"
+      $('indietro-pop').hidden = !(lavori[+b.dataset.fatto].prezzo != null);   // se chiede il prezzo, lascio spazio alla sua finestra
+      segnaFatto(carta);
+      setTimeout(() => { disegnaIndietro(); disegnaAzioni(); }, 100);
+    };
+  });
+  $('ri-elenco').querySelectorAll('button[data-sp]').forEach(b => { b.onclick = () => { spostaLavoro(lavori[+b.dataset.sp], b.dataset.a); disegnaIndietro(); }; });
+  $('ri-elenco').querySelectorAll('input[data-sp]').forEach(i => { i.onchange = () => { if (i.value) { spostaLavoro(lavori[+i.dataset.sp], i.value); disegnaIndietro(); } }; });
+}
+$('ri-chiudi').onclick = () => { $('indietro-pop').hidden = true; };
+$('indietro-pop').addEventListener('click', e => { if (e.target === $('indietro-pop')) $('indietro-pop').hidden = true; });
 $('nota-pop').addEventListener('click', e => { if (e.target === $('nota-pop')) $('nota-pop').hidden = true; });
 function sistemaNota(n) {
   apriFoglio();
@@ -2550,22 +2612,12 @@ function sistemaNota(n) {
 
 // Avvisi in cima alla prima pagina: copia dei dati e note da sistemare
 function disegnaAvvisiHome() {
-  const g = giorniDaCopia(), haDati = lavori.length > 0;
-  const copia = haDati && !copiaRimandata && (g == null || g > 7)
-    ? `<div class="banner"><span><strong>${g == null ? 'Non hai ancora una copia dei dati' : `Ultima copia ${g} giorni fa`}</strong><small>Se perdi il telefono, con la copia ritrovi tutto.</small></span>
-        <span class="banner-tasti"><button type="button" class="link-piccolo" id="b-dopo">Dopo</button><button type="button" class="salva" id="b-copia">Salva ora</button></span></div>` : '';
+  disegnaAzioni();
   const vuota = !clientiConosciuti().length
     ? `<div class="banner"><span><strong>Inizia da qui</strong><small>Segna chi ti deve già soldi e prendi i clienti dalla rubrica.</small></span><button type="button" class="salva" id="b-inizio">Inizia</button></div>` : '';
-  const note = daSistemare.length ? `<div class="da-sistemare"><div class="giorno-testa"><h2>Da sistemare</h2><span>${daSistemare.length}</span></div>
-      ${daSistemare.map(n => `<div class="nota-riga"><button type="button" class="nota-testo" data-n="${n.id}"><span>${sicuro(n.testo)}</span><small>${nomeGiorno(n.data)} · tocca per sistemarla</small></button><button type="button" class="togli" data-t="${n.id}" aria-label="Togli la nota">✕</button></div>`).join('')}</div>` : '';
-  $('avvisi-home').innerHTML = vuota + copia + note;
-  if ($('b-copia')) $('b-copia').onclick = esportaCopia;
-  if ($('b-dopo')) $('b-dopo').onclick = () => { copiaRimandata = true; disegnaAvvisiHome(); };
+  // (L'avviso della copia dei dati è tolto per ora: con il server dopo la beta la copia sarà automatica)
+  $('avvisi-home').innerHTML = vuota;
   if ($('b-inizio')) $('b-inizio').onclick = apriInizio;
-  $('avvisi-home').querySelectorAll('.nota-testo').forEach(b => { b.onclick = () => sistemaNota(daSistemare.find(n => n.id === +b.dataset.n)); });
-  $('avvisi-home').querySelectorAll('.nota-riga .togli').forEach(b => {
-    b.onclick = () => { const i = daSistemare.findIndex(n => n.id === +b.dataset.t), tolta = daSistemare.splice(i, 1)[0]; disegnaAvvisiHome(); avvisa('Nota tolta', { etichetta: 'Annulla', fai: () => { daSistemare.splice(i, 0, tolta); disegnaAvvisiHome(); } }); };
-  });
 }
 
 // ======== 4. Rimasti indietro: lavori di giorni passati non segnati "Fatto" ========
@@ -2580,16 +2632,8 @@ function spostaLavoro(l, nuovaData) {
   avvisa(`${l.nome}: spostato a ${nomeGiorno(nuovaData).toLowerCase()}`);
 }
 
-// Piove: tutti i lavori da fare di oggi passano al prossimo giorno di lavoro (con Annulla)
 function prossimoLavorativo(da) { const d = daIso(da); do d.setDate(d.getDate() + 1); while (!lavorativo(d)); return iso(d); }
-function spostaTuttoOggi() {
-  const oggi = lavori.filter(l => !l.fatto && !l.iniziale && l.data === tra(0));
-  if (!oggi.length) return;
-  const prima = oggi.map(l => [l, l.data, l.date && [...l.date]]), dove = prossimoLavorativo(tra(0));
-  oggi.forEach(l => { const d = Math.round((daIso(dove) - daIso(l.data)) / 86400000); l.data = dove; if (l.date) l.date = l.date.map(g => { const x = daIso(g); x.setDate(x.getDate() + d); return iso(x); }); });
-  tutto();
-  avvisa(`${nLavori(oggi.length)} spostati a ${nomeGiorno(dove).toLowerCase()}`, { etichetta: 'Annulla', fai: () => { prima.forEach(([l, d, dd]) => { l.data = d; if (dd) l.date = dd; }); tutto(); } });
-}
+let riprogramma = null;   // il giorno in cui si stanno spostando i lavori (null = nessuno)
 
 // ======== 5. "Fatto" su un lavoro senza prezzo: prima chiede quanto ========
 let fattoInAttesa = null;
@@ -2925,7 +2969,7 @@ function esportaCopia() {
   a.href = URL.createObjectURL(new Blob([JSON.stringify(dati, null, 2)], { type: 'application/json' }));
   a.download = `lavori-copia-${tra(0)}.json`;
   a.click(); URL.revokeObjectURL(a.href);
-  ultimaCopia = tra(0); disegnaImpostazioni(); disegnaAvvisiHome();
+  ultimaCopia = tra(0); disegnaImpostazioni();
   avvisa('Copia salvata nei download');
 }
 $('i-ripristina').onchange = async e => {
@@ -2965,7 +3009,6 @@ $('mese-prima').onclick = () => spostaHome(-1);
 $('mese-dopo').onclick = () => spostaHome(1);
 $('c-mese').onclick = () => { vistaHome = vistaHome === 'mesi' ? 'giorni' : 'mesi'; disegnaCalendario(); };
 $('c-anno').onclick = () => { vistaHome = vistaHome === 'anni' ? 'giorni' : 'anni'; disegnaCalendario(); };
-$('nuovo').onclick = () => apriFoglio();
 document.querySelectorAll('.barra button').forEach(b => {
   b.onclick = () => {
     document.querySelectorAll('.barra button').forEach(x => x.classList.toggle('attiva', x === b));
@@ -2973,7 +3016,6 @@ document.querySelectorAll('.barra button').forEach(b => {
     $('vista-clienti').hidden = b.dataset.vista !== 'clienti';
     $('vista-impostazioni').hidden = b.dataset.vista !== 'impostazioni';
     $('vista-conti').hidden = b.dataset.vista !== 'conti';
-    $('azioni-basso').hidden = b.dataset.vista === 'impostazioni' || b.dataset.vista === 'conti';   // qui non servono
     if (b.dataset.vista === 'conti') disegnaConti();
     if (b.dataset.vista === 'clienti') disegnaClienti();
     if (b.dataset.vista === 'impostazioni') disegnaImpostazioni();

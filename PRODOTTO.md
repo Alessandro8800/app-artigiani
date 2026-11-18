@@ -329,7 +329,20 @@ Prima pagina (Calendario):
    di quel giorno il cerchio "Fatto" diventa un'**icona calendario**: toccandola si sceglie il
    nuovo giorno per quel lavoro.
 
-Domande aperte su queste idee: vedi la conversazione del 18/11 sera.
+**→ Fatto nella prova (18/11 sera):**
+- In cima niente: si apre sul calendario. (Resta solo "Inizia da qui" quando l'app è vuota.)
+  **Avviso della copia dei dati tolto** per ora.
+- **Sotto il calendario, al centro** (il posto più comodo col pollice), una riga di tasti:
+  **Nuovo cliente** (metà riga) · **Note** (con il numerino delle note salvate) ·
+  **Indietro** (lavori rimasti indietro, numerino arancione). Il tasto grande fisso in basso è tolto.
+  In Clienti la stessa riga sotto la ricerca: Nuovo cliente · Note.
+- **Note**: toccando "Note" si scrive una nota nuova e si vedono quelle salvate; toccandone una
+  diventa un lavoro (Nuovo cliente già compilato).
+- **Indietro**: una finestra con i lavori non segnati, ognuno con "Fatto" e "Sposta a Oggi ·
+  Domani · Altro giorno". Non c'è più la sezione rossa in cima all'agenda.
+- **"Riprogramma"** accanto a ogni giorno con lavori (azzurro se è prevista pioggia): il cerchio
+  "Fatto" diventa un **calendario "Sposta"**, toccandolo si sceglie il nuovo giorno; "Fine" per
+  uscire. "Piove? Sposta tutto" e il suo Annulla di 3 secondi: tolti.
 
 ## Squadra di agenti (decisa il 18/11, da creare il 19/11)
 
