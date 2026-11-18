@@ -1640,6 +1640,7 @@ function chiudiFoglio() {
   }
   $('foglio').hidden = true;
   if ($('scheda').hidden) document.body.classList.remove('bloccato');
+  if (_ritornaInboxKey) { const k = _ritornaInboxKey; _ritornaInboxKey = null; apriInbox(k); }
 }
 
 // Etichetta: i colori pronti, quelli scelti dalla tavolozza, e il tasto "+" per sceglierne un altro
@@ -2192,6 +2193,7 @@ function leggiPrezzo(t) {
 
 function salva() {
   if (salvando) return;                      // niente doppioni con tocchi ripetuti
+  _ritornaInboxKey = null;                   // salvataggio riuscito: non tornare all'inbox
   if (modoFoglio === 'modifica') return salvaModifica();
   const nome = clienteScelto ? clienteScelto.nome : $('f-nome').value.trim();
   const prezzo = leggiPrezzo($('f-prezzo').value);
@@ -2231,6 +2233,7 @@ function salva() {
 
 // Modifica cliente: i dati cambiano su tutti i suoi lavori e pagamenti
 function salvaModifica() {
+  _ritornaInboxKey = null;
   const vecchio = nomeInModifica, nuovo = $('f-nome').value.trim();
   const doppio = nuovo !== vecchio && clientiConosciuti().some(x => normalizza(x.nome) === normalizza(nuovo));
   const errore = !nuovo ? 'Scrivi il nome del cliente' : doppio ? 'Hai già un cliente con questo nome' : '';
@@ -2541,6 +2544,7 @@ function inbox_cardHtml(item, cat) {
 
 // --- Nuovi clienti: apre il foglio completo pre-compilato ---
 let _inboxCard = null; // card da animare dopo conferma
+let _ritornaInboxKey = null; // se impostata, chiudiFoglio riapre l'inbox
 
 function apriModificaInboxCliente(card, item) {
   _inboxCard = card;
@@ -2691,7 +2695,7 @@ function apriInbox(key) {
   const addBtn = $('ai-inbox-add');
   if (key === 'cliente') {
     addBtn.hidden = false;
-    addBtn.onclick = () => { chiudiInbox(); apriFoglio(); };
+    addBtn.onclick = () => { _ritornaInboxKey = 'cliente'; chiudiInbox(); apriFoglio(); };
   } else if (key === 'nota') {
     addBtn.hidden = false;
     addBtn.onclick = () => aggiungiItemSimulato();
