@@ -5,10 +5,18 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   // './' fa funzionare l'app anche dentro una sottocartella (es. GitHub Pages)
   base: './',
+  // Oltre all'app, si pubblica anche la prova grafica: .../app-artigiani/prove/prima-pagina.html
+  build: {
+    rollupOptions: {
+      input: { app: 'index.html', prova: 'prove/prima-pagina.html' },
+    },
+  },
   plugins: [
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
+      // La prova non deve essere sostituita dall'app quando la si apre dal link
+      workbox: { navigateFallbackDenylist: [/\/prove\//] },
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
       manifest: {
         name: 'Lavori e Pagamenti',
