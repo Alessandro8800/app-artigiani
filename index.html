@@ -214,6 +214,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .st-btn:active { opacity: .7; }
 /* Pulsanti inline per card "attesa" */
 .st-quick { display: flex; gap: 6px; flex-shrink: 0; }
+/* Animazione scivolo destra per card storico */
+@keyframes stScivola { to { transform: translateX(110%); opacity: 0; } }
+.storico-item.scivola { animation: stScivola .28s cubic-bezier(.4,0,1,1) forwards; overflow: hidden; }
 /* Barra azioni sezione Clienti */
 .c-azioni { display: flex; gap: 6px; margin-bottom: 14px; }
 .c-az-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; position: relative; transition: background .12s; }
@@ -2988,9 +2991,6 @@ function apriInbox(key) {
   const footer = $('ai-inbox-footer');
   if (key === 'tutto') {
     footer.hidden = true;
-  } else if (key === 'cliente' || key === 'paga') {
-    footer.hidden = false;
-    footer.innerHTML = `<button class="inbox-vedi-btn" onclick="chiudiInbox();document.querySelectorAll('.barra button').forEach(b=>{if(b.dataset.vista==='clienti')b.click()})">Vai alla scheda Clienti <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>`;
   } else {
     footer.hidden = false;
     footer.innerHTML = `<button class="inbox-vedi-btn" onclick="apriStorico('${key}')">Vedi storico <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>`;
@@ -3026,14 +3026,25 @@ const STORICO_ESEMPI = {
     { testa: 'Preventivo siepe', dati: 'Villa Sangalli · scaduto', stato: 'no' },
     { testa: 'Portare la scala alta', dati: 'mercoledì 20 — Condominio Aurora', stato: 'ok' },
   ],
+  cliente: [
+    { testa: 'Fam. Brunetti', dati: 'Via Roma 14 · taglio prato · €80', extra: 'confermato', stato: 'ok' },
+    { testa: 'Sig. Moretti', dati: 'Via Verdi 3 · manutenzione · €120', extra: 'scartato', stato: 'no' },
+    { testa: 'Condominio Le Palme', dati: 'Viale Europa 22 · potatura · €300', extra: 'confermato', stato: 'ok' },
+  ],
+  paga: [
+    { testa: 'Villa Verdi', dati: 'Taglio prato nov · €80', extra: 'incassato 10 nov', stato: 'ok' },
+    { testa: 'Fam. Colombo', dati: 'Potatura siepe · €140', extra: 'scartato', stato: 'no' },
+    { testa: 'Giorgio Pozzi', dati: 'Taglio e bordi · €50', extra: 'incassato 5 nov', stato: 'ok' },
+    { testa: 'Marta Ferri', dati: 'Messa a dimora · €200', extra: 'incassato 1 nov', stato: 'ok' },
+  ],
 };
-const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note' };
+const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note', cliente: 'Storico nuovi clienti', paga: 'Storico pagamenti' };
 
 function apriStorico(key) {
   _storicoKey = key;
   $('storico-titolo').textContent = STORICO_TITOLI[key] || 'Storico';
-  const inAttesa = (INBOX_ESEMPI[key]?.voci || []).map((v, i) => ({ testa: v.testa, dati: v.dati || '', extra: 'da decidere', stato: 'attesa', _src: 'attesa', _idx: i }));
-  const decisi = (STORICO_ESEMPI[key] || []).map((it, i) => ({ ...it, _src: 'storico', _idx: i }));
+  const inAttesa = (INBOX_ESEMPI[key]?.voci || []).map((v, i) => ({ testa: v.testa, dati: v.dati || '', extra: 'da decidere', stato: 'attesa', _idx: i }));
+  const decisi = (STORICO_ESEMPI[key] || []).map((it, i) => ({ ...it, _idx: i }));
   const tutto = [...inAttesa, ...decisi];
   if (!tutto.length) {
     $('storico-lista').innerHTML = '<div class="vuoto">Nessun elemento nello storico.</div>';
@@ -3048,24 +3059,20 @@ function apriStorico(key) {
             <div class="storico-stato ${cls}">${icona}</div>
             <div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sub}</span></div>
             <div class="st-quick">
-              <button class="st-btn verde" onclick="confermaSt('attesa',${it._idx})">✓ Conf.</button>
-              <button class="st-btn rosso" onclick="scartaSt('attesa',${it._idx})">✕ Scarta</button>
+              <button class="st-btn verde" onclick="confermaSt(this,${it._idx})">✓ Conf.</button>
+              <button class="st-btn rosso" onclick="scartaSt(this,${it._idx})">✕ Scarta</button>
             </div>
           </div>
         </div>`;
       }
+      // Nota: solo visualizzazione, nessun pulsante
+      const btnRivedi = key !== 'nota'
+        ? `<button class="storico-reattiva" onclick="riviSt(this,${it._idx})">Rivedi</button>` : '';
       return `<div class="storico-item">
         <div class="storico-card">
           <div class="storico-stato ${cls}">${icona}</div>
           <div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sub}</span></div>
-          <button class="storico-reattiva" onclick="toggleStPanel(this)">Rivedi</button>
-        </div>
-        <div class="st-panel" hidden>
-          <div class="st-azioni">
-            <button class="st-btn verde" onclick="confermaSt('storico',${it._idx})">✓ Conferma</button>
-            <button class="st-btn rosso" onclick="scartaSt('storico',${it._idx})">✕ Scarta</button>
-            <button class="st-btn amber" onclick="riprogrammaSt(${it._idx})">📅 Riprogramma</button>
-          </div>
+          ${btnRivedi}
         </div>
       </div>`;
     }).join('');
@@ -3074,45 +3081,44 @@ function apriStorico(key) {
 }
 function chiudiStorico() { $('storico').hidden = true; }
 
-function toggleStPanel(btn) {
-  const panel = btn.closest('.storico-item').querySelector('.st-panel');
-  panel.hidden = !panel.hidden;
-  btn.textContent = panel.hidden ? 'Rivedi' : 'Chiudi';
-}
-
-function confermaSt(src, idx) {
-  if (src === 'attesa') {
+// Conf./Scarta da storico (solo attesa): anima poi aggiorna
+function confermaSt(btn, idx) {
+  const item = btn.closest('.storico-item');
+  item.classList.add('scivola');
+  item.addEventListener('animationend', () => {
     const v = (INBOX_ESEMPI[_storicoKey]?.voci || []).splice(idx, 1)[0];
     if (v) STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'confermato', stato: 'ok' });
     aggiornaBadge();
-  } else {
-    const it = STORICO_ESEMPI[_storicoKey]?.[idx];
-    if (it) { it.stato = 'ok'; it.extra = 'confermato'; }
-  }
-  apriStorico(_storicoKey);
+    apriStorico(_storicoKey);
+  }, { once: true });
 }
 
-function scartaSt(src, idx) {
-  if (src === 'attesa') {
+function scartaSt(btn, idx) {
+  const item = btn.closest('.storico-item');
+  item.classList.add('scivola');
+  item.addEventListener('animationend', () => {
     const v = (INBOX_ESEMPI[_storicoKey]?.voci || []).splice(idx, 1)[0];
     if (v) STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'annullato', stato: 'no' });
     aggiornaBadge();
-  } else {
-    const it = STORICO_ESEMPI[_storicoKey]?.[idx];
-    if (it) { it.stato = 'no'; it.extra = 'annullato'; }
-  }
-  apriStorico(_storicoKey);
+    apriStorico(_storicoKey);
+  }, { once: true });
 }
 
-function riprogrammaSt(idx) {
-  _storicoRiprIdx = idx;
-  const it = STORICO_ESEMPI[_storicoKey]?.[idx];
-  if (!it) return;
-  $('ripr-nome').value = it.testa;
-  $('ripr-data-vec').textContent = it.dati;
-  _riprogrammaMese = new Date();
-  disegnaRiprCalendario();
-  $('ripr-pop').hidden = false;
+// Rivedi: anima la card, sposta item dall'archivio tornato nell'inbox, apre inbox
+function riviSt(btn, idx) {
+  const item = btn.closest('.storico-item');
+  item.classList.add('scivola');
+  item.addEventListener('animationend', () => {
+    const it = (STORICO_ESEMPI[_storicoKey] || []).splice(idx, 1)[0];
+    if (it) {
+      const v = { testa: it.testa, dati: it.dati, campi: [] };
+      if (!INBOX_ESEMPI[_storicoKey]) INBOX_ESEMPI[_storicoKey] = { voci: [] };
+      INBOX_ESEMPI[_storicoKey].voci.unshift(v);
+      aggiornaBadge();
+    }
+    chiudiStorico();
+    apriInbox(_storicoKey);
+  }, { once: true });
 }
 
 // Note rapide (post-it sulla home)
