@@ -432,10 +432,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-btn-ok { flex: 2; height: 30px; border-radius: 9px; background: var(--foglia); color: var(--sul-foglia); border: none; font-weight: 800; font-size: 13px; cursor: pointer; }
 .inbox-btn-no { flex: 1; height: 30px; border-radius: 9px; background: none; border: 1.5px solid var(--linea); color: var(--testo-2); font-weight: 700; font-size: 13px; cursor: pointer; }
 /* Edit expand */
-.inbox-expand { display: none; align-items: center; justify-content: center; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--linea); width: 100%; font-size: 13px; font-weight: 700; color: var(--testo-2); cursor: pointer; background: none; border-left: none; border-right: none; border-bottom: none; border-radius: 0; }
-.inbox-expand::after { content: '›'; font-size: 16px; display: inline-block; transition: transform .2s; }
-.inbox-expand[aria-expanded="true"]::after { transform: rotate(90deg); }
-.edit-mode .inbox-expand { display: flex; }
+.inbox-expand { display: none; }
+.inbox-card-top { display: flex; align-items: flex-start; gap: 8px; }
+.inbox-card-info { flex: 1; min-width: 0; }
+.inbox-card-edit-btn { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; margin-top: -2px; }
+.inbox-card-edit-btn:active { background: var(--linea); }
+.inbox-card-suggerimenti { font-size: 12px; color: var(--testo-2); margin-top: 4px; line-height: 1.4; }
 .inbox-edit-panel { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linea); display: flex; flex-direction: column; gap: 8px; }
 .inbox-edit-panel label { font-size: 12px; font-weight: 700; color: var(--testo-2); display: flex; flex-direction: column; gap: 4px; }
 .inbox-edit-panel input, .inbox-edit-panel textarea { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--linea); background: var(--sfondo); color: var(--testo); font-size: 15px; box-sizing: border-box; }
@@ -1447,7 +1449,7 @@ button.s-riga:first-child { border-top: 0; }
       <h2 id="ai-inbox-titolo">Notifiche</h2>
       <div class="inbox-header-azioni">
         <button class="inbox-ic" id="ai-inbox-add" aria-label="Aggiungi" title="Aggiungi" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-        <button class="inbox-ic" id="ai-inbox-edit" aria-label="Modifica" title="Modifica"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="inbox-ic" id="ai-inbox-edit" aria-label="Modifica" title="Modifica" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
         <button class="inbox-ic" id="ai-inbox-mic" aria-label="Parla" title="Aggiungi con voce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg></button>
       </div>
     </header>
@@ -2797,29 +2799,46 @@ function inboxCampiHtml(item, cat) {
 
 function inbox_cardHtml(item, cat) {
   const campiHtml = inboxCampiHtml(item, cat);
-  // Pulsante "Modifica": per cliente e riprogramma apre una schermata; per gli altri espande panel inline
-  let expandBtn = '';
+  const ic = `${JSON.stringify(item).replace(/"/g, '&quot;')}`;
+
+  // Icona edit per-card: apre direttamente la modifica senza passare per edit-mode
+  let editOnclick = '';
   if (cat === 'cliente') {
-    expandBtn = `<button class="inbox-expand" onclick="apriModificaInboxCliente(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')})">Modifica</button>`;
+    editOnclick = `apriModificaInboxCliente(this.closest('.inbox-card'),${ic})`;
   } else if (cat === 'riprogramma') {
-    expandBtn = `<button class="inbox-expand" onclick="apriRiprogrammaInbox(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')})">Modifica</button>`;
+    editOnclick = `apriRiprogrammaInbox(this.closest('.inbox-card'),${ic})`;
   } else if (campiHtml) {
-    expandBtn = `<button class="inbox-expand" aria-expanded="false" onclick="
-      const p=this.previousElementSibling;
-      p.hidden=!p.hidden;
-      this.setAttribute('aria-expanded', String(!p.hidden));
-      this.textContent=p.hidden?'Modifica':'Chiudi';
-    ">Modifica</button>`;
+    editOnclick = `const p=this.closest('.inbox-card').querySelector('.inbox-edit-panel');p.hidden=!p.hidden;`;
   }
+  const SVG_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  const editBtn = editOnclick ? `<button class="inbox-card-edit-btn" onclick="${editOnclick}" aria-label="Modifica">${SVG_EDIT}</button>` : '';
+
+  // Riga suggerimenti dati mancanti (solo per cliente)
+  let suggerimentiHtml = '';
+  if (cat === 'cliente') {
+    const campi = item.campi || [];
+    const get = k => (campi.find(([c]) => c === k) || [])[1] || '';
+    const mancanti = [];
+    if (!get('Indirizzo')) mancanti.push('indirizzo');
+    if (!get('Prezzo'))    mancanti.push('prezzo');
+    if (!get('Lavoro'))    mancanti.push('tipo lavoro');
+    if (mancanti.length) suggerimentiHtml = `<div class="inbox-card-suggerimenti">Manca: ${mancanti.join(', ')} · tocca ✎ per aggiungere</div>`;
+  }
+
   return `<div class="inbox-card" data-cat="${cat}">
-    <div class="inbox-card-testa">${item.testa}</div>
-    <div class="inbox-card-dati">${item.dati}</div>
+    <div class="inbox-card-top">
+      <div class="inbox-card-info">
+        <div class="inbox-card-testa">${item.testa}</div>
+        <div class="inbox-card-dati">${item.dati}</div>
+        ${suggerimentiHtml}
+      </div>
+      ${editBtn}
+    </div>
     <div class="inbox-card-azioni">
-      <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')}, '${cat}')">✓ Conferma</button>
-      <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')}, '${cat}')">Scarta</button>
+      <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'),${ic},'${cat}')">✓ Conferma</button>
+      <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
     </div>
     ${campiHtml}
-    ${expandBtn}
   </div>`;
 }
 
@@ -2861,7 +2880,7 @@ function apriModificaInboxCliente(card, item) {
   $('f-piede').innerHTML = `<p class="errore" id="f-errore" hidden></p>
     <div class="f-piede-indietro">
       <button class="secondario" onclick="indietroInboxCliente()">← Indietro</button>
-      <button class="salva" onclick="confermaInboxCliente()">✓ Conferma</button>
+      <button class="salva" id="f-salva" onclick="confermaInboxCliente()">✓ Conferma</button>
     </div>`;
   mostraFoglio();
 }
@@ -3068,7 +3087,17 @@ function confermaCarta(card, item, cat) {
   }
 
   if (cat === 'cliente') {
-    apriModificaInboxCliente(card, item);
+    const nome = getCampo('Nome').trim();
+    if (!nome) { avvisa('Nome mancante'); return; }
+    const dove = getCampo('Indirizzo') || '';
+    const prezzo = parseFloat(getCampo('Prezzo')) || 0;
+    const cosa = getCampo('Lavoro') || '';
+    const data = giorniMigliori()[0] || tra(1);
+    lavori.push({ id: lavori.length, nome, data, fatto: false, prezzo, dove, tipo: TIPI[0], durata: durataSolita, cosa });
+    avvisa(`${nome} aggiunto per ${nomeGiorno(data).toLowerCase()}`);
+    tutto();
+    rimuoviVoceInbox(cat, item, 'ok');
+    animaCard(card, 'ok');
     return;
   }
 
