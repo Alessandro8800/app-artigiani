@@ -685,7 +685,8 @@ button.s-riga:first-child { border-top: 0; }
 .f-testa { display: flex; align-items: center; gap: 8px; padding-block: 12px 4px; }
 .f-testa h2 { font-family: var(--font-titoli); font-size: 24px; margin: 0; flex: 1; }
 .chiudi { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--carta); display: grid; place-items: center; margin-left: -4px; }
-.f-corpo { flex: 1; overflow-y: auto; padding-block: 8px 20px; display: flex; flex-direction: column; gap: 18px; }
+.f-corpo { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-block: 8px 20px; display: flex; flex-direction: column; gap: 18px; }
+.f-corpo > * { flex-shrink: 0; }
 .campo { display: flex; flex-direction: column; gap: 6px; }
 .campo > span { font-weight: 800; font-size: 15px; }
 .campo > span small { font-weight: 600; color: var(--testo-2); }
