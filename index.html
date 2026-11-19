@@ -162,16 +162,29 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 /* Sheet note rapide */
 .nr-nota { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--linea); }
 .nr-nota:last-child { border-bottom: none; }
-.nr-nota-testo { flex: 1; font-size: 15px; color: var(--testo); line-height: 1.4; padding-top: 2px; }
+.nr-nota-corpo { flex: 1; min-width: 0; padding-top: 1px; }
+.nr-nota-titolo { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #d97706; margin-bottom: 3px; }
+.nr-nota-testo { font-size: 15px; color: var(--testo); line-height: 1.4; }
+.nr-nota.fatta .nr-nota-titolo { opacity: .4; }
 .nr-nota.fatta .nr-nota-testo { text-decoration: line-through; opacity: .45; }
 .nr-nota-tick { width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); cursor: pointer; display: grid; place-items: center; flex-shrink: 0; font-size: 14px; }
 .nr-nota.fatta .nr-nota-tick { background: var(--foglia-chiara); border-color: var(--foglia); color: var(--foglia); }
 .nr-nota-del { width: 28px; height: 28px; border: none; background: none; color: var(--testo-2); cursor: pointer; font-size: 16px; display: grid; place-items: center; flex-shrink: 0; opacity: .4; }
 .nr-nota-del:active { opacity: 1; color: #c83232; }
-.nr-add { display: flex; gap: 8px; }
-.nr-add input { flex: 1; height: 50px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); padding: 0 14px; font-size: 16px; }
-.nr-add input:focus { outline: none; border-color: var(--foglia); }
-.nr-add button { width: 50px; height: 50px; border-radius: 14px; border: none; background: #d97706; color: #fff; font-size: 24px; font-weight: 800; cursor: pointer; }
+/* Bottone "+ Nuova nota" nel footer */
+.nr-open-btn { width: 100%; height: 50px; border-radius: 14px; border: 1.5px dashed var(--linea); background: none; color: var(--testo-2); font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.nr-open-btn:active { background: var(--carta); }
+/* Form aggiunta nota espandibile */
+.nr-form { display: flex; flex-direction: column; gap: 8px; }
+.nr-form-titolo-row { display: flex; align-items: center; gap: 6px; }
+.nr-form-titolo-row label { font-size: 12px; font-weight: 800; color: var(--testo-2); white-space: nowrap; text-transform: uppercase; letter-spacing: .04em; }
+.nr-form-titolo-inp { flex: 1; height: 36px; border-radius: 10px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); padding: 0 10px; font-size: 14px; font-weight: 700; min-width: 0; }
+.nr-form-titolo-inp:focus { outline: none; border-color: #d97706; }
+.nr-form textarea { width: 100%; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); padding: 12px 14px; font-size: 16px; resize: none; min-height: 80px; box-sizing: border-box; font-family: inherit; line-height: 1.4; }
+.nr-form textarea:focus { outline: none; border-color: var(--foglia); }
+.nr-form-azioni { display: flex; gap: 8px; }
+.nr-form-mic { width: 50px; height: 50px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 20px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+.nr-form-salva { flex: 1; height: 50px; border-radius: 14px; border: none; background: #d97706; color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
 /* Footer "Vedi in dettaglio" nell'inbox */
 .inbox-vedi-btn { width: 100%; padding: 14px 0; display: flex; align-items: center; justify-content: center; gap: 8px; background: none; border: none; color: var(--testo-2); font-size: 15px; font-weight: 700; cursor: pointer; }
 .inbox-vedi-btn svg { flex-shrink: 0; }
@@ -998,10 +1011,23 @@ button.s-riga:first-child { border-top: 0; }
       <span></span>
     </header>
     <div class="f-corpo gutter" id="nr-lista"></div>
-    <footer class="f-piede gutter">
-      <div class="nr-add">
-        <input type="text" id="nr-input" placeholder="Nuova nota…" autocomplete="off" autocapitalize="sentences" onkeydown="if(event.key==='Enter')aggiungiNota()">
-        <button onclick="aggiungiNota()" aria-label="Aggiungi nota">+</button>
+    <footer class="f-piede gutter" id="nr-footer">
+      <button class="nr-open-btn" id="nr-open-btn" onclick="apriFormNota()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuova nota
+      </button>
+      <div class="nr-form" id="nr-form" hidden>
+        <div class="nr-form-titolo-row">
+          <label for="nr-titolo-inp">Titolo</label>
+          <input type="text" id="nr-titolo-inp" class="nr-form-titolo-inp" placeholder="Auto…" autocomplete="off">
+        </div>
+        <textarea id="nr-testo-inp" placeholder="Scrivi la nota…" rows="3" autocapitalize="sentences" oninput="aggiornaTitoloAuto(this.value)"></textarea>
+        <div class="nr-form-azioni">
+          <button class="nr-form-mic" onclick="avvisa('Microfono non ancora attivo in questa sezione')" aria-label="Dettatura vocale">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="21" x2="12" y2="17"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+          </button>
+          <button class="nr-form-salva" onclick="aggiungiNota()">Aggiungi</button>
+        </div>
       </div>
     </footer>
   </div>
@@ -2997,9 +3023,9 @@ function chiudiStorico() { $('storico').hidden = true; }
 
 // Note rapide (post-it sulla home)
 let noteRapide = [
-  { id: 1, testo: 'Comprare guanti antitaglio taglia L', fatta: false },
-  { id: 2, testo: 'Chiedere preventivo cisterna Fam. Colombo', fatta: false },
-  { id: 3, testo: 'Verificare prezzo concime in sacchi 25kg', fatta: true },
+  { id: 1, titolo: 'Acquisto', testo: 'Comprare guanti antitaglio taglia L', fatta: false },
+  { id: 2, titolo: 'Preventivo', testo: 'Chiedere preventivo cisterna Fam. Colombo', fatta: false },
+  { id: 3, titolo: 'Verifica', testo: 'Verificare prezzo concime in sacchi 25kg', fatta: true },
 ];
 let _nrId = 10;
 
@@ -3009,47 +3035,91 @@ function aggiornaBadgeNote() {
   if (b) { b.textContent = n; b.hidden = n === 0; }
 }
 
+function generaTitoloAuto(testo) {
+  if (!testo) return '';
+  const mappe = [
+    [/(acquist|compr)/i,'Acquisto'],[/(preventiv)/i,'Preventivo'],[/(chiama|telefonar)/i,'Chiamata'],
+    [/(verific|control)/i,'Verifica'],[/(ripar|sistem)/i,'Riparazione'],[/(pagamento|pagar)/i,'Pagamento'],
+    [/(appuntament)/i,'Appuntamento'],[/(ordine|ordin)/i,'Ordine'],[/(sopralluog)/i,'Sopralluogo'],
+    [/(incontro|riunion)/i,'Incontro'],[/(consegn)/i,'Consegna'],[/(scont|offert)/i,'Offerta'],
+    [/(ricordami|ricorda)/i,'Promemoria'],[/(prenota)/i,'Prenotazione']
+  ];
+  for (const [re,t] of mappe) if (re.test(testo)) return t;
+  const stop = new Set(['devo','devi','ho','hai','che','il','la','lo','le','gli','i','e','o','a','di','da','in','con','su','per','tra','fra','non','si','ci','un','una','uno','dei','delle','degli','del','della','dello']);
+  const parole = testo.toLowerCase().split(/\s+/).filter(p => p.length > 2 && !stop.has(p));
+  if (parole.length) return parole[0].charAt(0).toUpperCase() + parole[0].slice(1);
+  return testo.split(/\s+/).slice(0,2).join(' ');
+}
+
+function aggiornaTitoloAuto(val) {
+  const inp = $('nr-titolo-inp');
+  if (inp && !inp.dataset.modificato) inp.value = generaTitoloAuto(val);
+}
+
 function disegnaNoteRapide() {
   if (!noteRapide.length) {
-    $('nr-lista').innerHTML = '<div class="vuoto">Nessuna nota. Scrivi qualcosa qui sotto.</div>';
+    $('nr-lista').innerHTML = '<div class="vuoto">Nessuna nota.</div>';
     return;
   }
   $('nr-lista').innerHTML = noteRapide.map(n =>
     `<div class="nr-nota${n.fatta ? ' fatta' : ''}" id="nr-${n.id}">
-      <button class="nr-nota-tick" onclick="toggleNota(${n.id})" aria-label="Segna ${n.fatta ? 'da fare' : 'fatta'}">${n.fatta ? '✓' : ''}</button>
-      <span class="nr-nota-testo">${sicuro(n.testo)}</span>
+      <button class="nr-nota-tick" onclick="toggleNota(${n.id})" aria-label="${n.fatta ? 'Riattiva' : 'Segna fatta'}">${n.fatta ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</button>
+      <div class="nr-nota-corpo">
+        ${n.titolo ? `<div class="nr-nota-titolo">${sicuro(n.titolo)}</div>` : ''}
+        <div class="nr-nota-testo">${sicuro(n.testo)}</div>
+      </div>
       <button class="nr-nota-del" onclick="eliminaNota(${n.id})" aria-label="Elimina nota">×</button>
     </div>`
   ).join('');
 }
 
 function apriNoteRapide() {
+  chiudiFormNota();
   disegnaNoteRapide();
   $('note-rapide').hidden = false;
   document.body.classList.add('bloccato');
-  setTimeout(() => { const inp = $('nr-input'); if (inp) inp.focus(); }, 200);
 }
 function chiudiNoteRapide() {
   $('note-rapide').hidden = true;
   document.body.classList.remove('bloccato');
   aggiornaBadgeNote();
 }
+
+function apriFormNota() {
+  $('nr-open-btn').hidden = true;
+  $('nr-form').hidden = false;
+  const t = $('nr-testo-inp'); if (t) { t.value = ''; t.focus(); }
+  const ti = $('nr-titolo-inp'); if (ti) { ti.value = ''; delete ti.dataset.modificato; }
+}
+function chiudiFormNota() {
+  if ($('nr-open-btn')) $('nr-open-btn').hidden = false;
+  if ($('nr-form')) $('nr-form').hidden = true;
+}
+
 function toggleNota(id) {
-  const n = noteRapide.find(x => x.id === id);
-  if (n) { n.fatta = !n.fatta; disegnaNoteRapide(); aggiornaBadgeNote(); }
+  const idx = noteRapide.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const copia = { ...noteRapide[idx] };
+  noteRapide.splice(idx, 1);
+  disegnaNoteRapide(); aggiornaBadgeNote();
+  avvisa(copia.fatta ? 'Nota riattivata' : 'Nota completata ✓', { etichetta: 'Annulla', fai: () => { noteRapide.splice(idx, 0, copia); disegnaNoteRapide(); aggiornaBadgeNote(); } });
 }
 function eliminaNota(id) {
-  noteRapide = noteRapide.filter(x => x.id !== id);
+  const idx = noteRapide.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const copia = { ...noteRapide[idx] };
+  noteRapide.splice(idx, 1);
   disegnaNoteRapide(); aggiornaBadgeNote();
+  avvisa('Nota eliminata', { etichetta: 'Annulla', fai: () => { noteRapide.splice(idx, 0, copia); disegnaNoteRapide(); aggiornaBadgeNote(); } });
 }
 function aggiungiNota() {
-  const inp = $('nr-input');
-  const testo = (inp?.value || '').trim();
-  if (!testo) return;
-  noteRapide.unshift({ id: ++_nrId, testo, fatta: false });
-  inp.value = '';
+  const testoInp = $('nr-testo-inp'), titoloInp = $('nr-titolo-inp');
+  const testo = (testoInp?.value || '').trim();
+  if (!testo) { testoInp?.focus(); return; }
+  const titolo = (titoloInp?.value || '').trim() || generaTitoloAuto(testo);
+  noteRapide.unshift({ id: ++_nrId, titolo, testo, fatta: false });
+  chiudiFormNota();
   disegnaNoteRapide(); aggiornaBadgeNote();
-  inp.focus();
 }
 // Badge iniziale al caricamento
 document.addEventListener('DOMContentLoaded', aggiornaBadgeNote);
