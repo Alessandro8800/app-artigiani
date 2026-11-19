@@ -278,6 +278,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 /* Scheda cliente */
 .s-testa-nome { font-family: var(--font-titoli); font-size: 24px; margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .modifica { border: 0; background: var(--carta); border-radius: 12px; min-height: 44px; padding: 0 14px; font-weight: 800; color: var(--foglia); }
+.s-testa-azioni { display: flex; align-items: center; gap: 6px; }
+.s-ic { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--carta); color: var(--foglia); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.s-ic.verde { background: var(--foglia); color: #fff; }
+.s-ok-riga { display: flex; align-items: center; gap: 8px; color: var(--foglia); font-weight: 800; font-size: 16px; padding: 8px 2px; }
+.etichetta.arancio { background: rgba(217,119,6,.12); color: #d97706; }
+.l-report-voci { background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.l-report-voce { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+.l-report-voce span { flex: 1; color: var(--testo-2); font-size: 14px; }
+.l-report-voce small { color: var(--testo-2); font-size: 12px; font-weight: 600; }
+.l-report-info { display: flex; flex-direction: column; }
+.l-report-riga { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--linea); font-weight: 700; font-size: 15px; }
+.l-report-riga:last-child { border-bottom: none; }
+.l-report-riga span { color: var(--testo-2); }
 .s-info { display: flex; flex-direction: column; gap: 6px; color: var(--testo-2); font-weight: 600; font-size: 16px; }
 .s-info span { display: flex; align-items: center; gap: 6px; }
 .s-info .etichetta { margin-left: 0; align-self: flex-start; }
@@ -887,7 +900,7 @@ button.s-riga:first-child { border-top: 0; }
       <!-- Barra AI: 5 categorie + inbox + microfono -->
       <div class="ai-barra">
         <div class="ai-barra-cat">
-          <button class="ai-ic" id="ai-cat-cliente" aria-label="Nuovi clienti da confermare">
+          <button class="ai-ic" id="ai-cat-cliente" aria-label="Nuovi lavori da confermare">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M2 20c0-4 3.6-7 8-7"/><path d="M19 12v6M16 15h6"/></svg>
             <span class="ai-badge" id="ai-b-cliente" hidden>0</span>
           </button>
@@ -1370,7 +1383,10 @@ button.s-riga:first-child { border-top: 0; }
     <header class="f-testa gutter">
       <button class="chiudi" id="s-chiudi" aria-label="Torna ai clienti"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <h2 class="s-testa-nome" id="s-nome"></h2>
-      <button class="modifica" id="s-modifica">Modifica</button>
+      <div class="s-testa-azioni">
+        <button class="s-ic verde" id="s-nuovo-job" aria-label="Nuovo lavoro per questo cliente"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+        <button class="s-ic" id="s-modifica" aria-label="Modifica cliente"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </header>
     <div class="f-corpo gutter" id="s-corpo"></div>
   </div>
@@ -2662,7 +2678,7 @@ $('f-nome').addEventListener('input', aggiornaCliente);
 // ---- Barra AI: icone categoria ----
 // ---- Inbox AI ----
 const INBOX_ESEMPI = {
-  cliente: { titolo: 'Nuovi clienti', cat: 'cliente', badge: 'ai-b-cliente', voci: [
+  cliente: { titolo: 'Nuovi lavori', cat: 'cliente', badge: 'ai-b-cliente', voci: [
     { testa: 'Marco Brambilla', dati: 'Via dei Tigli 12 · Taglio erba · 55 € · lun 25 nov',
       campi: [['Nome','Marco Brambilla'],['Indirizzo','Via dei Tigli 12'],['Lavoro','Taglio erba'],['Prezzo','55']] },
     { testa: 'Condominio Le Palme', dati: 'Via Roma 7 · Potatura siepi · 120 € · gio 28 nov',
@@ -2783,7 +2799,7 @@ function inbox_cardHtml(item, cat) {
   </div>`;
 }
 
-// --- Nuovi clienti: apre il foglio completo pre-compilato ---
+// --- Nuovi lavori: apre il foglio completo pre-compilato ---
 let _inboxCard = null; // card da animare dopo conferma
 let _ritornaInboxKey = null; // se impostata, chiudiFoglio riapre l'inbox
 let _inboxCatCorrente = null; // categoria inbox aperta in questo momento
@@ -3038,7 +3054,7 @@ const STORICO_ESEMPI = {
     { testa: 'Marta Ferri', dati: 'Messa a dimora · €200', extra: 'incassato 1 nov', stato: 'ok' },
   ],
 };
-const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note', cliente: 'Storico nuovi clienti', paga: 'Storico pagamenti' };
+const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note', cliente: 'Storico nuovi lavori', paga: 'Storico pagamenti' };
 
 function apriStorico(key) {
   _storicoKey = key;
@@ -3739,7 +3755,7 @@ function disegnaScheda() {
           <p class="errore" id="s-errore" hidden></p>
         </div>
       </div>`
-    : `<div class="riepilogo s-dovuto zero"><span>Ti deve</span><strong>Tutto pagato</strong></div>`;
+    : `<div class="s-ok-riga"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Tutto pagato</div>`;
 
   // Storico: tutti i lavori fatti, i più recenti in alto.
   // Per ognuno: data, lavoro, euro e dopo quanti giorni ha pagato (dal giorno del lavoro).
@@ -3757,36 +3773,33 @@ function disegnaScheda() {
       : `<small class="${cl}">da pagare · ${g === 0 ? 'da oggi' : g === 1 ? 'da 1 giorno' : `da ${g} giorni`}</small>`;
   };
   const fatti = lavori.filter(l => l.nome === schedaNome && l.fatto).sort((a, b) => b.data.localeCompare(a.data));
+  const daFare = lavori.filter(l => l.nome === schedaNome && !l.fatto).sort((a, b) => a.data.localeCompare(b.data));
   const storico = fatti.map(l => {
     const u = utileDi(l);
-    return `<button type="button" class="s-riga" data-id="${l.id}"><span class="cosa">${sicuro(l.cosa || 'Lavoro')}${l.iniziale ? ' <span class="etichetta">debito di prima</span>' : ''}</span><small>${dataBreve(l.data)}${u != null ? ` · <b class="${u < 0 ? 'perdita' : 'utile'}">utile ${euro(u)}</b>` : ''}</small>
+    return `<button type="button" class="s-riga" data-id="${l.id}" data-fatto="1"><span class="cosa">${sicuro(l.cosa || 'Lavoro')}${l.iniziale ? ' <span class="etichetta">debito di prima</span>' : ''}</span><small>${dataBreve(l.data)}${u != null ? ` · <b class="${u < 0 ? 'perdita' : 'utile'}">utile ${euro(u)}</b>` : ''}</small>
       <span class="importo">${l.prezzo ? euro(l.prezzo) : '—'}${stato(l)}</span></button>`;
   });
+  const righeDF = daFare.map(l => `<button type="button" class="s-riga" data-id="${l.id}"><span class="cosa">${sicuro(l.cosa || 'Lavoro')} <span class="etichetta arancio">da fare</span></span><small>${dataBreve(l.data)}</small><span class="importo">${l.prezzo ? euro(l.prezzo) : '—'}</span></button>`);
+  const tutteRighe = [...righeDF, ...storico];
   // Con questo cliente: quanto valgono i lavori fatti, quanto sono costati, quanto resta
   const conCosti = fatti.filter(l => costiDi(l) != null);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
   const spese = arrotonda(conCosti.reduce((t, l) => t + costiDi(l), 0));
-  const resa = fatti.length ? `<div class="s-resa"><span>Lavori fatti <b>${euro(ricavi)}</b></span><span>Costi <b>${conCosti.length ? euro(spese) : '—'}</b></span><span>Utile <b class="${ricavi - spese < 0 ? 'perdita' : 'utile'}">${conCosti.length ? euro(arrotonda(ricavi - spese)) : '—'}</b></span></div>
+  const resa = fatti.length ? `<div class="s-resa"><span>Ricavi <b>${euro(ricavi)}</b></span><span>Costi <b>${conCosti.length ? euro(spese) : '—'}</b></span><span>Utile <b class="${ricavi - spese < 0 ? 'perdita' : 'utile'}">${conCosti.length ? euro(arrotonda(ricavi - spese)) : '—'}</b></span></div>
     ${conCosti.length < fatti.length ? `<p class="s-nota-costi">Costi segnati su ${conCosti.length === 1 ? "1 lavoro" : conCosti.length + " lavori"} su ${fatti.length}: tocca un lavoro per aggiungerli.</p>` : ''}` : '';
 
   $('s-corpo').innerHTML = `
-    <button type="button" class="salva s-nuovo-lavoro" id="s-nuovo-lavoro"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo lavoro per questo cliente</button>
     <div class="s-info">
       ${c.tipo !== TIPI[0] ? `<span class="etichetta">${c.tipo}</span>` : ''}
-      ${c.dove ? `<span>${PIN}${sicuro(c.dove)}</span>` : ''}
-      ${[c.tel].filter(Boolean).map(t => {
-        const cifre = t.replace(/\D/g, '');
-        return `<span>${TEL}${sicuro(t)}<span class="s-contatti"><a href="tel:${cifre}">Chiama</a><a href="https://wa.me/39${cifre}" target="_blank" rel="noopener">WhatsApp</a></span></span>`;
-      }).join('')}
+      ${(c.dove || c.tel) ? `<span>${c.dove ? PIN + sicuro(c.dove) : ''}${c.dove && c.tel ? ` · ${TEL}${sicuro(c.tel)}` : c.tel ? TEL + sicuro(c.tel) : ''}</span>` : ''}
       ${c.ripeti && c.ripeti !== 'no' ? `<span>↻ Si ripete: ${c.ripeti.startsWith('custom:') ? 'personalizzato' : (RIPETI[c.ripeti]?.nome || c.ripeti).toLowerCase()}</span>` : ''}
       ${c.note ? `<span class="s-note">${sicuro(c.note)}</span>` : ''}
     </div>
     ${dovuto}
-    <div class="s-sezione"><h3>Lavori fatti</h3><span>${storico.length || ''}</span></div>
+    <div class="s-sezione"><h3>Lavori</h3><span>${(fatti.length + daFare.length) || ''}</span></div>
     ${resa}
-    <div class="s-righe">${storico.length ? storico.join('') : '<div class="s-vuoto">Ancora nessun lavoro fatto</div>'}</div>`;
-  $('s-corpo').querySelectorAll('.s-riga[data-id]').forEach(b => { b.onclick = () => apriLavoro(+b.dataset.id); });
-  $('s-nuovo-lavoro').onclick = () => apriFoglio(null, schedaNome);
+    <div class="s-righe">${tutteRighe.length ? tutteRighe.join('') : '<div class="s-vuoto">Ancora nessun lavoro</div>'}</div>`;
+  $('s-corpo').querySelectorAll('.s-riga[data-id]').forEach(b => { b.onclick = () => apriLavoro(+b.dataset.id, b.dataset.fatto ? 'report' : undefined); });
 
   if (!k.dovuto) return;
   $('s-tutto').onclick = () => pagaTutto($('s-tutto'));
@@ -3831,19 +3844,22 @@ function pagaParte() {
 
 $('s-chiudi').onclick = chiudiScheda;
 $('s-modifica').onclick = () => apriModifica(schedaNome);
+$('s-nuovo-job').onclick = () => apriFoglio(null, schedaNome);
 $('c-cerca').addEventListener('input', disegnaClienti);
 
 // ---- Scheda del lavoro ----
-let lavoroAperto = null;
+let lavoroAperto = null; let lavoroModo = 'modifica';
 function apriLavoro(id, vai) {
   lavoroAperto = lavori[id];
   if (!lavoroAperto) return;
+  lavoroModo = vai === 'report' ? 'report' : 'modifica';
   disegnaLavoro();
   $('lavoro').hidden = false; document.body.classList.add('bloccato');
   $('l-corpo').scrollTop = 0;
   if (vai === 'costi') setTimeout(() => { $('l-costi').scrollIntoView({ block: 'start' }); }, 80);
 }
 function chiudiLavoro() {
+  lavoroModo = 'modifica';
   $('lavoro').hidden = true;
   if ($('scheda').hidden) document.body.classList.remove('bloccato'); else disegnaScheda();
   tutto();
@@ -3858,6 +3874,30 @@ function disegnaLavoro() {
   if (!l.costi) l.costi = { generale: null, voci: [] };
   const costi = costiDi(l), utile = utileDi(l);
   $('l-titolo').textContent = l.cosa || 'Lavoro';
+  if (lavoroModo === 'report') {
+    const k = conto(l.nome);
+    const s = k.saldati.find(x => x.id === l.id);
+    const gg = s ? Math.round((daIso(s.pagatoIl) - daIso(l.data)) / 86400000) : null;
+    const pgInfo = s ? (gg <= 0 ? 'pagato subito' : gg === 1 ? 'pagato dopo 1 giorno' : `pagato dopo ${gg} giorni`) : 'da incassare';
+    const vociR = l.costi?.voci || [];
+    $('l-corpo').innerHTML = `
+      <button type="button" class="l-cliente" id="l-cliente">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
+      <div class="riepilogo l-soldi">
+        <div class="l-soldi-riga"><span>Prezzo</span><b>${l.prezzo != null ? euro(l.prezzo) : '—'}</b></div>
+        <div class="l-soldi-riga"><span>Costi</span><b>${costi != null ? '− ' + euro(costi) : 'non segnati'}</b></div>
+        <div class="l-soldi-riga utile-riga"><span>Utile</span><strong class="${utile != null && utile < 0 ? 'perdita' : 'utile'}">${utile != null ? euro(utile) : '—'}</strong></div>
+      </div>
+      ${vociR.length ? `<div class="l-report-voci">${vociR.map(v => v.tipo === 'Personale' ? `<div class="l-report-voce"><span>Personale</span><b>${euro(importoVoce(v))}</b><small>${virgola(v.ore)} h × ${virgola(v.tariffa)} €/h</small></div>` : `<div class="l-report-voce"><span>${sicuro(v.tipo)}</span><b>${v.importo != null ? euro(v.importo) : '—'}</b></div>`).join('')}</div>` : ''}
+      <div class="l-report-info">
+        <div class="l-report-riga"><span>Data</span><b>${dataBreve(l.data)}</b></div>
+        <div class="l-report-riga"><span>Pagamento</span><b>${pgInfo}</b></div>
+        ${l.durata ? `<div class="l-report-riga"><span>Durata</span><b>${nomeDurata(l.durata)}</b></div>` : ''}
+        ${l.oreVere != null ? `<div class="l-report-riga"><span>Ore vere</span><b>${virgola(l.oreVere)} h</b></div>` : ''}
+        ${l.note ? `<div class="l-report-riga"><span>Note</span><b>${sicuro(l.note)}</b></div>` : ''}
+      </div>`;
+    $('l-cliente').onclick = () => { const nome = l.nome; $('lavoro').hidden = true; lavoroModo = 'modifica'; tutto(); if ($('scheda').hidden || schedaNome !== nome) apriScheda(nome); else disegnaScheda(); };
+    return;
+  }
   const voci = l.costi.voci;
   const riga = (v, i) => v.tipo === 'Personale'
     ? `<div class="costo-voce"><div class="costo-testa"><span class="etichetta">Personale</span><b>${euro(importoVoce(v))}</b><button type="button" class="togli" data-i="${i}" aria-label="Togli">✕</button></div>
