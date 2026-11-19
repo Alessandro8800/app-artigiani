@@ -4024,7 +4024,7 @@ function disegnaAzioni() {
   const nuovo = '<button type="button" class="nuovo a-nuovo"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button>';
   const note = `<button type="button" class="a-piccolo a-note" aria-label="Note: ${nNote}">${ICONA_NOTA}<small>Note</small>${numerino(nNote)}</button>`;
   const ind = `<button type="button" class="a-piccolo a-indietro${nInd ? ' da-vedere' : ''}" aria-label="Rimasti indietro: ${nInd}">${ICONA_INDIETRO}<small>Indietro</small>${numerino(nInd)}</button>`;
-  $('azioni-cli').innerHTML = nuovo + note;
+  if ($('azioni-cli')) $('azioni-cli').innerHTML = nuovo + note;
   document.querySelectorAll('.a-nuovo').forEach(b => { b.onclick = () => apriFoglio(); });
   document.querySelectorAll('.a-note').forEach(b => { b.onclick = apriNota; });
   document.querySelectorAll('.a-indietro').forEach(b => { b.onclick = apriIndietro; });
