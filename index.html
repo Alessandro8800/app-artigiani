@@ -153,6 +153,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .cerca input { flex: 1; min-width: 0; border: 0; background: none; min-height: 52px; font-size: 17px; font-weight: 600; outline: none; color: var(--testo); }
 .cerca:focus-within { border-color: var(--foglia); }
 #storico { z-index: 21; }
+/* Post-it / note rapide nella testata home */
+.testata-destra { display: flex; align-items: center; gap: 10px; }
+.nr-btn { width: 34px; height: 34px; border: none; background: none; cursor: pointer; display: grid; place-items: center; position: relative; padding: 0; color: #d97706; flex-shrink: 0; }
+.nr-btn svg { filter: drop-shadow(0 1px 2px rgba(217,119,6,.25)); }
+.nr-btn:active { opacity: .7; }
+.nr-badge { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; padding: 0 3px; background: #d97706; color: #fff; font-size: 10px; font-weight: 900; display: grid; place-items: center; }
+/* Sheet note rapide */
+.nr-nota { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--linea); }
+.nr-nota:last-child { border-bottom: none; }
+.nr-nota-testo { flex: 1; font-size: 15px; color: var(--testo); line-height: 1.4; padding-top: 2px; }
+.nr-nota.fatta .nr-nota-testo { text-decoration: line-through; opacity: .45; }
+.nr-nota-tick { width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); cursor: pointer; display: grid; place-items: center; flex-shrink: 0; font-size: 14px; }
+.nr-nota.fatta .nr-nota-tick { background: var(--foglia-chiara); border-color: var(--foglia); color: var(--foglia); }
+.nr-nota-del { width: 28px; height: 28px; border: none; background: none; color: var(--testo-2); cursor: pointer; font-size: 16px; display: grid; place-items: center; flex-shrink: 0; opacity: .4; }
+.nr-nota-del:active { opacity: 1; color: #c83232; }
+.nr-add { display: flex; gap: 8px; }
+.nr-add input { flex: 1; height: 50px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); padding: 0 14px; font-size: 16px; }
+.nr-add input:focus { outline: none; border-color: var(--foglia); }
+.nr-add button { width: 50px; height: 50px; border-radius: 14px; border: none; background: #d97706; color: #fff; font-size: 24px; font-weight: 800; cursor: pointer; }
 /* Footer "Vedi in dettaglio" nell'inbox */
 .inbox-vedi-btn { width: 100%; padding: 14px 0; display: flex; align-items: center; justify-content: center; gap: 8px; background: none; border: none; color: var(--testo-2); font-size: 15px; font-weight: 700; cursor: pointer; }
 .inbox-vedi-btn svg { flex-shrink: 0; }
@@ -815,7 +834,13 @@ button.s-riga:first-child { border-top: 0; }
     <div id="avvisi-home" class="gutter"></div>
     <header class="testata gutter">
       <h1 id="t-data"></h1>
-      <p id="t-riassunto"></p>
+      <div class="testata-destra">
+        <p id="t-riassunto"></p>
+        <button class="nr-btn" id="nr-btn" onclick="apriNoteRapide()" aria-label="Note rapide">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8z"/><polyline points="16 3 16 8 21 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+          <span class="nr-badge" id="nr-badge" hidden>0</span>
+        </button>
+      </div>
     </header>
     <div class="gutter">
       <div class="calendario">
@@ -963,6 +988,24 @@ button.s-riga:first-child { border-top: 0; }
 </nav>
 
 <div class="avviso" id="avviso" role="status" hidden><span id="avviso-testo"></span><span class="avviso-tasti"><button id="avviso-azione2" hidden></button><button id="avviso-azione" hidden></button></span><i class="avviso-tempo" id="avviso-tempo" hidden></i></div>
+
+<!-- Note rapide (post-it) -->
+<div class="foglio-sfondo" id="note-rapide" hidden>
+  <div class="foglio" role="dialog" aria-modal="true" aria-label="Note rapide" style="max-height:85vh;height:auto">
+    <header class="f-testa gutter">
+      <button class="chiudi" onclick="chiudiNoteRapide()" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+      <h2 style="margin:0;font-family:var(--font-titoli);font-size:22px">Note rapide</h2>
+      <span></span>
+    </header>
+    <div class="f-corpo gutter" id="nr-lista"></div>
+    <footer class="f-piede gutter">
+      <div class="nr-add">
+        <input type="text" id="nr-input" placeholder="Nuova nota…" autocomplete="off" autocapitalize="sentences" onkeydown="if(event.key==='Enter')aggiungiNota()">
+        <button onclick="aggiungiNota()" aria-label="Aggiungi nota">+</button>
+      </div>
+    </footer>
+  </div>
+</div>
 
 <!-- Storico inbox (riprogrammi, costi, note già decisi) -->
 <div class="foglio-sfondo" id="storico" hidden>
@@ -2951,6 +2994,65 @@ function apriStorico(key) {
   $('storico').hidden = false;
 }
 function chiudiStorico() { $('storico').hidden = true; }
+
+// Note rapide (post-it sulla home)
+let noteRapide = [
+  { id: 1, testo: 'Comprare guanti antitaglio taglia L', fatta: false },
+  { id: 2, testo: 'Chiedere preventivo cisterna Fam. Colombo', fatta: false },
+  { id: 3, testo: 'Verificare prezzo concime in sacchi 25kg', fatta: true },
+];
+let _nrId = 10;
+
+function aggiornaBadgeNote() {
+  const n = noteRapide.filter(x => !x.fatta).length;
+  const b = $('nr-badge');
+  if (b) { b.textContent = n; b.hidden = n === 0; }
+}
+
+function disegnaNoteRapide() {
+  if (!noteRapide.length) {
+    $('nr-lista').innerHTML = '<div class="vuoto">Nessuna nota. Scrivi qualcosa qui sotto.</div>';
+    return;
+  }
+  $('nr-lista').innerHTML = noteRapide.map(n =>
+    `<div class="nr-nota${n.fatta ? ' fatta' : ''}" id="nr-${n.id}">
+      <button class="nr-nota-tick" onclick="toggleNota(${n.id})" aria-label="Segna ${n.fatta ? 'da fare' : 'fatta'}">${n.fatta ? '✓' : ''}</button>
+      <span class="nr-nota-testo">${sicuro(n.testo)}</span>
+      <button class="nr-nota-del" onclick="eliminaNota(${n.id})" aria-label="Elimina nota">×</button>
+    </div>`
+  ).join('');
+}
+
+function apriNoteRapide() {
+  disegnaNoteRapide();
+  $('note-rapide').hidden = false;
+  document.body.classList.add('bloccato');
+  setTimeout(() => { const inp = $('nr-input'); if (inp) inp.focus(); }, 200);
+}
+function chiudiNoteRapide() {
+  $('note-rapide').hidden = true;
+  document.body.classList.remove('bloccato');
+  aggiornaBadgeNote();
+}
+function toggleNota(id) {
+  const n = noteRapide.find(x => x.id === id);
+  if (n) { n.fatta = !n.fatta; disegnaNoteRapide(); aggiornaBadgeNote(); }
+}
+function eliminaNota(id) {
+  noteRapide = noteRapide.filter(x => x.id !== id);
+  disegnaNoteRapide(); aggiornaBadgeNote();
+}
+function aggiungiNota() {
+  const inp = $('nr-input');
+  const testo = (inp?.value || '').trim();
+  if (!testo) return;
+  noteRapide.unshift({ id: ++_nrId, testo, fatta: false });
+  inp.value = '';
+  disegnaNoteRapide(); aggiornaBadgeNote();
+  inp.focus();
+}
+// Badge iniziale al caricamento
+document.addEventListener('DOMContentLoaded', aggiornaBadgeNote);
 function riativaStorico(key, idx) {
   const it = STORICO_ESEMPI[key]?.[idx];
   if (!it) return;
