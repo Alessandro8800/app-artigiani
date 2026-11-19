@@ -109,6 +109,18 @@ Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat
 | `costo` | Espande panel inline | Stepper ± importo, toggle Personale/Cliente |
 | `paga` | Espande panel inline | Stepper ± importo (solo + e −, senza frecce browser), ricerca cliente |
 
+**Nuovi clienti (`cliente`) sono sempre sospesi:** la voce viene creata con bordo arancione + "Manca: giorno" perché l'AI vocale non fornisce mai un giorno per i nuovi clienti. L'utente deve aprire il foglio e completarlo. I campi essenziali sono **nome + indirizzo + giorno** — tutti e tre devono essere presenti.
+
+**Note (`nota`) — `confermaCarta` agisce in base ai campi:**
+- `Giorno` presente → crea `lavoro` con `memo: true` nel calendario (nota evento, pallino blu)
+- `Cliente` presente (senza Giorno) → aggiunge a `prendiExtra(cliente).note`
+- Nessuno dei due → aggiunge a `noteRapide[]`
+- Nota vuota → `avvisa(...)` e **non** rimuove la card (blocco early return)
+
+**Riprogramma — due varianti di card:**
+- Con data destinazione (`A` parsabile) → bottone **Conferma** (sposta subito)
+- Senza data destinazione → bottone **📅 Pianifica** → apre `#ripr-pop`; nel popup cliccare un giorno **seleziona** (non conferma) e mostra `#ripr-conferma-row` con "Conferma [gg mese]"; `confRiprCalendario()` esegue lo spostamento
+
 **Animazione card:** `animaCard(card, 'ok')` → slide destra verde + collassa. `animaCard(card, 'no')` → cade giù.
 
 ---
@@ -132,6 +144,20 @@ Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat
 **Attenzione:** in `modoFoglio === 'conferma-inbox'`, `f-salva` e `f-micro` **non esistono nel DOM** (il footer è stato sostituito con bottoni custom). `chiudiFoglio()` li ripristina automaticamente.
 
 **_ritornaInboxKey** — variabile globale. Se impostata quando `chiudiFoglio()` viene chiamato (senza salvataggio), riapre l'inbox con quella key. Viene azzerata da `salva()` e `salvaModifica()`.
+
+---
+
+## Lavori con `memo: true`
+
+```js
+{ id:..., nome:'...', data:'AAAA-MM-GG', fatto: false, prezzo: null, dove:'', tipo: TIPI[0], durata: 0.5, cosa:'...', memo: true }
+```
+
+- Creati da `confermaCarta` per note inbox con un giorno → compaiono nel calendario come **promemoria** (pallino blu, badge "Promemoria")
+- `durata: 0.5` → valore truthy che non attiva il fallback `|| 2`, ma è abbastanza piccolo da non pesare sulle ore
+- **Esclusi da `mappaGiorni`** → non bloccano ore nei giorni migliori
+- `prezzo: null` (non 0) → `cartaLavoro` non mostra "0,00 €"
+- CSS: `.pallini i.memo { background: #3b82f6 }` / `.lavoro.memo { border-color: rgba(59,130,246,0.35); } .lavoro.memo .nome { color: #3b82f6 }`
 
 ---
 
@@ -312,7 +338,8 @@ CSS: `.prev-dot { width:10px; height:10px; border-radius:50%; display:inline-blo
 | `indietroInboxCliente()` | Dal foglio, torna alla scheda "Nuovi clienti" |
 | `confermaInboxCliente()` | Rimuove voce inbox, anima card ok, chiude foglio |
 | `apriRiprogrammaInbox(card, item)` | Apre popup `#ripr-pop` con input nome e data vecchia |
-| `disegnaRiprCalendario()` | Ridisegna griglia `#ripr-griglia` — dopo la scelta chiama `rimuoviVoceInbox` |
+| `disegnaRiprCalendario()` | Ridisegna griglia `#ripr-griglia`; click giorno = seleziona (inbox) o conferma (storico) |
+| `confRiprCalendario()` | Esegue lo spostamento dopo che l'utente clicca "Conferma [giorno]" in `#ripr-pop` |
 | `aggiungiItemSimulato()` | Aggiunge item fake all'inbox Note (simulazione mic) |
 | `stepperCambia(btn, delta)` | Incrementa/decrementa valore stepper ±1 |
 | `cercaClienteInbox(input)` | Filtra `CLIENTI_FAKE` mentre si digita |
@@ -345,9 +372,10 @@ let _inboxCard        // card da animare dopo confermaInboxCliente()
 let _inboxItem        // item della card in attesa conferma cliente (per rimuoverla dopo)
 let _inboxCat         // categoria della card in attesa conferma cliente
 let _ritornaInboxKey  // se impostata, chiudiFoglio riapre l'inbox con questa key
-let _riprogrammaCard  // card da animare dopo scelta data in ripr-pop
-let _riprogrammaItem  // item della card riprogramma (per rimuoverla dopo scelta data)
-let _riprogrammaMese  // Date() del mese corrente in ripr-pop
+let _riprogrammaCard         // card da animare dopo scelta data in ripr-pop
+let _riprogrammaItem         // item della card riprogramma (per rimuoverla dopo scelta data)
+let _riprogrammaMese         // Date() del mese corrente in ripr-pop
+let _riprogrammaDataScelta   // ISO string del giorno selezionato (non ancora confermato) in ripr-pop
 
 // Clienti fake per ricerca simulata (da sostituire con dati reali Dexie)
 const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condominio Le Palme', 'Marta Ferri', 'Condominio Aurora']
@@ -357,7 +385,7 @@ const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condomini
 
 ## Prossimi passi (in ordine di priorità)
 
-1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. Ora la card sparisce ma la nota non viene scritta da nessuna parte. `confermaCarta` per cat=`nota` non fa ancora nulla di concreto.
+1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. `confermaCarta` per cat=`nota` con `Cliente` presente salva già in `prendiExtra(cliente).note`, ma la scheda cliente non mostra ancora queste note extra in modo prominente.
 2. **Collegare pagamenti e costi ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. Per ora la ricerca usa `CLIENTI_FAKE`, da sostituire con i dati reali di Dexie.
 3. **Mic per scheda specifica** — se il mic dentro l'inbox "Note" registra, l'item va in Note; se è dentro "Costi", va in Costi. Ora va sempre nella categoria globale.
 4. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente.
@@ -372,6 +400,9 @@ const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condomini
 - ✅ Pagamento senza importo → usa conto(nome).dovuto automaticamente
 - ✅ Riprogramma con data parsabile → sposta direttamente senza popup
 - ✅ Conferma/Scarta rimuove voce da inbox, aggiorna badge, sposta in storico
+- ✅ Nuovi clienti inbox sempre sospesi (giorno mai fornito dall'AI vocale), campi mancanti evidenziati
+- ✅ Note inbox: Giorno → nota evento (`memo: true` in lavori[], pallino blu), no data → noteRapide, nota vuota → avviso
+- ✅ Riprogramma senza data destinazione → 📅 Pianifica + select+confirm nel popup calendario
 
 ---
 
