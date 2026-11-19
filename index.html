@@ -359,6 +359,28 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-card.exit-ok { animation: inbox-ok .35s ease-in forwards; pointer-events: none; }
 .inbox-card.exit-no { animation: inbox-ko .28s ease-in forwards; pointer-events: none; }
 @keyframes ai-pulsa { 0%,100% { box-shadow: 0 4px 18px rgba(180,35,24,.22); } 50% { box-shadow: 0 4px 36px rgba(180,35,24,.55), 0 0 0 10px rgba(180,35,24,.08); } }
+/* Box microfono vocale */
+#mic-box { position: fixed; inset: 0; z-index: 25; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.35); }
+.mic-box { background: var(--carta); width: 100%; max-width: 480px; border-radius: 22px 22px 0 0; padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px)); animation: sali .22s ease-out; display: flex; flex-direction: column; gap: 12px; }
+.mic-box-testa { display: flex; align-items: center; justify-content: space-between; }
+.mic-box-onda { display: flex; align-items: center; gap: 5px; height: 40px; }
+.mic-box-onda span { display: block; width: 5px; border-radius: 3px; background: var(--rosso); animation: onda-mic .9s ease-in-out infinite; }
+.mic-box-onda span:nth-child(1) { height: 10px; animation-delay: 0s; }
+.mic-box-onda span:nth-child(2) { height: 22px; animation-delay: .12s; }
+.mic-box-onda span:nth-child(3) { height: 36px; animation-delay: .24s; }
+.mic-box-onda span:nth-child(4) { height: 22px; animation-delay: .36s; }
+.mic-box-onda span:nth-child(5) { height: 10px; animation-delay: .48s; }
+@keyframes onda-mic { 0%,100%{transform:scaleY(.3)} 50%{transform:scaleY(1)} }
+.mic-box-chiudi-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--sfondo); color: var(--testo-2); font-size: 18px; display: grid; place-items: center; cursor: pointer; }
+.mic-box-testo { font-size: 20px; font-weight: 700; color: var(--testo); min-height: 54px; line-height: 1.4; margin: 0; }
+.mic-box-testo em { color: var(--testo-2); font-style: normal; }
+.mic-box-cat { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 99px; font-size: 15px; font-weight: 800; }
+.mic-box-cat.cat-cliente { background:var(--foglia-chiara); color:var(--foglia); }
+.mic-box-cat.cat-nota { background:var(--ambra-chiara); color:var(--ambra); }
+.mic-box-cat.cat-riprogramma { background:#e0eaf9; color:#3b82c4; }
+.mic-box-cat.cat-costo { background:#f0eafc; color:#8a5cc7; }
+.mic-box-cat.cat-paga { background:var(--foglia-chiara); color:var(--foglia); }
+.mic-box-cat.cat-tutto { background:var(--sfondo); color:var(--testo-2); }
 /* Mostra altro, in fondo all'agenda */
 .mostra-altro { width: 100%; margin-top: 18px; min-height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); font-weight: 800; font-size: 16px; }
 .mostra-nota { margin: 8px 4px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--testo-2); }
@@ -853,6 +875,20 @@ button.s-riga:first-child { border-top: 0; }
 </nav>
 
 <div class="avviso" id="avviso" role="status" hidden><span id="avviso-testo"></span><span class="avviso-tasti"><button id="avviso-azione2" hidden></button><button id="avviso-azione" hidden></button></span><i class="avviso-tempo" id="avviso-tempo" hidden></i></div>
+
+<!-- Box microfono vocale -->
+<div id="mic-box" hidden>
+  <div class="mic-box">
+    <div class="mic-box-testa">
+      <div class="mic-box-onda"><span></span><span></span><span></span><span></span><span></span></div>
+      <button id="mic-box-chiudi" class="mic-box-chiudi-btn" aria-label="Annulla">✕</button>
+    </div>
+    <p id="mic-box-testo" class="mic-box-testo"><em>Parla pure…</em></p>
+    <div id="mic-box-cat-wrap" hidden>
+      <span id="mic-box-cat" class="mic-box-cat"></span>
+    </div>
+  </div>
+</div>
 
 <!-- Foglio "Nuovo cliente" -->
 <div class="foglio-sfondo" id="foglio" hidden>
@@ -2452,6 +2488,7 @@ const INBOX_ESEMPI = {
     { testa: 'Sig. Rossi — ha pagato', dati: '85 € · 20 nov',
       campi: [['Cliente','Sig. Rossi'],['Importo','85']] },
   ]},
+  extra: { titolo: 'Extra', cat: 'extra', badge: null, voci: [] },
 };
 
 function inboxCampiHtml(item, cat) {
@@ -2708,6 +2745,7 @@ function apriInbox(key) {
   let html = '<p class="inbox-nota-sim">Simulazione — questi arriverebbero dall\'assistente vocale</p>';
   if (key === 'tutto') {
     Object.values(INBOX_ESEMPI).forEach(cfg => {
+      if (cfg.voci.length === 0) return;
       html += `<div class="inbox-sezione">${cfg.titolo}</div>`;
       html += cfg.voci.map(v => inbox_cardHtml(v, cfg.cat)).join('');
     });
@@ -2755,19 +2793,158 @@ $('ai-cat-costo').onclick    = () => apriInbox('costo');
 $('ai-cat-paga').onclick     = () => apriInbox('paga');
 $('ai-tutto').onclick        = () => apriInbox('tutto');
 
-// ---- Microfono globale AI ----
+// ---- Microfono globale AI: riconoscimento vocale con categorizzazione ----
+const CATEGORIE_VOCALI = {
+  paga: [
+    'pagato','ha pagato','pagamento','mi ha pagato','mi ha dato',
+    'bonifico','contanti','in contanti','acconto','saldo','ha saldato',
+    'mi paga','mi deve','deve pagare','ha versato','ha mandato i soldi',
+    'mi ha dato i soldi','ha fatto il bonifico',
+  ],
+  costo: [
+    'costo','spesa','ho speso','comprato','acquistato','ho comprato','ho acquistato',
+    'fattura','materiale','attrezzatura','attrezzi','diesel','carburante',
+    'benzina','concime','terra','piante','noleggio','riparazione','ricambi',
+    'ho pagato','ho preso','ho noleggiato',
+  ],
+  riprogramma: [
+    'riprogramma','riprogrammare','sposta','spostare','posticipa','posticipare',
+    'anticipa','anticipare','cambia data','cambio data','altra data','cambio giorno',
+    'nuovo giorno','lo sposto','lo rimando','rimandiamo','ha disdetto','ha annullato',
+    'non può venire','non vengono','non ci sarà','rinviato','spostato',
+    'manda avanti','lo mando avanti',
+  ],
+  nota: [
+    'nota','appunto','appunti','ricorda','ricordami','memo','annotazione',
+    'segna','scrivi','da ricordare','non dimenticare','promemoria','importante',
+    'attenzione','da fare','reminder','segnati','me lo segno',
+  ],
+  cliente: [
+    'nuovo cliente','nuova cliente','cliente nuovo','nuova persona','persona nuova',
+    'nuovo contatto','nuova azienda','preventivo per','vuole un preventivo',
+    'mi ha chiamato','ha chiamato','si chiama','aggiungere cliente',
+    'nuovo lavoro','nuova richiesta',
+  ],
+};
+
+const CAT_INFO = {
+  cliente:     { nome: 'Nuovo cliente',  emoji: '👤' },
+  riprogramma: { nome: 'Riprogramma',    emoji: '📅' },
+  nota:        { nome: 'Nota',           emoji: '📝' },
+  paga:        { nome: 'Pagamento',      emoji: '💶' },
+  costo:       { nome: 'Costo',          emoji: '🧾' },
+  tutto:       { nome: 'Extra',          emoji: '🔔' },
+};
+
+function categorizzaVoce(testo) {
+  const basso = testo.toLowerCase();
+  for (const [cat, parole] of Object.entries(CATEGORIE_VOCALI)) {
+    for (const p of parole) {
+      if (basso.includes(p)) return cat;
+    }
+  }
+  return 'tutto';
+}
+
+function aggiungiVoceInbox(testo, cat) {
+  const data = new Date();
+  const giorno = data.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+  const item = { testa: testo, dati: giorno, campi: [['Trascritto', testo]] };
+  const dest = cat === 'tutto' ? 'extra' : cat;
+  if (INBOX_ESEMPI[dest]) INBOX_ESEMPI[dest].voci.unshift(item);
+  aggiornaBadge();
+}
+
+let _micRiconosc = null;
+let _micFinaleTrovato = false;
+
+function chiudiMicBox() {
+  const box = $('mic-box');
+  if (!box || box.hidden) return;
+  if (_micRiconosc) { try { _micRiconosc.stop(); } catch(e){} _micRiconosc = null; }
+  box.hidden = true;
+  document.body.classList.remove('bloccato');
+  const btn = $('ai-mic');
+  btn.classList.remove('ascolta');
+  const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
+  btn.innerHTML = SVG_MIC + ' Parla';
+}
+
 $('ai-mic').onclick = () => {
   const btn = $('ai-mic');
   const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
-  if (btn.classList.contains('ascolta')) {
-    btn.classList.remove('ascolta');
-    btn.innerHTML = SVG_MIC + ' Parla';
-    aggiungiItemSimulato();
-  } else {
-    btn.classList.add('ascolta');
-    btn.innerHTML = SVG_MIC + ' In ascolto…';
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    // Nessun supporto vocale: simulazione come prima
+    if (btn.classList.contains('ascolta')) {
+      btn.classList.remove('ascolta');
+      btn.innerHTML = SVG_MIC + ' Parla';
+      aggiungiItemSimulato();
+    } else {
+      btn.classList.add('ascolta');
+      btn.innerHTML = SVG_MIC + ' In ascolto…';
+    }
+    return;
   }
+  const box = $('mic-box');
+  $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
+  $('mic-box-cat-wrap').hidden = true;
+  box.hidden = false;
+  document.body.classList.add('bloccato');
+  btn.classList.add('ascolta');
+  btn.innerHTML = SVG_MIC + ' In ascolto…';
+  _micFinaleTrovato = false;
+  const sr = new SpeechRecognition();
+  _micRiconosc = sr;
+  sr.lang = 'it-IT';
+  sr.interimResults = true;
+  sr.continuous = false;
+  sr.maxAlternatives = 1;
+  sr.onresult = (e) => {
+    let interim = '', finale = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finale += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    const catWrap = $('mic-box-cat-wrap');
+    const catEl = $('mic-box-cat');
+    if (finale) {
+      _micFinaleTrovato = true;
+      $('mic-box-testo').textContent = finale;
+      const cat = categorizzaVoce(finale);
+      const info = CAT_INFO[cat];
+      catEl.textContent = info.emoji + ' ' + info.nome;
+      catEl.className = 'mic-box-cat cat-' + cat;
+      catWrap.hidden = false;
+      setTimeout(() => { aggiungiVoceInbox(finale, cat); chiudiMicBox(); }, 1200);
+    } else if (interim) {
+      $('mic-box-testo').innerHTML = `<em>${interim}</em>`;
+      const cat = categorizzaVoce(interim);
+      if (cat !== 'tutto') {
+        const info = CAT_INFO[cat];
+        catEl.textContent = info.emoji + ' ' + info.nome;
+        catEl.className = 'mic-box-cat cat-' + cat;
+        catWrap.hidden = false;
+      } else {
+        catWrap.hidden = true;
+      }
+    }
+  };
+  sr.onerror = (e) => {
+    if (e.error === 'no-speech') {
+      $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>';
+      $('mic-box-cat-wrap').hidden = true;
+      setTimeout(chiudiMicBox, 1800);
+    } else if (e.error !== 'aborted') {
+      chiudiMicBox();
+    }
+  };
+  sr.onend = () => {
+    if (!_micFinaleTrovato) setTimeout(() => { if ($('mic-box') && !$('mic-box').hidden) chiudiMicBox(); }, 400);
+  };
+  sr.start();
 };
+$('mic-box-chiudi').onclick = chiudiMicBox;
 
 // Costi rapidi: con un tocco si aggiunge la voce e si scrive l'importo. Si cambiano dalle Impostazioni.
 // "Personale" è sempre il primo ed è speciale: ore × costo all'ora.
