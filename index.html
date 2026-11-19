@@ -2880,7 +2880,7 @@ function disegnaRiprCalendario() {
       apriStorico(_storicoKey);
     } else if (_riprogrammaCard) {
       const cliente = $('ripr-nome').value.trim();
-      const nuovaData = iso(giorno);
+      const nuovaData = giorno; // già stringa ISO da riempiGriglia
       const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
       if (lavoroTarget) spostaLavoro(lavoroTarget, nuovaData);
       animaCard(_riprogrammaCard, 'ok');
