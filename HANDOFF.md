@@ -163,6 +163,120 @@ Ci sono **due** popup calendario distinti:
 
 ---
 
+## AI vocale — come funziona
+
+### Principio fondamentale
+**L'AI fa una sola cosa: trasforma testo in dati strutturati.** Non tocca mai i dati dell'app.
+Il flusso è sempre: voce → AI classifica+estrae → card nell'inbox → utente clicca Conferma → **il codice dell'app** esegue l'azione.
+
+### Chiave Anthropic
+```js
+let ANTHROPIC_KEY = '';
+try { ANTHROPIC_KEY = localStorage.getItem('anthropic_key') || ''; } catch(e){}
+```
+La chiave viene chiesta con `chiediChiaveAI()` la prima volta. Salvata in `localStorage`, non nel codice.
+
+### Flusso mic → inbox
+1. Web Speech API trascrive la voce (`sr.lang = 'it-IT'`)
+2. `categorizzaVoceAI(testo)` chiama Claude Haiku 5.5 → restituisce `{categoria, titolo, dati, campi}`
+3. Se la chiave manca o la chiamata fallisce → `categorizzaVoce(testo)` (fallback keyword locale)
+4. `aggiungiVoceInbox(testo, risultato)` smista nella categoria giusta e chiama `aggiornaBadge()`
+
+### Flusso Conferma → app
+Quando l'utente clicca **✓ Conferma** su una card, `confermaCarta(card, item, cat)` fa l'azione reale:
+
+| Categoria | Azione del codice |
+|---|---|
+| `paga` | `registraPagamento(nome, importo)` — se importo vuoto usa `conto(nome).dovuto` |
+| `costo` | `spese.push(...)` con i dati estratti |
+| `riprogramma` | Se la data è parsabile ("domani", "martedì"…) → `spostaLavoro()` direttamente. Altrimenti apre il popup calendario |
+| `cliente` | Apre il foglio pre-compilato con nome+lavoro (l'utente conferma lì) |
+| `nota-cliente` | ⚠️ **Non ancora implementato** — la nota non viene ancora salvata nella scheda cliente |
+| altre | Rimuove la card dall'inbox e la mette nello storico |
+
+**Dopo ogni Conferma o Scarta:** `rimuoviVoceInbox(cat, item, esito)` toglie la voce da `INBOX_ESEMPI`, la sposta in `STORICO_ESEMPI`, aggiorna il badge.
+
+### Prompt AI ottimizzato (`categorizzaVoceAI`)
+Il prompt è costruito dinamicamente a ogni chiamata con tre blocchi:
+
+```
+CONTESTO (costruito live)
+  Clienti in rubrica: Villa Verdi, Sig. Rossi, ...   ← da CLIENTI_FAKE
+  Lavori in agenda: Sig. Rossi · lun 20 nov · taglio prato / ...  ← lavori non fatti nei prossimi 30gg, max 25
+
+REGOLE (8, in ordine di priorità)
+  1. Cliente in rubrica + tipo di lavoro (con/senza data) → "cliente"
+  2. Spostare/rimandare un lavoro in agenda → "riprogramma"
+  3. Pagamento ricevuto → "paga"
+  4. Spesa sostenuta → "costo"
+  5. Cliente in rubrica + info/nota → "nota-cliente"
+  6. Data/ora senza lavoro specifico → "calendario"
+  7. Tutto il resto → "nota-rapida"
+
+4 ESEMPI FEW-SHOT (casi ambigui)
+  "domani Villa Verdi, potatura alberi" → cliente
+  "sposta Sig. Rossi a giovedì" → riprogramma
+  "Villa Verdi ha pagato" → paga, Importo: ""
+  "Villa Verdi: cancello verde, codice 1847" → nota-cliente
+```
+
+Parametri API: modello `claude-haiku-5-5`, `max_tokens: 200`.
+
+**Perché i lavori prossimi nel contesto:** senza, l'AI non sa che Marta Ferri ha un lavoro sabato, quindi "preferisce il martedì" finisce in nota-cliente invece di riprogramma.
+**Perché NON passare importi dovuti:** il codice gestisce già il fallback con `conto(nome).dovuto` — l'AI non deve saperlo.
+
+### Output AI
+```json
+{"categoria":"...","titolo":"max 5 parole","dati":"riga principale","campi":[["Etichetta","Valore"]]}
+```
+(Rimosso `nome_cliente`, era ridondante — il cliente è già nei `campi`.)
+
+### Categorie e destinazione inbox
+| Categoria AI | → Inbox |
+|---|---|
+| `cliente` | `cliente` |
+| `riprogramma` | `riprogramma` |
+| `paga` | `paga` |
+| `costo` | `costo` |
+| `calendario`, `nota-cliente`, `nota-rapida` | `nota` |
+
+```js
+const _CAT_TO_INBOX = {
+  'calendario':'nota', 'nota-cliente':'nota', 'nota-rapida':'nota',
+  'paga':'paga', 'costo':'costo', 'riprogramma':'riprogramma', 'cliente':'cliente'
+};
+```
+
+### `aggiungiVoceInbox(testo, risultato)`
+- `risultato` oggetto AI: `{categoria, titolo, dati, campi}` → usa titolo e campi AI
+- `risultato` stringa legacy: categoria diretta → crea voce semplice con solo testo trascritto
+
+---
+
+## Form preventivi — struttura dati
+
+### Proprietà `dot` sugli slider
+Alcuni slider hanno `dot` per mostrare un pallino colorato accanto all'etichetta:
+```js
+{ id:'piant-pianta-eco', dot:'#f59e0b', label:'Pianta semplice', ... }
+```
+Reso in HTML con:
+```js
+${d.dot ? `<span class="prev-dot" style="background:${d.dot}"></span>` : ''}
+```
+CSS: `.prev-dot { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }`
+
+### Sezioni del form preventivi
+- **Siepi** — aggiunto `siepe-smalto` (slider €0-150, smaltimento materiali)
+- **Potature** — aggiunto `pot-smalto` (slider €0-200)
+- **Abbattimento** — aggiunto `abb-smalto` (slider €0-500)
+- **Piantumazione** — 4 slider separati con pallini colorati (arancione/viola/verde/rosso)
+- **Irrigazione** — 2 slider con esempi specifici (100m² 4 zone / 500m²+ 12 zone)
+- **Materiali** — aggiunto chip "Rincaro personalizzato (indica nelle note)"
+- **Noleggio attrezzature** — nuova sezione con 4 slider (piccolo/medio/grande/pesante)
+
+---
+
 ## Funzioni JS chiave
 
 ### Form cliente
@@ -188,13 +302,17 @@ Ci sono **due** popup calendario distinti:
 | `chiudiInbox()` | Chiude `#ai-inbox` |
 | `aggiornaBadge()` | Ricalcola tutti i badge numerici da `INBOX_ESEMPI` |
 | `animaCard(card, tipo)` | Anima e collassa la card (`'ok'` o `'no'`) |
+| `rimuoviVoceInbox(cat, item, esito)` | Toglie voce da `INBOX_ESEMPI`, la sposta in `STORICO_ESEMPI`, aggiorna badge |
+| `scartaCarta(card, item, cat)` | Handler bottone Scarta: chiama `rimuoviVoceInbox` + `animaCard` |
+| `confermaCarta(card, item, cat)` | Handler bottone Conferma: esegue l'azione reale (pagamento, costo, sposta lavoro…) poi rimuove la voce |
+| `parseDataRelativa(testo)` | Converte "domani"/"martedì"/ecc. in stringa ISO (`tra(N)`) |
 | `inbox_cardHtml(item, cat)` | Genera HTML di una card |
 | `inboxCampiHtml(item, cat)` | Genera HTML del pannello di modifica inline |
 | `apriModificaInboxCliente(card, item)` | Apre foglio pre-compilato per confermare nuovo cliente |
 | `indietroInboxCliente()` | Dal foglio, torna alla scheda "Nuovi clienti" |
-| `confermaInboxCliente()` | Anima card ok, chiude foglio |
+| `confermaInboxCliente()` | Rimuove voce inbox, anima card ok, chiude foglio |
 | `apriRiprogrammaInbox(card, item)` | Apre popup `#ripr-pop` con input nome e data vecchia |
-| `disegnaRiprCalendario()` | Ridisegna griglia `#ripr-griglia` |
+| `disegnaRiprCalendario()` | Ridisegna griglia `#ripr-griglia` — dopo la scelta chiama `rimuoviVoceInbox` |
 | `aggiungiItemSimulato()` | Aggiunge item fake all'inbox Note (simulazione mic) |
 | `stepperCambia(btn, delta)` | Incrementa/decrementa valore stepper ±1 |
 | `cercaClienteInbox(input)` | Filtra `CLIENTI_FAKE` mentre si digita |
@@ -224,11 +342,14 @@ let clienteScelto, modoFoglio, nomeInModifica
 
 // Inbox
 let _inboxCard        // card da animare dopo confermaInboxCliente()
+let _inboxItem        // item della card in attesa conferma cliente (per rimuoverla dopo)
+let _inboxCat         // categoria della card in attesa conferma cliente
 let _ritornaInboxKey  // se impostata, chiudiFoglio riapre l'inbox con questa key
 let _riprogrammaCard  // card da animare dopo scelta data in ripr-pop
+let _riprogrammaItem  // item della card riprogramma (per rimuoverla dopo scelta data)
 let _riprogrammaMese  // Date() del mese corrente in ripr-pop
 
-// Clienti fake per ricerca simulata
+// Clienti fake per ricerca simulata (da sostituire con dati reali Dexie)
 const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condominio Le Palme', 'Marta Ferri', 'Condominio Aurora']
 ```
 
@@ -236,11 +357,21 @@ const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condomini
 
 ## Prossimi passi (in ordine di priorità)
 
-1. **Collegare pagamenti e costi ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente; i costi "Di un cliente" pure. Per ora la ricerca usa `CLIENTI_FAKE`, da sostituire con i dati reali di Dexie.
-2. **Mic per scheda specifica** — se il mic dentro l'inbox "Note" registra, l'item simulato va in Note; se è dentro "Costi", va in Costi. Ora va sempre in Note.
-3. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente. Nessun giorno specifico, basta il mese. Va implementato con il sistema notifiche.
-4. **AI vocale reale** — Web Speech API per trascrizione + Haiku per interpretare → inbox da confermare. Vedi `PRODOTTO.md` per le decisioni di architettura complete.
-5. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
+1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. Ora la card sparisce ma la nota non viene scritta da nessuna parte. `confermaCarta` per cat=`nota` non fa ancora nulla di concreto.
+2. **Collegare pagamenti e costi ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. Per ora la ricerca usa `CLIENTI_FAKE`, da sostituire con i dati reali di Dexie.
+3. **Mic per scheda specifica** — se il mic dentro l'inbox "Note" registra, l'item va in Note; se è dentro "Costi", va in Costi. Ora va sempre nella categoria globale.
+4. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente.
+5. **Scheda conti — grafica** — migliorare aspetto grafico (non bug critici).
+6. **Preventivi AI** — box testo/voce → Claude genera stima usando i dati dei form preventivi (`prevDati`).
+7. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
+
+**Già fatto:**
+- ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)
+- ✅ Prompt ottimizzato: contesto live (lavori prossimi 30gg), 4 few-shot examples, max_tokens 200
+- ✅ Conferma collega ai dati reali: registraPagamento, spese.push, spostaLavoro
+- ✅ Pagamento senza importo → usa conto(nome).dovuto automaticamente
+- ✅ Riprogramma con data parsabile → sposta direttamente senza popup
+- ✅ Conferma/Scarta rimuove voce da inbox, aggiorna badge, sposta in storico
 
 ---
 
