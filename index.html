@@ -1480,7 +1480,23 @@ const OGGI = new Date(); OGGI.setHours(0, 0, 0, 0);
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const tra = n => { const d = new Date(OGGI); d.setDate(d.getDate() + n); return iso(d); };
 
-const lavori = [];
+const lavori = [
+  // Fatti e NON pagati → "ha pagato" ha senso
+  { g: -18, nome: 'Villa Verdi',       dove: 'Via Manzoni 4',      cosa: 'Taglio prato e bordi',    prezzo: 90,   fatto: true },
+  { g: -11, nome: 'Sig. Rossi',        dove: 'Via Roma 12',        cosa: 'Potatura siepe',          prezzo: 150,  fatto: true },
+  { g: -6,  nome: 'Marta Ferri',       dove: 'Via dei Tigli 14',   cosa: 'Taglio prato',            prezzo: 50,   fatto: true },
+  { g: -4,  nome: 'Condominio Aurora', dove: 'Via Cavour 3',       cosa: 'Sfalcio aree comuni',     prezzo: 220,  fatto: true, tipo: 'Condominio' },
+  // Fatti e già pagati → storico
+  { g: -30, nome: 'Villa Verdi',       dove: 'Via Manzoni 4',      cosa: 'Trattamento antiparassitario', prezzo: 120, fatto: true, pagato: true },
+  { g: -25, nome: 'Sig. Rossi',        dove: 'Via Roma 12',        cosa: 'Taglio prato',            prezzo: 50,   fatto: true, pagato: true },
+  { g: -22, nome: 'Marta Ferri',       dove: 'Via dei Tigli 14',   cosa: 'Taglio prato',            prezzo: 50,   fatto: true, pagato: true },
+  // Prossimi giorni → "sposta" e "domani" hanno senso
+  { g: 0,   nome: 'Sig. Rossi',        dove: 'Via Roma 12',        cosa: 'Taglio prato',            prezzo: 50 },
+  { g: 1,   nome: 'Villa Verdi',       dove: 'Via Manzoni 4',      cosa: 'Potatura alberi',         prezzo: 350 },
+  { g: 2,   nome: 'Marta Ferri',       dove: 'Via dei Tigli 14',   cosa: 'Taglio prato',            prezzo: 50 },
+  { g: 4,   nome: 'Condominio Aurora', dove: 'Via Cavour 3',       cosa: 'Manutenzione verde',      prezzo: 300,  tipo: 'Condominio' },
+  { g: 7,   nome: 'Sig. Rossi',        dove: 'Via Roma 12',        cosa: 'Trattamento prato',       prezzo: 85 },
+].map((l, i) => ({ ...l, id: i, data: tra(l.g), fatto: !!l.fatto, tipo: l.tipo || 'Privato', durata: 2 }));
 
 // Telefoni di prova (facoltativi: non tutti i clienti ce l'hanno)
 const TELEFONI = {};
