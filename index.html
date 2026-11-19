@@ -438,6 +438,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-card-edit-btn { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; margin-top: -2px; }
 .inbox-card-edit-btn:active { background: var(--linea); }
 .inbox-card-suggerimenti { font-size: 12px; color: var(--testo-2); margin-top: 4px; line-height: 1.4; }
+.inbox-card-sospeso { border: 1.5px solid #f59e0b; }
+.inbox-btn-sospeso { flex: 2; height: 30px; border-radius: 9px; background: none; border: 2px solid #f59e0b; color: #f59e0b; font-weight: 800; font-size: 13px; cursor: pointer; }
+.inbox-btn-sospeso:active { background: rgba(245,158,11,0.12); }
+.campo-mancante { border-color: #f59e0b !important; }
 .inbox-edit-panel { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linea); display: flex; flex-direction: column; gap: 8px; }
 .inbox-edit-panel label { font-size: 12px; font-weight: 700; color: var(--testo-2); display: flex; flex-direction: column; gap: 4px; }
 .inbox-edit-panel input, .inbox-edit-panel textarea { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--linea); background: var(--sfondo); color: var(--testo); font-size: 15px; box-sizing: border-box; }
@@ -2813,18 +2817,30 @@ function inbox_cardHtml(item, cat) {
   const SVG_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
   const editBtn = editOnclick ? `<button class="inbox-card-edit-btn" onclick="${editOnclick}" aria-label="Modifica">${SVG_EDIT}</button>` : '';
 
-  // Riga data proposta + dati mancanti (solo per cliente)
-  let suggerimentiHtml = '';
+  // Lavori sospesi: nuovi clienti senza dati essenziali (nome, via, giorno)
   if (cat === 'cliente') {
     const campi = item.campi || [];
-    const get = k => (campi.find(([c]) => c === k) || [])[1] || '';
-    const proposta = giorniMigliori()[0] || tra(1);
-    const ggProposta = maiuscola(fmtSettBreve.format(daIso(proposta)));
+    const getC = k => (campi.find(([c]) => c === k) || [])[1] || '';
     const mancanti = [];
-    if (!get('Indirizzo')) mancanti.push('indirizzo');
-    if (!get('Prezzo'))    mancanti.push('prezzo');
-    const mancantiTxt = mancanti.length ? ` · manca: ${mancanti.join(', ')}` : '';
-    suggerimentiHtml = `<div class="inbox-card-suggerimenti">📅 ${ggProposta}${mancantiTxt}</div>`;
+    if (!getC('Nome'))      mancanti.push('nome');
+    if (!getC('Indirizzo')) mancanti.push('via');
+    if (!getC('Giorno'))    mancanti.push('giorno');
+    if (mancanti.length) {
+      return `<div class="inbox-card inbox-card-sospeso" data-cat="${cat}">
+        <div class="inbox-card-top">
+          <div class="inbox-card-info">
+            <div class="inbox-card-testa">${item.testa}</div>
+            <div class="inbox-card-dati">${item.dati}</div>
+            <div class="inbox-card-suggerimenti">Manca: ${mancanti.join(', ')}</div>
+          </div>
+          <button class="inbox-card-edit-btn" onclick="apriModificaInboxCliente(this.closest('.inbox-card'),${ic})" aria-label="Completa">${SVG_EDIT}</button>
+        </div>
+        <div class="inbox-card-azioni">
+          <button class="inbox-btn-sospeso" onclick="apriModificaInboxCliente(this.closest('.inbox-card'),${ic})">Completa i dati</button>
+          <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
+        </div>
+      </div>`;
+    }
   }
 
   return `<div class="inbox-card" data-cat="${cat}">
@@ -2832,7 +2848,6 @@ function inbox_cardHtml(item, cat) {
       <div class="inbox-card-info">
         <div class="inbox-card-testa">${item.testa}</div>
         <div class="inbox-card-dati">${item.dati}</div>
-        ${suggerimentiHtml}
       </div>
       ${editBtn}
     </div>
@@ -2876,9 +2891,14 @@ function apriModificaInboxCliente(card, item) {
   const prezzo = get('Prezzo');
   if (prezzo) { $('f-prezzo').value = prezzo; scorriPrezzoDrum(); }
   aggiornaCliente(); disegnaQuando();
+  // Evidenzia campi essenziali mancanti
+  setTimeout(() => {
+    if (!$('f-nome').value) $('f-nome').classList.add('campo-mancante');
+    if (!$('f-dove').value) $('f-dove').classList.add('campo-mancante');
+  }, 50);
   // Footer Indietro / Conferma
   modoFoglio = 'conferma-inbox';
-  $('f-titolo').textContent = 'Conferma nuovo cliente';
+  $('f-titolo').textContent = 'Completa i dati del lavoro';
   $('f-piede').innerHTML = `<p class="errore" id="f-errore" hidden></p>
     <div class="f-piede-indietro">
       <button class="secondario" onclick="indietroInboxCliente()">← Indietro</button>
