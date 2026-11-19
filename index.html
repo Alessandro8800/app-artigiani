@@ -3065,9 +3065,7 @@ function apriStorico(key) {
           </div>
         </div>`;
       }
-      // Nota: solo visualizzazione, nessun pulsante
-      const btnRivedi = key !== 'nota'
-        ? `<button class="storico-reattiva" onclick="riviSt(this,${it._idx})">Rivedi</button>` : '';
+      const btnRivedi = `<button class="storico-reattiva" onclick="riviSt(this,${it._idx})">Rivedi</button>`;
       return `<div class="storico-item">
         <div class="storico-card">
           <div class="storico-stato ${cls}">${icona}</div>
