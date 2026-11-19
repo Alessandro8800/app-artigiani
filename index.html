@@ -444,6 +444,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-card-sospeso { border: 1.5px solid #f59e0b; }
 .inbox-btn-sospeso { flex: 2; height: 30px; border-radius: 9px; background: none; border: 2px solid #f59e0b; color: #f59e0b; font-weight: 800; font-size: 13px; cursor: pointer; }
 .inbox-btn-sospeso:active { background: rgba(245,158,11,0.12); }
+.inbox-btn-pianifica { flex: 2; height: 30px; border-radius: 9px; background: none; border: 2px solid var(--foglia); color: var(--foglia); font-weight: 800; font-size: 13px; cursor: pointer; }
+.inbox-btn-pianifica:active { background: var(--foglia-chiara); }
+.ripr-conferma-row { padding: 10px 16px 2px; }
+.ripr-conferma-row button { width: 100%; height: 44px; border-radius: 12px; background: var(--foglia); color: var(--sul-foglia); border: none; font-weight: 800; font-size: 15px; cursor: pointer; }
 .campo-mancante { border-color: #f59e0b !important; }
 .inbox-edit-panel { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linea); display: flex; flex-direction: column; gap: 8px; }
 .inbox-edit-panel label { font-size: 12px; font-weight: 700; color: var(--testo-2); display: flex; flex-direction: column; gap: 4px; }
@@ -1350,6 +1354,9 @@ button.s-riga:first-child { border-top: 0; }
         <button class="freccia" id="ripr-dopo" aria-label="Mese dopo"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="griglia" id="ripr-griglia"></div>
+    </div>
+    <div class="ripr-conferma-row" id="ripr-conferma-row" hidden>
+      <button id="ripr-conferma-btn" onclick="confRiprCalendario()">Conferma</button>
     </div>
   </div>
 </div>
@@ -2734,8 +2741,8 @@ const INBOX_ESEMPI = {
     { testa: 'Nota vuota', dati: 'nessun testo', campi: [['Nota','']] },
   ] },
   riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [
-    { testa: 'Marta Ferri', dati: 'Taglio prato · ven 21 nov → gio 20 nov', campi: [['Cliente','Marta Ferri'],['Da','ven 21 nov'],['A','giovedì']] },
-    { testa: 'Villa Verdi', dati: 'Potatura alberi · gio 20 nov (scegli data)', campi: [['Cliente','Villa Verdi'],['Da','gio 20 nov'],['A','']] },
+    { testa: 'Marta Ferri', dati: 'Taglio prato · ven 20 nov → gio 26 nov', campi: [['Cliente','Marta Ferri'],['Da','ven 20 nov'],['A','giovedì']] },
+    { testa: 'Villa Verdi', dati: 'Potatura alberi · ven 20 nov (scegli data)', campi: [['Cliente','Villa Verdi'],['Da','ven 20 nov'],['A','']] },
   ] },
   costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [
     { testa: 'Carburante', dati: 'Diesel · €52', campi: [['Descrizione','Carburante'],['Importo','52']] },
@@ -2823,6 +2830,26 @@ function inbox_cardHtml(item, cat) {
   }
   const SVG_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
   const editBtn = editOnclick ? `<button class="inbox-card-edit-btn" onclick="${editOnclick}" aria-label="Modifica">${SVG_EDIT}</button>` : '';
+
+  // Riprogramma senza data destinazione: mostra bottone Pianifica
+  if (cat === 'riprogramma') {
+    const campi = item.campi || [];
+    const getC = k => (campi.find(([c]) => c === k) || [])[1] || '';
+    if (!parseDataRelativa(getC('A'))) {
+      return `<div class="inbox-card" data-cat="${cat}">
+        <div class="inbox-card-top">
+          <div class="inbox-card-info">
+            <div class="inbox-card-testa">${item.testa}</div>
+            <div class="inbox-card-dati">${item.dati}</div>
+          </div>
+        </div>
+        <div class="inbox-card-azioni">
+          <button class="inbox-btn-pianifica" onclick="apriRiprogrammaInbox(this.closest('.inbox-card'),${ic})">📅 Pianifica</button>
+          <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
+        </div>
+      </div>`;
+    }
+  }
 
   // Lavori sospesi: nuovi clienti senza dati essenziali (nome, via, giorno)
   if (cat === 'cliente') {
@@ -2933,6 +2960,7 @@ function confermaInboxCliente() {
 let _riprogrammaCard = null;
 let _riprogrammaItem = null;
 let _riprogrammaMese = new Date();
+let _riprogrammaDataScelta = null;
 
 function apriRiprogrammaInbox(card, item) {
   _riprogrammaCard = card;
@@ -2943,6 +2971,8 @@ function apriRiprogrammaInbox(card, item) {
   $('ripr-nome').value = cliente;
   $('ripr-data-vec').textContent = da;
   _riprogrammaMese = new Date();
+  _riprogrammaDataScelta = null;
+  $('ripr-conferma-row').hidden = true;
   disegnaRiprCalendario();
   $('ripr-pop').hidden = false;
 }
@@ -2953,33 +2983,44 @@ function disegnaRiprCalendario() {
   $('ripr-anno').textContent = a;
   const g = $('ripr-griglia');
   g.className = 'griglia';
-  riempiGriglia(g, _riprogrammaMese, null, giorno => {
+  riempiGriglia(g, _riprogrammaMese, _riprogrammaDataScelta, giorno => {
     if (_storicoRiprIdx !== null && _storicoKey) {
+      // Storico: conferma immediata come prima
       const it = STORICO_ESEMPI[_storicoKey]?.[_storicoRiprIdx];
       if (it) {
         const f = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' });
         it.stato = 'ok';
-        it.extra = '→ ' + f.format(giorno);
+        it.extra = '→ ' + f.format(daIso(giorno));
       }
       _storicoRiprIdx = null;
       $('ripr-pop').hidden = true;
       apriStorico(_storicoKey);
-    } else if (_riprogrammaCard) {
-      const cliente = $('ripr-nome').value.trim();
-      const nuovaData = giorno; // già stringa ISO da riempiGriglia
-      const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
-      if (lavoroTarget) spostaLavoro(lavoroTarget, nuovaData);
-      if (_riprogrammaItem) rimuoviVoceInbox('riprogramma', _riprogrammaItem, 'ok');
-      animaCard(_riprogrammaCard, 'ok');
-      _riprogrammaCard = null; _riprogrammaItem = null;
-      setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
     } else {
-      $('ripr-pop').hidden = true;
+      // Inbox: seleziona il giorno, mostra bottone Conferma
+      _riprogrammaDataScelta = giorno;
+      const gg = maiuscola(fmtSettBreve.format(daIso(giorno)));
+      $('ripr-conferma-btn').textContent = `Conferma ${gg}`;
+      $('ripr-conferma-row').hidden = false;
+      disegnaRiprCalendario();
     }
   });
 }
 
-$('ripr-chiudi').onclick = () => { $('ripr-pop').hidden = true; _riprogrammaCard = null; };
+function confRiprCalendario() {
+  if (!_riprogrammaDataScelta) return;
+  if (_riprogrammaCard) {
+    const cliente = $('ripr-nome').value.trim();
+    const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
+    if (lavoroTarget) { spostaLavoro(lavoroTarget, _riprogrammaDataScelta); avvisa(`${cliente} spostato`); }
+    if (_riprogrammaItem) rimuoviVoceInbox('riprogramma', _riprogrammaItem, 'ok');
+    animaCard(_riprogrammaCard, 'ok');
+  }
+  _riprogrammaCard = null; _riprogrammaItem = null; _riprogrammaDataScelta = null;
+  $('ripr-conferma-row').hidden = true;
+  setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
+}
+
+$('ripr-chiudi').onclick = () => { $('ripr-pop').hidden = true; _riprogrammaCard = null; _riprogrammaDataScelta = null; $('ripr-conferma-row').hidden = true; };
 $('ripr-prima').onclick = () => { _riprogrammaMese = new Date(_riprogrammaMese.getFullYear(), _riprogrammaMese.getMonth() - 1, 1); disegnaRiprCalendario(); };
 $('ripr-dopo').onclick  = () => { _riprogrammaMese = new Date(_riprogrammaMese.getFullYear(), _riprogrammaMese.getMonth() + 1, 1); disegnaRiprCalendario(); };
 $('ripr-mese').onclick  = () => {};
