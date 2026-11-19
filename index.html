@@ -190,16 +190,30 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-vedi-btn svg { flex-shrink: 0; }
 .inbox-vedi-btn:active { color: var(--testo); }
 /* Storico bottom sheet */
-.storico-card { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--linea); }
-.storico-card:last-child { border-bottom: none; }
-.storico-stato { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; flex-shrink: 0; }
+.storico-item { border-bottom: 1px solid var(--linea); }
+.storico-item:last-child { border-bottom: none; }
+.storico-card { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.storico-stato { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font-size: 13px; flex-shrink: 0; font-weight: 800; }
 .storico-stato.ok { background: color-mix(in srgb, var(--foglia) 15%, transparent); color: var(--foglia); }
 .storico-stato.no { background: rgba(200,50,50,.12); color: #c83232; }
+.storico-stato.attesa { background: rgba(255,165,0,.12); color: orange; }
 .storico-info { flex: 1; min-width: 0; }
 .storico-info strong { display: block; font-size: 15px; font-weight: 700; color: var(--testo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .storico-info span { font-size: 13px; color: var(--testo-2); }
-.storico-reattiva { padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+/* Pulsante Rivedi */
+.storico-reattiva { padding: 5px 10px; border-radius: 7px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 .storico-reattiva:active { background: var(--carta); }
+/* Panel inline che appare sotto la card */
+.st-panel { padding: 0 0 12px 38px; }
+.st-azioni { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Piccoli pulsanti azione storico */
+.st-btn { padding: 5px 10px; border-radius: 7px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.st-btn.verde { border-color: var(--foglia); color: var(--foglia); background: var(--foglia-chiara); }
+.st-btn.rosso { border-color: rgba(200,50,50,.5); color: #c83232; background: rgba(200,50,50,.07); }
+.st-btn.amber { border-color: rgba(217,119,6,.5); color: #d97706; background: rgba(217,119,6,.07); }
+.st-btn:active { opacity: .7; }
+/* Pulsanti inline per card "attesa" */
+.st-quick { display: flex; gap: 6px; flex-shrink: 0; }
 /* Barra azioni sezione Clienti */
 .c-azioni { display: flex; gap: 6px; margin-bottom: 14px; }
 .c-az-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; position: relative; transition: background .12s; }
@@ -2840,10 +2854,23 @@ function disegnaRiprCalendario() {
   const g = $('ripr-griglia');
   g.className = 'griglia';
   riempiGriglia(g, _riprogrammaMese, null, giorno => {
-    if (_riprogrammaCard) animaCard(_riprogrammaCard, 'ok');
-    _riprogrammaCard = null;
-    $('ripr-pop').hidden = false; // keep open briefly then close
-    setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
+    if (_storicoRiprIdx !== null && _storicoKey) {
+      const it = STORICO_ESEMPI[_storicoKey]?.[_storicoRiprIdx];
+      if (it) {
+        const f = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' });
+        it.stato = 'ok';
+        it.extra = '→ ' + f.format(giorno);
+      }
+      _storicoRiprIdx = null;
+      $('ripr-pop').hidden = true;
+      apriStorico(_storicoKey);
+    } else if (_riprogrammaCard) {
+      animaCard(_riprogrammaCard, 'ok');
+      _riprogrammaCard = null;
+      setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
+    } else {
+      $('ripr-pop').hidden = true;
+    }
   });
 }
 
@@ -2974,6 +3001,9 @@ function apriInbox(key) {
 
 function chiudiInbox() { $('ai-inbox').hidden = true; document.body.classList.remove('bloccato'); }
 
+let _storicoKey = null;
+let _storicoRiprIdx = null; // idx in STORICO_ESEMPI quando si riprogramma dallo storico
+
 // Storico: ultimi 10 già decisi per ogni categoria
 const STORICO_ESEMPI = {
   riprogramma: [
@@ -3000,26 +3030,90 @@ const STORICO_ESEMPI = {
 const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note' };
 
 function apriStorico(key) {
+  _storicoKey = key;
   $('storico-titolo').textContent = STORICO_TITOLI[key] || 'Storico';
-  const items = [...(STORICO_ESEMPI[key] || [])];
-  // In cima: quelli ancora da decidere (dall'inbox)
-  const inAttesa = (INBOX_ESEMPI[key]?.voci || []).map(v => ({ testa: v.testa, dati: v.dati || '', extra: 'da decidere', stato: 'attesa' }));
-  const tutto = [...inAttesa, ...items];
+  const inAttesa = (INBOX_ESEMPI[key]?.voci || []).map((v, i) => ({ testa: v.testa, dati: v.dati || '', extra: 'da decidere', stato: 'attesa', _src: 'attesa', _idx: i }));
+  const decisi = (STORICO_ESEMPI[key] || []).map((it, i) => ({ ...it, _src: 'storico', _idx: i }));
+  const tutto = [...inAttesa, ...decisi];
   if (!tutto.length) {
     $('storico-lista').innerHTML = '<div class="vuoto">Nessun elemento nello storico.</div>';
   } else {
-    $('storico-lista').innerHTML = tutto.map((it, i) => {
-      const icona = it.stato === 'ok' ? '✓' : it.stato === 'no' ? '✕' : '…';
+    $('storico-lista').innerHTML = tutto.map((it) => {
+      const icona = it.stato === 'ok' ? '✓' : it.stato === 'no' ? '✕' : '···';
       const cls = it.stato === 'ok' ? 'ok' : it.stato === 'no' ? 'no' : 'attesa';
-      const stile = cls === 'attesa' ? 'background:rgba(255,165,0,.12);color:orange' : '';
-      const btnReattiva = (it.stato === 'ok' || it.stato === 'no')
-        ? `<button class="storico-reattiva" onclick="riativaStorico('${key}',${i - inAttesa.length})">Rivedi</button>` : '';
-      return `<div class="storico-card"><div class="storico-stato ${cls}" style="${stile}">${icona}</div><div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sicuro(it.dati)}${it.extra ? ' · ' + sicuro(it.extra) : ''}</span></div>${btnReattiva}</div>`;
+      const sub = `${sicuro(it.dati)}${it.extra ? ' · ' + sicuro(it.extra) : ''}`;
+      if (it.stato === 'attesa') {
+        return `<div class="storico-item">
+          <div class="storico-card">
+            <div class="storico-stato ${cls}">${icona}</div>
+            <div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sub}</span></div>
+            <div class="st-quick">
+              <button class="st-btn verde" onclick="confermaSt('attesa',${it._idx})">✓ Conf.</button>
+              <button class="st-btn rosso" onclick="scartaSt('attesa',${it._idx})">✕ Scarta</button>
+            </div>
+          </div>
+        </div>`;
+      }
+      return `<div class="storico-item">
+        <div class="storico-card">
+          <div class="storico-stato ${cls}">${icona}</div>
+          <div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sub}</span></div>
+          <button class="storico-reattiva" onclick="toggleStPanel(this)">Rivedi</button>
+        </div>
+        <div class="st-panel" hidden>
+          <div class="st-azioni">
+            <button class="st-btn verde" onclick="confermaSt('storico',${it._idx})">✓ Conferma</button>
+            <button class="st-btn rosso" onclick="scartaSt('storico',${it._idx})">✕ Scarta</button>
+            <button class="st-btn amber" onclick="riprogrammaSt(${it._idx})">📅 Riprogramma</button>
+          </div>
+        </div>
+      </div>`;
     }).join('');
   }
   $('storico').hidden = false;
 }
 function chiudiStorico() { $('storico').hidden = true; }
+
+function toggleStPanel(btn) {
+  const panel = btn.closest('.storico-item').querySelector('.st-panel');
+  panel.hidden = !panel.hidden;
+  btn.textContent = panel.hidden ? 'Rivedi' : 'Chiudi';
+}
+
+function confermaSt(src, idx) {
+  if (src === 'attesa') {
+    const v = (INBOX_ESEMPI[_storicoKey]?.voci || []).splice(idx, 1)[0];
+    if (v) STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'confermato', stato: 'ok' });
+    aggiornaBadge();
+  } else {
+    const it = STORICO_ESEMPI[_storicoKey]?.[idx];
+    if (it) { it.stato = 'ok'; it.extra = 'confermato'; }
+  }
+  apriStorico(_storicoKey);
+}
+
+function scartaSt(src, idx) {
+  if (src === 'attesa') {
+    const v = (INBOX_ESEMPI[_storicoKey]?.voci || []).splice(idx, 1)[0];
+    if (v) STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'annullato', stato: 'no' });
+    aggiornaBadge();
+  } else {
+    const it = STORICO_ESEMPI[_storicoKey]?.[idx];
+    if (it) { it.stato = 'no'; it.extra = 'annullato'; }
+  }
+  apriStorico(_storicoKey);
+}
+
+function riprogrammaSt(idx) {
+  _storicoRiprIdx = idx;
+  const it = STORICO_ESEMPI[_storicoKey]?.[idx];
+  if (!it) return;
+  $('ripr-nome').value = it.testa;
+  $('ripr-data-vec').textContent = it.dati;
+  _riprogrammaMese = new Date();
+  disegnaRiprCalendario();
+  $('ripr-pop').hidden = false;
+}
 
 // Note rapide (post-it sulla home)
 let noteRapide = [
@@ -3123,16 +3217,6 @@ function aggiungiNota() {
 }
 // Badge iniziale al caricamento
 document.addEventListener('DOMContentLoaded', aggiornaBadgeNote);
-function riativaStorico(key, idx) {
-  const it = STORICO_ESEMPI[key]?.[idx];
-  if (!it) return;
-  const v = { testa: it.testa, dati: it.dati, campi: [] };
-  INBOX_ESEMPI[key]?.voci.unshift(v);
-  STORICO_ESEMPI[key].splice(idx, 1);
-  aggiornaBadge();
-  chiudiStorico();
-  apriInbox(key);
-}
 $('ai-inbox-chiudi').onclick = chiudiInbox;
 $('ai-inbox').addEventListener('click', e => { if (e.target === $('ai-inbox')) chiudiInbox(); });
 $('ai-inbox-edit').onclick = () => {
