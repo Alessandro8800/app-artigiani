@@ -646,7 +646,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .sett-g > span { font-size: 11px; font-weight: 700; text-align: center; }
 .sett-g.oggi > span { color: var(--foglia); font-weight: 900; }
 .sett-g.scelto { background: var(--foglia-chiara); border-radius: 8px; }
-.sett-blocco { border-radius: 3px; padding: 2px 3px; font-size: 9px; overflow: hidden; white-space: nowrap; font-weight: 700; line-height: 1.4; }
+.sett-blocco { border-radius: 4px; padding: 2px 4px; font-size: 11px; overflow: hidden; white-space: nowrap; font-weight: 700; line-height: 1.4; }
 /* Template calendario: Agenda */
 .agenda-lista { display: flex; flex-direction: column; gap: 5px; }
 .agenda-riga { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; background: var(--sfondo); border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
@@ -1844,8 +1844,10 @@ function riempiGrigliaSettimane(g) {
       const lavs = (mp[s]?.lavori || []);
       col.className = 'sett-g' + (s === tra(0) ? ' oggi' : '') + (s === scelto ? ' scelto' : '');
       col.innerHTML = `<span>${n}</span>${lavs.slice(0, 3).map(v => {
-        const c = prendiExtra(v.l.nome).colore || 'var(--foglia)';
-        return `<div class="sett-blocco" style="background:${c}22;color:${c}">${sicuro(v.l.nome.split(' ')[0])}</div>`;
+        const c = prendiExtra(v.l.nome).colore;
+        const bg = c ? `${c}40` : 'var(--foglia-chiara)';
+        const fg = c || 'var(--foglia)';
+        return `<div class="sett-blocco" style="background:${bg};color:${fg}">${sicuro(v.l.nome.split(' ')[0])}</div>`;
       }).join('')}`;
       col.onclick = () => scegli(s);
       riga.appendChild(col);
@@ -5112,7 +5114,7 @@ const GRUPPI_IMP = [
             if (!n) { h += '<div class="mini-sett-g"></div>'; continue; }
             const s = iso(new Date(aa, mm, n));
             const lavs = (mp[s]?.lavori || []).slice(0, 2);
-            h += `<div class="mini-sett-g"><span>${n}</span>${lavs.map(v => { const c = prendiExtra(v.l.nome).colore || 'var(--foglia)'; return `<div class="mini-sett-blocco" style="background:${c}22;color:${c}">${v.l.nome.slice(0,3)}</div>`; }).join('')}</div>`;
+            h += `<div class="mini-sett-g"><span>${n}</span>${lavs.map(v => { const c = prendiExtra(v.l.nome).colore; const bg = c ? `${c}40` : 'var(--foglia-chiara)'; const fg = c || 'var(--foglia)'; return `<div class="mini-sett-blocco" style="background:${bg};color:${fg}">${v.l.nome.slice(0,3)}</div>`; }).join('')}</div>`;
           }
           h += '</div>';
         }
