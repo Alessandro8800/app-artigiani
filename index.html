@@ -972,6 +972,20 @@ button.s-riga:first-child { border-top: 0; }
         Parla
       </button>
 
+      <!-- BARRA DI TEST — rimuovere dopo i test -->
+      <div id="test-bar" style="margin-top:12px;background:#fffbe6;border:1.5px dashed #f59e0b;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:11px;font-weight:800;color:#92400e;letter-spacing:.05em;text-transform:uppercase;">🧪 Modalità test AI</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="test-key" type="text" placeholder="Chiave Anthropic (sk-ant-…)" autocomplete="off" style="flex:1;padding:8px 10px;border-radius:9px;border:1.5px solid #f59e0b;font-size:13px;background:#fff;color:#000;" />
+          <button onclick="(function(){const k=$('test-key').value.trim();if(!k.startsWith('sk-ant-')){alert('Chiave non valida');return;}ANTHROPIC_KEY=k;try{localStorage.setItem('anthropic_key',k);}catch(e){}$('test-key').value='';$('test-key').placeholder='✓ Chiave salvata';$('test-key').disabled=true;})()" style="padding:8px 12px;border-radius:9px;border:none;background:#f59e0b;color:#000;font-weight:800;cursor:pointer;white-space:nowrap;">Salva</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="test-frase" type="text" placeholder="Scrivi una frase e premi Invio…" style="flex:1;padding:8px 10px;border-radius:9px;border:1.5px solid #f59e0b;font-size:13px;background:#fff;color:#000;" onkeydown="if(event.key==='Enter')$('test-invia').click()" />
+          <button id="test-invia" onclick="(function(){const t=$('test-frase').value.trim();if(!t)return;$('test-frase').value='';const box=$('mic-box');$('mic-box-testo').textContent=t;$('mic-box-cat-wrap').hidden=false;const catEl=$('mic-box-cat');catEl.className='mic-box-cat';catEl.innerHTML='<span class=\'mic-box-elabora\'><span></span><span></span><span></span></span> Elaboro…';box.hidden=false;const mostraCat=(ris)=>{const cat=(ris&&typeof ris==='object')?ris.categoria:ris;const info=CAT_INFO[cat]||CAT_INFO['tutto'];catEl.className='mic-box-cat cat-'+cat;catEl.textContent=info.emoji+' '+info.nome;setTimeout(()=>{aggiungiVoceInbox(t,ris);box.hidden=true;},1200);};if(!ANTHROPIC_KEY){alert('Prima inserisci la chiave Anthropic qui sopra.');return;}categorizzaVoceAI(t).then(mostraCat).catch(()=>mostraCat(categorizzaVoce(t)));})();" style="padding:8px 12px;border-radius:9px;border:none;background:#f59e0b;color:#000;font-weight:800;cursor:pointer;">Invia</button>
+        </div>
+      </div>
+      <!-- FINE BARRA DI TEST -->
+
       <div id="agenda"></div>
     </div>
   </section>
@@ -2787,7 +2801,7 @@ function inbox_cardHtml(item, cat) {
     <div class="inbox-card-dati">${item.dati}</div>
     <div class="inbox-card-azioni">
       <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')}, '${cat}')">✓ Conferma</button>
-      <button class="inbox-btn-no" onclick="animaCard(this.closest('.inbox-card'),'no')">Scarta</button>
+      <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')}, '${cat}')">Scarta</button>
     </div>
     ${campiHtml}
     ${expandBtn}
@@ -2796,12 +2810,16 @@ function inbox_cardHtml(item, cat) {
 
 // --- Nuovi lavori: apre il foglio completo pre-compilato ---
 let _inboxCard = null; // card da animare dopo conferma
+let _inboxItem = null; // item della card in attesa (per rimuoverla dopo conferma)
+let _inboxCat = null;  // categoria della card in attesa
 let _ritornaInboxKey = null; // se impostata, chiudiFoglio riapre l'inbox
 let _inboxCatCorrente = null; // categoria inbox aperta in questo momento
 let _micSorgente = null; // 'globale' | 'inbox': quale mic ha avviato il riconoscimento
 
 function apriModificaInboxCliente(card, item) {
   _inboxCard = card;
+  _inboxItem = item;
+  _inboxCat = 'cliente';
   // Init completo come apriFoglio (senza mostraFoglio) per disegnare tutti i drum
   notaInCorso = null;
   tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = '';
@@ -2840,17 +2858,22 @@ function indietroInboxCliente() {
 }
 
 function confermaInboxCliente() {
-  if (_inboxCard) animaCard(_inboxCard, 'ok');
-  _inboxCard = null;
+  if (_inboxCard) {
+    if (_inboxItem && _inboxCat) rimuoviVoceInbox(_inboxCat, _inboxItem, 'ok');
+    animaCard(_inboxCard, 'ok');
+  }
+  _inboxCard = null; _inboxItem = null; _inboxCat = null;
   chiudiFoglio();
 }
 
 // --- Riprogramma: apre popup calendario con info cliente ---
 let _riprogrammaCard = null;
+let _riprogrammaItem = null;
 let _riprogrammaMese = new Date();
 
 function apriRiprogrammaInbox(card, item) {
   _riprogrammaCard = card;
+  _riprogrammaItem = item;
   const get = (l) => (item.campi.find(([k]) => k === l) || [])[1] || '';
   const cliente = get('Cliente');
   const da = get('Da');
@@ -2883,8 +2906,9 @@ function disegnaRiprCalendario() {
       const nuovaData = giorno; // già stringa ISO da riempiGriglia
       const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
       if (lavoroTarget) spostaLavoro(lavoroTarget, nuovaData);
+      if (_riprogrammaItem) rimuoviVoceInbox('riprogramma', _riprogrammaItem, 'ok');
       animaCard(_riprogrammaCard, 'ok');
-      _riprogrammaCard = null;
+      _riprogrammaCard = null; _riprogrammaItem = null;
       setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
     } else {
       $('ripr-pop').hidden = true;
@@ -2947,6 +2971,39 @@ function animaCard(card, tipo) {
   }, { once: true });
 }
 
+function rimuoviVoceInbox(cat, item, esito) {
+  const cfg = INBOX_ESEMPI[cat];
+  if (!cfg) return;
+  const idx = cfg.voci.findIndex(v => v.testa === item.testa && v.dati === item.dati);
+  if (idx < 0) return;
+  const v = cfg.voci.splice(idx, 1)[0];
+  if (v && STORICO_ESEMPI[cat]) {
+    STORICO_ESEMPI[cat].unshift({ testa: v.testa, dati: v.dati || '', extra: esito === 'ok' ? 'confermato' : 'annullato', stato: esito === 'ok' ? 'ok' : 'no' });
+  }
+  aggiornaBadge();
+}
+
+function scartaCarta(card, item, cat) {
+  rimuoviVoceInbox(cat, item, 'no');
+  animaCard(card, 'no');
+}
+
+function parseDataRelativa(testo) {
+  if (!testo) return null;
+  const t = testo.toLowerCase().trim();
+  if (t === 'oggi') return tra(0);
+  if (t.includes('domani') && !t.includes('dopodomani')) return tra(1);
+  if (t.includes('dopodomani')) return tra(2);
+  const nomiGiorni = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  const idx = nomiGiorni.findIndex(g => t.includes(g));
+  if (idx >= 0) {
+    const diff = ((idx - new Date().getDay()) + 7) % 7 || 7;
+    return tra(diff);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(testo.trim())) return testo.trim();
+  return null;
+}
+
 function confermaCarta(card, item, cat) {
   const getCampo = l => (item.campi?.find(([k]) => k === l) || [])[1] || '';
 
@@ -2954,12 +3011,14 @@ function confermaCarta(card, item, cat) {
     const panel = card.querySelector('.inbox-edit-panel');
     const inputs = panel ? panel.querySelectorAll('input') : [];
     const nome = (inputs[0]?.value || getCampo('Cliente')).trim();
-    const importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    let importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    if (nome && importo <= 0) importo = conto(nome).dovuto; // usa il dovuto reale se non specificato
     if (nome && importo > 0) {
       registraPagamento(nome, importo);
       avvisa(`${nome}: ${euro(importo)} registrati`);
       tutto();
     }
+    rimuoviVoceInbox(cat, item, 'ok');
     animaCard(card, 'ok');
     return;
   }
@@ -2974,12 +3033,22 @@ function confermaCarta(card, item, cat) {
       avvisa(`Costo registrato: ${desc} ${euro(importo)}`);
       tutto();
     }
+    rimuoviVoceInbox(cat, item, 'ok');
     animaCard(card, 'ok');
     return;
   }
 
   if (cat === 'riprogramma') {
-    apriRiprogrammaInbox(card, item);
+    const dataISO = parseDataRelativa(getCampo('A') || getCampo('data_iso'));
+    if (dataISO) {
+      const cliente = getCampo('Cliente');
+      const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
+      if (lavoroTarget) { spostaLavoro(lavoroTarget, dataISO); avvisa(`${cliente} spostato`); }
+      rimuoviVoceInbox(cat, item, 'ok');
+      animaCard(card, 'ok');
+    } else {
+      apriRiprogrammaInbox(card, item);
+    }
     return;
   }
 
@@ -2988,6 +3057,7 @@ function confermaCarta(card, item, cat) {
     return;
   }
 
+  rimuoviVoceInbox(cat, item, 'ok');
   animaCard(card, 'ok');
 }
 
@@ -3388,13 +3458,14 @@ async function categorizzaVoceAI(testo) {
       system: `Sei l'assistente di un giardiniere italiano. Analizza la frase e rispondi SOLO con JSON valido, senza altri testi.
 
 Regole di smistamento (priorità dall'alto):
-1. C'è un riferimento a data/giorno/ora → categoria "calendario"
-2. C'è il nome di un cliente dalla rubrica (senza data) → categoria "nota-cliente"
+1. C'è il nome di un cliente dalla rubrica + una descrizione di lavoro da fare (con o senza data) → categoria "cliente" (nuovo lavoro)
+2. Si chiede di spostare o rimandare un appuntamento → categoria "riprogramma"; estrai campo "A" con la data in linguaggio naturale (es. "domani", "martedì")
 3. Riguarda un pagamento ricevuto → categoria "paga"
 4. Riguarda una spesa sostenuta → categoria "costo"
-5. Si chiede di spostare o rimandare un appuntamento → categoria "riprogramma"
-6. Si vuole aggiungere un nuovo cliente → categoria "cliente"
-7. Altrimenti → categoria "nota-rapida"
+5. C'è un riferimento a data/giorno/ora senza lavoro da fare → categoria "calendario"
+6. C'è il nome di un cliente dalla rubrica (informazione o nota sul cliente) → categoria "nota-cliente"
+7. Si vuole aggiungere un nuovo cliente senza lavoro specifico → categoria "cliente"
+8. Altrimenti → categoria "nota-rapida"
 
 Oggi è ${oggi}. Clienti in rubrica: ${clienti}.`,
       messages: [{
