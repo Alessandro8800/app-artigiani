@@ -92,7 +92,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .pallini { display: flex; gap: 3px; height: 6px; }
 .pallini i { width: 6px; height: 6px; border-radius: 50%; background: var(--ambra); }
 .pallini i.fatto { background: var(--foglia); }
+.pallini i.memo { background: #3b82f6; }
 .g.scelto .pallini i { background: var(--sul-foglia); }
+.lavoro.memo { border-color: rgba(59,130,246,0.35); }
+.lavoro.memo .nome { color: #3b82f6; }
 
 /* Agenda */
 .giorno { padding-top: 18px; scroll-margin-top: 12px; }
@@ -1724,7 +1727,7 @@ function riempiGriglia(g, meseVisto, scelto, alTocco, soloFuturi) {
     const pioggia = livelloPioggia(s);
     if (pioggia) b.classList.add(pioggia === 2 ? 'pioggia-forte' : 'pioggia');
     b.setAttribute('aria-label', `${n}, ${delGiorno.length === 1 ? "1 lavoro" : delGiorno.length + " lavori"}${pioggia ? ', ' + testoPioggia(s) : ''}`);
-    b.innerHTML = `<span>${n}${pioggia ? GOCCIA : ''}</span><span class="pallini">${delGiorno.slice(0, 3).map(l => `<i class="${l.fatto ? 'fatto' : ''}"></i>`).join('')}</span>`;
+    b.innerHTML = `<span>${n}${pioggia ? GOCCIA : ''}</span><span class="pallini">${delGiorno.slice(0, 3).map(l => `<i class="${l.fatto ? 'fatto' : l.memo ? 'memo' : ''}"></i>`).join('')}</span>`;
     if (soloFuturi && s < tra(0)) b.disabled = true;
     b.onclick = () => alTocco(s);
     g.appendChild(b);
@@ -1734,11 +1737,11 @@ function riempiGriglia(g, meseVisto, scelto, alTocco, soloFuturi) {
 function cartaLavoro(l, parte = 1, di = 1, sposta = false) {
   const c = prendiExtra(l.nome).colore;   // colore del cliente: bordo a sinistra
   const giorni = di > 1 ? `<span class="etichetta piu-giorni">giorno ${parte} di ${di}</span>` : '';
-  return `<article class="lavoro${c ? ' colorato' : ''}" data-id="${l.id}"${c ? ` style="--c:${c}"` : ''}>
+  return `<article class="lavoro${c ? ' colorato' : ''}${l.memo ? ' memo' : ''}" data-id="${l.id}"${c ? ` style="--c:${c}"` : ''}>
     <button class="testo" aria-label="Apri il lavoro di ${sicuro(l.nome)}">
-      <span class="nome">${sicuro(l.nome)}${l.tipo && l.tipo !== TIPI[0] ? `<span class="etichetta">${l.tipo}</span>` : ''}${giorni}</span>
+      <span class="nome">${sicuro(l.nome)}${l.memo ? '<span class="etichetta">Promemoria</span>' : l.tipo && l.tipo !== TIPI[0] ? `<span class="etichetta">${l.tipo}</span>` : ''}${giorni}</span>
       ${l.dove ? `<span class="dove"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>${sicuro(l.dove)}</span>` : ''}
-      <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo != null ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
+      <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
     </button>
     ${sposta ? `<button type="button" class="spunta sposta-qui" data-sp="${l.id}" aria-label="Scegli il nuovo giorno per ${sicuro(l.nome)}">
       <svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2303,7 +2306,7 @@ function mappaGiorni() {
   for (const l of lavori) {
     if (l.iniziale) continue;   // debito di prima dell'app: non è un lavoro in calendario
     const g = giorniDel(l);
-    g.forEach(([s, o], i) => { (m[s] || (m[s] = { lavori: [], ore: 0 })).lavori.push({ l, parte: i + 1, di: g.length }); if (!l.fatto) m[s].ore += o; });
+    g.forEach(([s, o], i) => { (m[s] || (m[s] = { lavori: [], ore: 0 })).lavori.push({ l, parte: i + 1, di: g.length }); if (!l.fatto && !l.memo) m[s].ore += o; });
   }
   return m;
 }
@@ -2725,6 +2728,10 @@ const INBOX_ESEMPI = {
   nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [
     { testa: 'Comprare concime', dati: 'memo · nessuna data', campi: [['Nota','Comprare concime granulare sacchi 25 kg']] },
     { testa: 'Nota Villa Verdi', dati: 'codice cancello', campi: [['Cliente','Villa Verdi'],['Nota','Cancello automatico: codice 2024, telecomando di riserva in cassetta']] },
+    { testa: 'Comprare guanti', dati: 'domani · con data', campi: [['Nota','Comprare guanti antitaglio taglia L'],['Giorno','2026-11-20']] },
+    { testa: 'Chiamare Vanzina', dati: 'mer 25 nov · con data', campi: [['Nota','Chiamare Vanzina per preventivo materiali'],['Giorno','2026-11-25']] },
+    { testa: 'Chiamare Vanzina', dati: 'memo · nessuna data', campi: [['Nota','Chiamare Vanzina per preventivo materiali']] },
+    { testa: 'Nota vuota', dati: 'nessun testo', campi: [['Nota','']] },
   ] },
   riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [
     { testa: 'Marta Ferri', dati: 'Taglio prato · ven 21 nov → gio 20 nov', campi: [['Cliente','Marta Ferri'],['Da','ven 21 nov'],['A','giovedì']] },
@@ -3128,12 +3135,23 @@ function confermaCarta(card, item, cat) {
     const inputs = panel ? panel.querySelectorAll('input, textarea') : [];
     const cliente = (inputs[0]?.value?.trim()) || getCampo('Cliente');
     const nota = (inputs[1]?.value?.trim()) || getCampo('Nota') || getCampo('Trascritto') || item.dati || '';
-    if (cliente) {
+    const giorno = getCampo('Giorno');
+    if (!nota) {
+      avvisa('Nessun testo — modifica la nota prima di salvare');
+      return;
+    }
+    if (giorno) {
+      const data = parseDataRelativa(giorno) || tra(1);
+      const nomeEvento = item.testa || nota.slice(0, 40);
+      lavori.push({ id: lavori.length, nome: nomeEvento, data, fatto: false, prezzo: null, dove: '', tipo: TIPI[0], durata: 0.5, cosa: nota, memo: true });
+      avvisa(`Promemoria salvato per ${maiuscola(fmtSettBreve.format(daIso(data)))}`);
+      tutto();
+    } else if (cliente) {
       const e = prendiExtra(cliente);
-      if (nota) e.note = e.note ? e.note + '\n' + nota : nota;
+      e.note = e.note ? e.note + '\n' + nota : nota;
       avvisa(`Nota salvata per ${cliente}`);
       tutto();
-    } else if (nota) {
+    } else {
       const titolo = item.testa && item.testa !== nota ? item.testa : generaTitoloAuto(nota);
       noteRapide.unshift({ id: ++_nrId, titolo, testo: nota, fatta: false });
       avvisa('Nota rapida salvata');
