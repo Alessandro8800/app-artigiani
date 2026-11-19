@@ -700,6 +700,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .costo-testa .togli { width: 34px; height: 34px; }
 .l-totale-voci { display: flex; justify-content: space-between; font-weight: 800; padding: 2px 4px; }
 .l-dati { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--linea); padding-top: 14px; }
+.l-azioni-report { display: flex; gap: 10px; padding-top: 8px; }
+.l-azioni-report button { flex: 1; }
 .s-resa { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: -6px; }
 .s-resa span { background: var(--carta); border: 1px solid var(--linea); border-radius: 12px; padding: 8px 10px; font-size: 13px; font-weight: 700; color: var(--testo-2); display: flex; flex-direction: column; }
 .s-resa b { font-size: 16px; color: var(--testo); font-variant-numeric: tabular-nums; }
@@ -1769,11 +1771,12 @@ function disegnaAgenda() {
   const mappa = mappaGiorni();
   const fine = agendaLunga ? 61 : 6;
   const giorni = [];
-  if (scelto < tra(0) || scelto > tra(fine)) giorni.push(scelto);
+  if (scelto < tra(0)) giorni.push(scelto);    // passato: in cima
   for (let i = 0; i <= fine; i++) {
     const s = tra(i);
     if (i <= 6 || ((mappa[s] || { lavori: [] }).lavori.some(v => !v.l.fatto))) giorni.push(s);
   }
+  if (scelto > tra(fine)) giorni.push(scelto);  // futuro fuori range: in fondo
   document.getElementById('agenda').innerHTML = giorni.map(s => {
     const tutti = (mappa[s] || { lavori: [] }).lavori;
     const daFare = tutti.filter(v => !v.l.fatto).sort((a, b) => minutiOra(a.l.ora) - minutiOra(b.l.ora));
@@ -2509,8 +2512,8 @@ function salva() {
   $('f-errore').textContent = errore; $('f-errore').hidden = !errore;
   if (errore) return;
   salvando = true;
-  $('f-salva').disabled = true;
-  $('f-salva').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Salvato';
+  const salvaBt = $('f-salva');
+  if (salvaBt) { salvaBt.disabled = true; salvaBt.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Salvato'; }
   const nuovo = {
     id: lavori.length, nome, data: quando, fatto: false, prezzo,
     dove: clienteScelto ? clienteScelto.dove : $('f-dove').value.trim(),
@@ -2929,6 +2932,10 @@ function apriModificaInboxCliente(card, item) {
   setTimeout(() => {
     if (!$('f-nome').value) $('f-nome').classList.add('campo-mancante');
     if (!$('f-dove').value) $('f-dove').classList.add('campo-mancante');
+    if (!get('Giorno')) {
+      const qi = $('q-info');
+      if (qi) { qi.textContent = '↑ Verifica il giorno suggerito'; qi.hidden = false; qi.style.cssText = 'color:#f59e0b;font-weight:700;'; }
+    }
   }, 50);
   // Footer Indietro / Conferma
   modoFoglio = 'conferma-inbox';
@@ -3072,6 +3079,7 @@ function animaCard(card, tipo) {
   card.addEventListener('animationend', () => {
     card.style.cssText = `height:${h}px;overflow:hidden;transition:height .22s ease,margin .22s ease,padding .22s ease;`;
     requestAnimationFrame(() => { card.style.height = '0'; card.style.marginBottom = '0'; card.style.paddingTop = '0'; card.style.paddingBottom = '0'; });
+    card.addEventListener('transitionend', () => card.remove(), { once: true });
   }, { once: true });
 }
 
@@ -3175,7 +3183,7 @@ function confermaCarta(card, item, cat) {
     const panel = card.querySelector('.inbox-edit-panel');
     const inputs = panel ? panel.querySelectorAll('input, textarea') : [];
     const cliente = (inputs[0]?.value?.trim()) || getCampo('Cliente');
-    const nota = (inputs[1]?.value?.trim()) || getCampo('Nota') || getCampo('Trascritto') || item.dati || '';
+    const nota = (inputs[1]?.value?.trim()) || getCampo('Nota') || getCampo('Trascritto') || '';
     const giorno = getCampo('Giorno');
     if (!nota) {
       avvisa('Nessun testo — modifica la nota prima di salvare');
@@ -4183,14 +4191,10 @@ function disegnaScheda() {
 function pagaTutto(b) {
   if (b.disabled) return;                       // tocchi ripetuti: ignorati
   const nome = schedaNome, { dovuto } = conto(nome);
-  b.disabled = true; b.classList.add('ok');
-  b.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path class="segno" d="M5 12.5l4.5 4.5L19 7.5" pathLength="100" style="animation:disegna .3s ease-out both"/></svg>Pagato';
   if (navigator.vibrate) navigator.vibrate(20);
   const annulla = registraPagamento(nome, dovuto);
-  setTimeout(() => {
-    disegnaScheda();
-    avvisa(`${nome}: pagato ${euro(dovuto)}`, { etichetta: 'Annulla', fai: () => { annulla(); if (schedaNome === nome) disegnaScheda(); disegnaClienti(); } });
-  }, 700);
+  disegnaScheda();
+  avvisa(`${nome}: pagato ${euro(dovuto)}`, { etichetta: 'Annulla', fai: () => { annulla(); if (schedaNome === nome) disegnaScheda(); disegnaClienti(); } });
 }
 
 let pagaPer = null;   // lavoro scelto in "Pagato in parte" (null = dal più vecchio)
@@ -4245,7 +4249,12 @@ function disegnaLavoro() {
     const k = conto(l.nome);
     const s = k.saldati.find(x => x.id === l.id);
     const gg = s ? Math.round((daIso(s.pagatoIl) - daIso(l.data)) / 86400000) : null;
-    const pgInfo = s ? (gg <= 0 ? 'pagato subito' : gg === 1 ? 'pagato dopo 1 giorno' : `pagato dopo ${gg} giorni`) : 'da incassare';
+    const parziale = k.daPagare.find(x => x.id === l.id);
+    const ricevutiParz = parziale && l.prezzo ? arrotonda(l.prezzo - parziale.resta) : 0;
+    const pgInfo = s
+      ? (gg <= 0 ? 'pagato subito' : gg === 1 ? 'pagato dopo 1 giorno' : `pagato dopo ${gg} giorni`)
+      : ricevutiParz > 0 ? `${euro(ricevutiParz)} ricevuti · restano ${euro(parziale.resta)}`
+      : 'da incassare';
     const vociR = l.costi?.voci || [];
     $('l-corpo').innerHTML = `
       <button type="button" class="l-cliente" id="l-cliente">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
@@ -4261,8 +4270,21 @@ function disegnaLavoro() {
         ${l.durata ? `<div class="l-report-riga"><span>Durata</span><b>${nomeDurata(l.durata)}</b></div>` : ''}
         ${l.oreVere != null ? `<div class="l-report-riga"><span>Ore vere</span><b>${virgola(l.oreVere)} h</b></div>` : ''}
         ${l.note ? `<div class="l-report-riga"><span>Note</span><b>${sicuro(l.note)}</b></div>` : ''}
+      </div>
+      <div class="l-azioni-report">
+        <button type="button" class="secondario" id="l-modifica-btn">Modifica</button>
+        <button type="button" class="secondario" id="l-elimina-btn" style="color:#ef4444;border-color:#ef4444">Elimina lavoro</button>
       </div>`;
     $('l-cliente').onclick = () => { const nome = l.nome; $('lavoro').hidden = true; lavoroModo = 'modifica'; tutto(); if ($('scheda').hidden || schedaNome !== nome) apriScheda(nome); else disegnaScheda(); };
+    $('l-modifica-btn').onclick = () => { lavoroModo = 'modifica'; disegnaLavoro(); };
+    $('l-elimina-btn').onclick = () => {
+      const idx = lavori.indexOf(l);
+      if (idx < 0) return;
+      lavori.splice(idx, 1);
+      lavori.forEach((x, i) => (x.id = i));
+      chiudiLavoro();
+      avvisa('Lavoro eliminato', { etichetta: 'Annulla', fai: () => { lavori.splice(idx, 0, l); lavori.forEach((x, i) => (x.id = i)); tutto(); } });
+    };
     return;
   }
   const voci = l.costi.voci;
