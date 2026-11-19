@@ -494,6 +494,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .mic-box-cat.cat-costo { background:#f0eafc; color:#8a5cc7; }
 .mic-box-cat.cat-paga { background:var(--foglia-chiara); color:var(--foglia); }
 .mic-box-cat.cat-tutto { background:var(--sfondo); color:var(--testo-2); }
+.mic-box-cat.cat-calendario { background:#dbeafe; color:#1d4ed8; }
+.mic-box-cat.cat-nota-cliente { background:#fef9c3; color:#ca8a04; }
+.mic-box-cat.cat-nota-rapida { background:var(--sfondo); color:var(--testo-2); }
+.mic-box-elabora { display:inline-flex; align-items:center; gap:5px; padding:2px 0; }
+.mic-box-elabora span { width:7px; height:7px; border-radius:50%; background:var(--foglia); animation:onda-mic .9s ease-in-out infinite; }
+.mic-box-elabora span:nth-child(1){animation-delay:0s} .mic-box-elabora span:nth-child(2){animation-delay:.2s} .mic-box-elabora span:nth-child(3){animation-delay:.4s}
 /* Mostra altro, in fondo all'agenda */
 .mostra-altro { width: 100%; margin-top: 18px; min-height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); font-weight: 800; font-size: 16px; }
 .mostra-nota { margin: 8px 4px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--testo-2); }
@@ -3372,6 +3378,60 @@ $('ai-cat-costo').onclick    = () => apriInbox('costo');
 $('ai-cat-paga').onclick     = () => apriInbox('paga');
 $('ai-tutto').onclick        = () => apriInbox('tutto');
 
+// ---- AI vocale: chiave API e classificazione con Claude Haiku ----
+let ANTHROPIC_KEY = '';
+try { ANTHROPIC_KEY = localStorage.getItem('anthropic_key') || ''; } catch(e){}
+
+function chiediChiaveAI() {
+  const k = prompt('Per usare l\'AI inserisci la tua chiave Anthropic (sk-ant-...).\nViene salvata sul tuo telefono, non la vede nessun altro.');
+  if (k && k.trim().startsWith('sk-ant-')) {
+    ANTHROPIC_KEY = k.trim();
+    try { localStorage.setItem('anthropic_key', ANTHROPIC_KEY); } catch(e){}
+    return true;
+  }
+  alert('Chiave non valida. Uso il riconoscimento base senza AI.');
+  return false;
+}
+
+async function categorizzaVoceAI(testo) {
+  const oggi = new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const clienti = CLIENTI_FAKE.join(', ');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-5-5',
+      max_tokens: 300,
+      system: `Sei l'assistente di un giardiniere italiano. Analizza la frase e rispondi SOLO con JSON valido, senza altri testi.
+
+Regole di smistamento (priorità dall'alto):
+1. C'è un riferimento a data/giorno/ora → categoria "calendario"
+2. C'è il nome di un cliente dalla rubrica (senza data) → categoria "nota-cliente"
+3. Riguarda un pagamento ricevuto → categoria "paga"
+4. Riguarda una spesa sostenuta → categoria "costo"
+5. Si chiede di spostare o rimandare un appuntamento → categoria "riprogramma"
+6. Si vuole aggiungere un nuovo cliente → categoria "cliente"
+7. Altrimenti → categoria "nota-rapida"
+
+Oggi è ${oggi}. Clienti in rubrica: ${clienti}.`,
+      messages: [{
+        role: 'user',
+        content: `Frase: "${testo}"\n\nRispondi SOLO con JSON:\n{"categoria":"...","titolo":"max 6 parole","dati":"dettaglio principale","campi":[["Etichetta","Valore"]],"nome_cliente":null}`
+      }]
+    })
+  });
+  if (!resp.ok) throw new Error('API ' + resp.status);
+  const json = await resp.json();
+  const raw = (json.content[0].text || '').trim();
+  const match = raw.match(/\{[\s\S]*\}/);
+  return JSON.parse(match ? match[0] : raw);
+}
+
 // ---- Microfono globale AI: riconoscimento vocale con categorizzazione ----
 const CATEGORIE_VOCALI = {
   paga: [
@@ -3407,12 +3467,15 @@ const CATEGORIE_VOCALI = {
 };
 
 const CAT_INFO = {
-  cliente:     { nome: 'Nuovo cliente',  emoji: '👤' },
-  riprogramma: { nome: 'Riprogramma',    emoji: '📅' },
-  nota:        { nome: 'Nota',           emoji: '📝' },
-  paga:        { nome: 'Pagamento',      emoji: '💶' },
-  costo:       { nome: 'Costo',          emoji: '🧾' },
-  tutto:       { nome: 'Extra',          emoji: '🔔' },
+  cliente:        { nome: 'Nuovo cliente',  emoji: '👤' },
+  riprogramma:    { nome: 'Riprogramma',    emoji: '📅' },
+  nota:           { nome: 'Nota',           emoji: '📝' },
+  paga:           { nome: 'Pagamento',      emoji: '💶' },
+  costo:          { nome: 'Costo',          emoji: '🧾' },
+  tutto:          { nome: 'Extra',          emoji: '🔔' },
+  calendario:     { nome: 'Calendario',     emoji: '📅' },
+  'nota-cliente': { nome: 'Nota cliente',   emoji: '👤' },
+  'nota-rapida':  { nome: 'Nota rapida',    emoji: '📝' },
 };
 
 function categorizzaVoce(testo) {
@@ -3425,11 +3488,24 @@ function categorizzaVoce(testo) {
   return 'tutto';
 }
 
-function aggiungiVoceInbox(testo, cat) {
-  const data = new Date();
-  const giorno = data.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
-  const item = { testa: testo, dati: giorno, campi: [['Trascritto', testo]] };
-  const dest = cat === 'tutto' ? 'extra' : cat;
+const _CAT_TO_INBOX = { 'calendario':'nota', 'nota-cliente':'nota', 'nota-rapida':'nota', 'paga':'paga', 'costo':'costo', 'riprogramma':'riprogramma', 'cliente':'cliente' };
+
+function aggiungiVoceInbox(testo, risultato) {
+  const giorno = new Date().toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+  let dest, item;
+  if (risultato && typeof risultato === 'object' && risultato.categoria) {
+    dest = _CAT_TO_INBOX[risultato.categoria] || 'nota';
+    item = {
+      testa: risultato.titolo || testo,
+      dati: risultato.dati || giorno,
+      campi: (risultato.campi && risultato.campi.length) ? risultato.campi : [['Trascritto', testo]],
+      cal: risultato.categoria === 'calendario',
+    };
+  } else {
+    const catStr = typeof risultato === 'string' ? risultato : 'nota';
+    dest = (catStr === 'tutto' || !INBOX_ESEMPI[catStr]) ? 'nota' : catStr;
+    item = { testa: testo, dati: giorno, campi: [['Trascritto', testo]] };
+  }
   if (INBOX_ESEMPI[dest]) INBOX_ESEMPI[dest].voci.unshift(item);
   aggiornaBadge();
 }
@@ -3497,12 +3573,20 @@ $('ai-mic').onclick = () => {
     if (finale) {
       _micFinaleTrovato = true;
       $('mic-box-testo').textContent = finale;
-      const cat = categorizzaVoce(finale);
-      const info = CAT_INFO[cat];
-      catEl.textContent = info.emoji + ' ' + info.nome;
-      catEl.className = 'mic-box-cat cat-' + cat;
       catWrap.hidden = false;
-      setTimeout(() => { aggiungiVoceInbox(finale, cat); chiudiMicBox(); }, 1200);
+      catEl.className = 'mic-box-cat';
+      catEl.innerHTML = '<span class="mic-box-elabora"><span></span><span></span><span></span></span> Elaboro…';
+      const mostraCat = (ris) => {
+        const cat = (ris && typeof ris === 'object') ? ris.categoria : ris;
+        const info = CAT_INFO[cat] || CAT_INFO['tutto'];
+        catEl.className = 'mic-box-cat cat-' + cat;
+        catEl.textContent = info.emoji + ' ' + info.nome;
+        setTimeout(() => { aggiungiVoceInbox(finale, ris); chiudiMicBox(); }, 1200);
+      };
+      if (!ANTHROPIC_KEY) {
+        if (!chiediChiaveAI()) { mostraCat(categorizzaVoce(finale)); return; }
+      }
+      categorizzaVoceAI(finale).then(mostraCat).catch(() => mostraCat(categorizzaVoce(finale)));
     } else if (interim) {
       $('mic-box-testo').innerHTML = `<em>${interim}</em>`;
       const cat = categorizzaVoce(interim);
