@@ -153,9 +153,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .cerca input { flex: 1; min-width: 0; border: 0; background: none; min-height: 52px; font-size: 17px; font-weight: 600; outline: none; color: var(--testo); }
 .cerca:focus-within { border-color: var(--foglia); }
 /* Barra azioni sezione Clienti */
-.c-azioni { display: flex; gap: 8px; margin-bottom: 14px; }
-.c-az-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 64px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 12px; font-weight: 700; cursor: pointer; position: relative; transition: background .12s; }
-.c-az-btn svg { width: 22px; height: 22px; }
+.c-azioni { display: flex; gap: 6px; margin-bottom: 14px; }
+.c-az-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; position: relative; transition: background .12s; }
+.c-az-btn svg { width: 20px; height: 20px; }
 .c-az-btn:active { background: var(--foglia-chiara); color: var(--foglia); }
 /* Stats strip minimal */
 .c-stats { display: flex; align-items: center; background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 12px 16px; margin: 12px 0 0; }
@@ -874,6 +874,11 @@ button.s-riga:first-child { border-top: 0; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 004-3V9a8 8 0 1116 0v5a3 3 0 004 3"/><path d="M9 17v1a3 3 0 006 0v-1"/></svg>
         <span class="ai-badge" id="c-b-notifiche" hidden>0</span>
         Notifiche
+      </button>
+      <button class="c-az-btn" style="position:relative" onclick="apriInbox('paga')" aria-label="Pagamenti da confermare">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h2a2 2 0 100-4h-1a2 2 0 110-4h2m0 8h-2"/></svg>
+        <span class="ai-badge" id="c-b-paga" hidden>0</span>
+        Pagamenti
       </button>
     </div>
     <!-- Cerca -->
@@ -2813,6 +2818,9 @@ function aggiornaBadge() {
   const clientiN = INBOX_ESEMPI.cliente?.voci.length || 0;
   const cbn = $('c-b-notifiche');
   if (cbn) { cbn.textContent = clientiN; cbn.hidden = clientiN === 0; }
+  const pagaN = INBOX_ESEMPI.paga?.voci.length || 0;
+  const cbp = $('c-b-paga');
+  if (cbp) { cbp.textContent = pagaN; cbp.hidden = pagaN === 0; }
 }
 
 function apriInbox(key) {
@@ -3238,7 +3246,7 @@ function disegnaRubrica(filtroQ = '') {
   const ALFA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const q = normalizza(filtroQ);
   const fonte = clientiConosciuti().sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
-  const tutti = q ? fonte.filter(c => normalizza(c.nome).includes(q) || normalizza(c.dove || '').includes(q)) : fonte;
+  const tutti = q ? fonte.filter(c => normalizza(c.nome).includes(q)) : fonte;
   const letterePresenti = new Set(tutti.map(c => normalizza(c.nome[0] || '').toUpperCase()));
 
   // Indice alfabetico: tutte le 26 lettere, disabilitate se non ci sono clienti
