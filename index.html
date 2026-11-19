@@ -586,6 +586,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-chip.sel { border-color: var(--foglia); background: var(--foglia-chiara); color: var(--foglia); }
 .prev-nota { width: 100%; min-height: 80px; border: 1.5px solid var(--linea); border-radius: 12px; padding: 10px 12px; font-size: 15px; resize: none; background: var(--sfondo); }
 .prev-label-riga { display: flex; align-items: center; gap: 6px; }
+.prev-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .prev-info-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--testo-2); background: none; color: var(--testo-2); font-size: 12px; font-weight: 800; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
 .prev-info-pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); }
 .prev-info-box { background: var(--carta); border-radius: 22px 22px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom,0px)); max-width: 480px; width: 100%; display: flex; flex-direction: column; gap: 12px; animation: sali .2s ease-out; }
@@ -4862,6 +4863,8 @@ const PREV_FORM = [
         info: { titolo: "Siepe semplice", testo: "Siepe dritta, buon accesso su entrambi i lati, altezza normale (1–1.5 m). Puoi andare spedito con il canneto o le cesoie." } },
       { id: 'siepe-no', label: "Siepe difficile (tortuosa, alta, scarso accesso)", tipo: 'slider', min: 3, max: 40, step: 0.5, unita: '€/m', media: 12,
         info: { titolo: "Siepe difficile", testo: "Siepe irregolare, alta (2+ m), accessibile solo da un lato, con rami duri o pianta spinosa. Spesso serve scala e più passate." } },
+      { id: 'siepe-smalto', label: "Extra per portare via i rami", tipo: 'slider', min: 0, max: 150, step: 5, unita: '€', media: 30,
+        info: { titolo: "Smaltimento rami siepe", testo: "Caricare e portare al centro di raccolta ha un costo fisso: il viaggio, il tempo, il gasolio. In media 20–40 € per un carico standard di furgone. Metti 0 se il cliente li smaltisce da solo." } },
     ]
   },
   {
@@ -4871,6 +4874,8 @@ const PREV_FORM = [
         info: { titolo: "Potatura semplice", testo: "Rose, lavanda, arbusti ornamentali: pianta libera, facile accesso, non ci sono ostacoli sopra. Lavoro da 20–40 minuti." } },
       { id: 'pot-no', label: "Albero complicato (vicino a strutture, scala necessaria)", tipo: 'slider', min: 80, max: 800, step: 20, unita: '€', media: 250,
         info: { titolo: "Potatura complicata", testo: "Albero grande o vicino a muri, cavi, tetti. Serve la scala, ci vuole attenzione, i rami devono essere abbassati piano. Comprende un albero medio (5–10 m) in condizioni difficili." } },
+      { id: 'pot-smalto', label: "Extra per portare via i rami", tipo: 'slider', min: 0, max: 200, step: 10, unita: '€', media: 40,
+        info: { titolo: "Smaltimento rami potatura", testo: "Portare via i rami è un lavoro a sé: caricare, legare, trasportare. Per una pianta media aspettati 30–50 €. Per un albero grande anche 80–150 €. Metti 0 se il cliente li gestisce." } },
     ]
   },
   {
@@ -4880,24 +4885,43 @@ const PREV_FORM = [
         info: { titolo: "Abbattimento semplice", testo: "Albero in spazio aperto, puoi farlo cadere senza problemi, nessun ostacolo vicino. Include lo smontaggio in pezzi e l'accatastamento sul posto." } },
       { id: 'abb-no', label: "Albero vicino a strutture o molto grande (10–20 m)", tipo: 'slider', min: 400, max: 4000, step: 100, unita: '€', media: 1200,
         info: { titolo: "Abbattimento difficile", testo: "Albero grande o vicino a casa, recinzioni, cavi. Serve smontare ramo per ramo dall'alto, spesso con fune. Lavoro da mezza giornata intera." } },
+      { id: 'abb-smalto', label: "Extra per portare via il legname e i rami", tipo: 'slider', min: 0, max: 500, step: 25, unita: '€', media: 100,
+        info: { titolo: "Smaltimento dopo abbattimento", testo: "Dopo un abbattimento il materiale è tanto: legna grossa, rami, ramaglie. Un carico di furgone o rimorchio al centro di raccolta vale in media 80–150 €. Per alberi grandi ci vogliono più viaggi." } },
     ]
   },
   {
-    sezione: 'Piantumazione',
+    sezione: 'Piantumazione — manodopera per pianta',
     domande: [
-      { id: 'piant-ok', label: "Pianta piccola (fiori, arbusti, bulbi)", tipo: 'slider', min: 5, max: 40, step: 5, unita: '€/pianta', media: 10,
-        info: { titolo: "Piantumazione semplice", testo: "Un fiore, una piantina annuale, un arbusto leggero. Scavo piccolo, lavoro veloce. Solo manodopera, i materiali sono a parte." } },
-      { id: 'piant-no', label: "Pianta grande (albicocco, oleandro, cipresso...)", tipo: 'slider', min: 20, max: 150, step: 10, unita: '€/pianta', media: 50,
-        info: { titolo: "Piantumazione importante", testo: "Un albero da frutto o una pianta ornamentale grande: serve scavare profondo, mettere tutori, annaffiare abbondante. Comprende solo il lavoro, non la pianta." } },
+      { id: 'piant-pianta-eco', label: "Pianta economica (lavanda, rosa, graminacea...)", dot: '#f59e0b', tipo: 'slider', min: 5, max: 60, step: 5, unita: '€/pianta', media: 15,
+        info: { titolo: "🟠 Pianta economica", testo: "Piccola o leggera: lavanda, rosa cespuglio, graminacea ornamentale, piantine stagionali. Scavo piccolo, pochi minuti a pianta. Solo manodopera, la pianta è a parte." } },
+      { id: 'piant-pianta-cara', label: "Pianta costosa (bambù, oleandro grande, fotinia...)", dot: '#8b5cf6', tipo: 'slider', min: 15, max: 120, step: 5, unita: '€/pianta', media: 40,
+        info: { titolo: "🟣 Pianta costosa", testo: "Grande o pesante: bambù, oleandro alto, pittosporo, fotinia a cespuglio. Scavo più fondo, peso da gestire, spesso serve sistemare il terreno. Solo manodopera." } },
+      { id: 'piant-albero-eco', label: "Albero giovane (cipresso, ulivo piccolo, acero...)", dot: '#22c55e', tipo: 'slider', min: 20, max: 150, step: 10, unita: '€/albero', media: 50,
+        info: { titolo: "🟢 Albero giovane", testo: "Alberello da vivaio fino a 1.5–2 m: cipresso, ulivo giovane, acero ornamentale. Palo tutore, annaffiatura abbondante. Mezz'ora di lavoro. Solo manodopera." } },
+      { id: 'piant-albero-caro', label: "Albero grande / semimaturo (5m+, zolla pesante)", dot: '#ef4444', tipo: 'slider', min: 80, max: 500, step: 20, unita: '€/albero', media: 150,
+        info: { titolo: "🔴 Albero grande", testo: "Semimaturo con zolla grossa: platano, quercia, olivo adulto, albero da frutto in vaso grande. Ci vuole la macchina o il cavalletto per sollevarlo, scavo profondo, tutori robusti." } },
     ]
   },
   {
-    sezione: 'Altri lavori (per ora)',
+    sezione: 'Installazione irrigazione',
     domande: [
-      { id: 'pulizia', label: "Pulizia giardino / raccolta foglie", tipo: 'slider', min: 20, max: 80, step: 5, unita: '€/h', media: 35,
-        info: { titolo: "Pulizia e raccolta", testo: "Lavoro manuale continuo: raccolta foglie, diserbo, pulizia ghiaia. Media dei giardinieri: 30–40 €/h." } },
-      { id: 'irrigaz', label: "Installazione / manutenzione irrigazione", tipo: 'slider', min: 25, max: 100, step: 5, unita: '€/h', media: 50,
-        info: { titolo: "Irrigazione", testo: "Lavoro tecnico più specializzato. Media: 40–60 €/h. Se sai farlo bene puoi stare nella fascia alta." } },
+      { id: 'irrigaz-piccolo', label: "Impianto piccolo (100 m², 4 zone, terreno facile)", tipo: 'slider', min: 300, max: 1500, step: 50, unita: '€', media: 650,
+        info: { titolo: "Irrigazione piccola", testo: "Giardino di casa, 4 zone (prato + arbusti), tubazioni base, nessuno scavo difficile, terreno normale. Include manodopera e materiale base. Media di mercato: 500–800 €." } },
+      { id: 'irrigaz-grande', label: "Impianto grande (500 m²+, 12 zone, scavi, premium)", tipo: 'slider', min: 1500, max: 8000, step: 200, unita: '€', media: 3500,
+        info: { titolo: "Irrigazione grande", testo: "Parco o giardino ampio, molte zone, tubazioni interrate con scavi, controller programmabile, testine premium anti-vandalo. Lavoro da più giorni. Media: 2500–5000 €, ma dipende moltissimo dai materiali." } },
+    ]
+  },
+  {
+    sezione: 'Noleggio attrezzature (costo che addebiti al cliente)',
+    domande: [
+      { id: 'noleg-piccolo', label: "Piccoli attrezzi (fresa, soffiatore, trinciatutto)", tipo: 'slider', min: 20, max: 150, step: 10, unita: '€/giorno', media: 60,
+        info: { titolo: "Noleggio attrezzatura piccola", testo: "Fresa del terreno, soffiatore professionale, trinciatutto a scoppio. Noleggio di mercato: 40–80 €/giorno. Se è tua la aggiungi come usura, non come noleggio." } },
+      { id: 'noleg-medio', label: "Trattorino, motocarriola, miniescavatore 1T", tipo: 'slider', min: 80, max: 400, step: 20, unita: '€/giorno', media: 160,
+        info: { titolo: "Noleggio medio", testo: "Trattorino rasaerba da parco, motocarriola cingolata, miniescavatore 1 tonnellata. Noleggio: 100–250 €/giorno. Utile per grandi spazi o movimenti terra leggeri." } },
+      { id: 'noleg-grande', label: "Piattaforma aerea (cestello)", tipo: 'slider', min: 200, max: 1000, step: 50, unita: '€/giorno', media: 450,
+        info: { titolo: "Noleggio piattaforma aerea", testo: "Cestello semovente fino a 10–14 m: fondamentale per potature alte in sicurezza. Noleggio: 300–600 €/giorno. Considera anche il trasporto se non la guidi tu." } },
+      { id: 'noleg-pesante', label: "Escavatore / mezzo pesante (3T+)", tipo: 'slider', min: 400, max: 2000, step: 100, unita: '€/giorno', media: 850,
+        info: { titolo: "Noleggio mezzo pesante", testo: "Escavatore da 3–8 tonnellate, carro gru, autocaricante. Noleggio: 600–1200 €/giorno, spesso con trasporto su bilico a parte (150–300 €). Usato per impianti grandi, sbancamenti, abbattimenti complessi." } },
     ]
   },
   {
@@ -4906,7 +4930,7 @@ const PREV_FORM = [
       { id: 'spese-fisse', label: "Aggiungo al preventivo per coprire le spese fisse", tipo: 'slider', min: 0, max: 120, step: 5, unita: '€ per mezza giornata', media: 25,
         info: { titolo: "Spese fisse", testo: "In media un giardiniere aggiunge 20–35 € per mezza giornata per coprire: carburante (8–12 €), usura attrezzatura (5–10 €), assicurazione e telefono (5–8 €). L'AI scala automaticamente in base alla durata del lavoro e alla distanza." } },
       { id: 'materiali', label: "Quando usi materiali (terra, pali, legacci...)", tipo: 'chips',
-        opzioni: ['Li passo al cliente al costo esatto', 'Li includo nel preventivo', 'Li passo con +15% di ricarico', 'Li passo con +30% di ricarico'], default: 0 },
+        opzioni: ['Al costo esatto', 'Inclusi nel preventivo', '+15% di ricarico', '+30% di ricarico', 'Rincaro personalizzato (indica nelle note)'], default: 0 },
     ]
   },
   {
@@ -4922,7 +4946,7 @@ const PREV_FORM = [
     sezione: "Altro che l'AI deve sapere",
     domande: [
       { id: 'extra', label: "Note libere", tipo: 'textarea',
-        placeholder: "Es. lavoro solo entro 30 km, non salgo su scale oltre 4 m, ho un trincia rami professionale, non faccio siepi di cipresso..." },
+        placeholder: "Es. lavoro solo entro 30 km, non salgo su scale oltre 4 m, ho un trincia rami professionale, non faccio siepi di cipresso, rincaro materiali personalizzato: XX%..." },
     ]
   },
 ];
@@ -4949,7 +4973,7 @@ function disegnaSezioneForm(s) {
     if (d.tipo === 'slider') {
       const val = prevDati?.[d.id] ?? d.default ?? d.media ?? d.min;
       return `<div class="prev-domanda">
-        <div class="prev-label-riga"><label>${d.label}</label>${infoBtn(d)}</div>
+        <div class="prev-label-riga">${d.dot ? `<span class="prev-dot" style="background:${d.dot}"></span>` : ''}<label>${d.label}</label>${infoBtn(d)}</div>
         <div class="prev-slider-wrap">
           <div class="prev-slider-valore" id="sv-${d.id}">${sliderLabel(d, val)}</div>
           <div class="prev-slider-track">
