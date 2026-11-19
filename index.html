@@ -638,6 +638,73 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .imp-r button:disabled { opacity: .45; }
 .pericolo { min-height: 50px; border-radius: 14px; border: 1.5px solid var(--rosso); background: var(--rosso-chiaro); color: var(--rosso); font-weight: 800; font-size: 16px; }
 .pericolo.conferma { background: var(--rosso); color: #fff; }
+/* Template calendario: Per settimane */
+.griglia-sett { display: flex; flex-direction: column; gap: 4px; }
+.sett-riga { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.sett-g { display: flex; flex-direction: column; gap: 2px; padding: 3px 2px; border-radius: 8px; cursor: pointer; min-height: 44px; }
+.sett-g.vuoto { opacity: 0; pointer-events: none; }
+.sett-g > span { font-size: 11px; font-weight: 700; text-align: center; }
+.sett-g.oggi > span { color: var(--foglia); font-weight: 900; }
+.sett-g.scelto { background: var(--foglia-chiara); border-radius: 8px; }
+.sett-blocco { border-radius: 3px; padding: 2px 3px; font-size: 9px; overflow: hidden; white-space: nowrap; font-weight: 700; line-height: 1.4; }
+/* Template calendario: Agenda */
+.agenda-lista { display: flex; flex-direction: column; gap: 5px; }
+.agenda-riga { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; background: var(--sfondo); border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
+.agenda-riga.scelto { border-color: var(--foglia); background: var(--foglia-chiara); }
+.agenda-riga.oggi .agenda-data b { color: var(--foglia); }
+.agenda-data { font-size: 10px; color: var(--testo-2); font-weight: 700; min-width: 26px; text-align: center; line-height: 1.2; }
+.agenda-data b { display: block; font-size: 20px; font-weight: 900; color: var(--testo); line-height: 1; }
+.agenda-lavori { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.agenda-lavoro { font-size: 13px; font-weight: 600; padding-left: 6px; border-left: 2px solid var(--foglia); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.agenda-vuoto { font-size: 11px; color: var(--testo-2); font-style: italic; }
+/* Template calendario: Anno Report */
+.anno-griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.anno-mese { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 6px; border-radius: 10px; border: 1.5px solid transparent; }
+.anno-mese.attivo { border-color: var(--foglia); }
+.anno-mese-nome { font-size: 11px; font-weight: 800; color: var(--testo-2); text-align: center; margin-bottom: 1px; }
+.anno-mese-g { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.anno-cella { width: 100%; aspect-ratio: 1; border-radius: 1px; }
+/* Carosello anteprime template calendario */
+.cal-car { display: flex; flex-direction: column; gap: 10px; }
+.cal-car-anteprima { background: var(--sfondo); border-radius: 14px; overflow: hidden; height: 200px; padding: 10px; touch-action: pan-y; }
+.cal-car-nav { display: flex; align-items: center; justify-content: space-between; }
+.cal-car-nav-btn { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--linea); background: var(--carta); font-size: 20px; font-weight: 700; cursor: pointer; color: var(--testo); display: flex; align-items: center; justify-content: center; }
+.cal-car-nav-btn:disabled { opacity: 0.25; cursor: default; }
+.cal-car-dots { display: flex; gap: 6px; align-items: center; }
+.cal-car-dots span { width: 7px; height: 7px; border-radius: 99px; background: var(--linea); transition: all .2s; }
+.cal-car-dots span.attivo { background: var(--foglia); width: 20px; }
+.cal-car-nome { font-weight: 800; font-size: 17px; text-align: center; }
+.cal-car-scegli { width: 100%; padding: 13px; border-radius: 12px; border: 2px solid var(--foglia); background: transparent; color: var(--foglia); font-weight: 800; font-size: 16px; cursor: pointer; }
+.cal-car-scegli.attivo { background: var(--foglia); color: var(--sul-foglia); }
+/* Mini mensile */
+.mini-mens { display: flex; flex-direction: column; height: 100%; }
+.mini-mens-testa { font-weight: 800; font-size: 12px; text-align: center; padding-bottom: 4px; }
+.mini-mens-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.mini-g-nome { font-size: 8px; font-weight: 700; text-align: center; color: var(--testo-2); padding-bottom: 2px; }
+.mini-g { display: flex; flex-direction: column; align-items: center; padding: 1px 0; }
+.mini-g > span { font-size: 9px; line-height: 1.2; }
+.mini-g.oggi > span { background: var(--foglia); color: var(--sul-foglia); border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; }
+.mini-pallini { display: flex; gap: 1px; margin-top: 1px; }
+.mini-pallini i { width: 3px; height: 3px; border-radius: 50%; background: var(--foglia); display: block; }
+/* Mini per settimane */
+.mini-sett { display: flex; flex-direction: column; gap: 4px; height: 100%; overflow: hidden; }
+.mini-sett-riga { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.mini-sett-g { display: flex; flex-direction: column; gap: 1px; }
+.mini-sett-g > span { font-size: 8px; color: var(--testo-2); text-align: center; }
+.mini-sett-blocco { border-radius: 2px; padding: 1px 2px; font-size: 7px; overflow: hidden; white-space: nowrap; font-weight: 700; line-height: 1.4; }
+/* Mini agenda */
+.mini-agenda { display: flex; flex-direction: column; gap: 4px; height: 100%; overflow: hidden; }
+.mini-agenda-riga { display: flex; align-items: flex-start; gap: 6px; padding: 4px 6px; background: var(--carta); border-radius: 7px; border: 1px solid var(--linea); }
+.mini-agenda-data { font-size: 8px; color: var(--testo-2); font-weight: 700; min-width: 22px; text-align: center; line-height: 1; }
+.mini-agenda-data b { display: block; font-size: 14px; font-weight: 900; color: var(--testo); }
+.mini-agenda-lavori { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mini-agenda-lavoro { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; border-left: 2px solid var(--foglia); font-weight: 600; }
+/* Mini anno */
+.mini-anno-g { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 100%; }
+.mini-anno-mese { display: flex; flex-direction: column; gap: 1px; }
+.mini-anno-nome { font-size: 7px; font-weight: 800; color: var(--testo-2); text-align: center; }
+.mini-anno-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.mini-anno-cella { width: 100%; aspect-ratio: 1; border-radius: 1px; }
 .contatore { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .contatore span { font-weight: 700; font-size: 15px; }
 .contatore div { display: flex; align-items: center; gap: 4px; background: var(--sfondo); border-radius: 12px; padding: 3px; }
@@ -1699,13 +1766,27 @@ let vistaHome = 'giorni';   // 'giorni' | 'mesi' | 'anni'
 function disegnaCalendario() {
   const g = document.getElementById('griglia'), cm = document.getElementById('c-mese'), ca = document.getElementById('c-anno');
   const a = meseVisto.getFullYear(), m = meseVisto.getMonth();
+  // Template Anno: navigazione per anno, mostra tutto l'anno
+  if (templateCalendario === 'anno' && vistaHome === 'giorni') {
+    cm.textContent = 'Anno';
+    ca.textContent = a;
+    cm.classList.remove('attivo');
+    ca.classList.remove('attivo');
+    document.getElementById('mese-prima').style.visibility = '';
+    document.getElementById('mese-dopo').style.visibility = '';
+    return riempiAnno(g);
+  }
   cm.textContent = maiuscola(new Intl.DateTimeFormat('it-IT', { month: 'long' }).format(meseVisto));
   ca.textContent = a;
   cm.classList.toggle('attivo', vistaHome === 'mesi');
   ca.classList.toggle('attivo', vistaHome === 'anni');
   document.getElementById('mese-prima').style.visibility = document.getElementById('mese-dopo').style.visibility = vistaHome === 'anni' ? 'hidden' : '';
   g.className = vistaHome === 'giorni' ? 'griglia' : 'q-scelte';
-  if (vistaHome === 'giorni') return riempiGriglia(g, meseVisto, scelto, scegli, false);
+  if (vistaHome === 'giorni') {
+    if (templateCalendario === 'per-settimane') return riempiGrigliaSettimane(g);
+    if (templateCalendario === 'agenda') return riempiAgenda(g);
+    return riempiGriglia(g, meseVisto, scelto, scegli, false);
+  }
   if (vistaHome === 'mesi') {
     g.innerHTML = Array.from({ length: 12 }, (_, i) => `<button data-m="${i}" class="${i === m ? 'attivo' : ''}">${maiuscola(new Intl.DateTimeFormat('it-IT', { month: 'short' }).format(new Date(a, i, 1)))}</button>`).join('');
     g.querySelectorAll('button').forEach(b => { b.onclick = () => { meseVisto = new Date(a, +b.dataset.m, 1); vistaHome = 'giorni'; disegnaCalendario(); }; });
@@ -1740,6 +1821,83 @@ function riempiGriglia(g, meseVisto, scelto, alTocco, soloFuturi) {
     if (soloFuturi && s < tra(0)) b.disabled = true;
     b.onclick = () => alTocco(s);
     g.appendChild(b);
+  }
+}
+
+function riempiGrigliaSettimane(g) {
+  const a = meseVisto.getFullYear(), m = meseVisto.getMonth();
+  const quanti = new Date(a, m + 1, 0).getDate();
+  const vuoti = (new Date(a, m, 1).getDay() + 6) % 7;
+  const mp = mappaGiorni();
+  g.className = 'griglia-sett';
+  g.innerHTML = '';
+  const days = Array(vuoti).fill(null).concat(Array.from({ length: quanti }, (_, i) => i + 1));
+  while (days.length % 7) days.push(null);
+  for (let w = 0; w < days.length; w += 7) {
+    const riga = document.createElement('div');
+    riga.className = 'sett-riga';
+    for (let d = 0; d < 7; d++) {
+      const n = days[w + d];
+      const col = document.createElement('div');
+      if (!n) { col.className = 'sett-g vuoto'; riga.appendChild(col); continue; }
+      const s = iso(new Date(a, m, n));
+      const lavs = (mp[s]?.lavori || []);
+      col.className = 'sett-g' + (s === tra(0) ? ' oggi' : '') + (s === scelto ? ' scelto' : '');
+      col.innerHTML = `<span>${n}</span>${lavs.slice(0, 3).map(v => {
+        const c = prendiExtra(v.l.nome).colore || 'var(--foglia)';
+        return `<div class="sett-blocco" style="background:${c}22;color:${c}">${sicuro(v.l.nome.split(' ')[0])}</div>`;
+      }).join('')}`;
+      col.onclick = () => scegli(s);
+      riga.appendChild(col);
+    }
+    g.appendChild(riga);
+  }
+}
+
+function riempiAgenda(g) {
+  const a = meseVisto.getFullYear(), m = meseVisto.getMonth();
+  const quanti = new Date(a, m + 1, 0).getDate();
+  const mp = mappaGiorni();
+  g.className = 'agenda-lista';
+  g.innerHTML = '';
+  for (let n = 1; n <= quanti; n++) {
+    const s = iso(new Date(a, m, n));
+    const lavs = (mp[s]?.lavori || []);
+    const dt = daIso(s);
+    const gg = NOMI_GIORNI[dt.getDay()].slice(0, 3);
+    const riga = document.createElement('div');
+    riga.className = 'agenda-riga' + (s === tra(0) ? ' oggi' : '') + (s === scelto ? ' scelto' : '');
+    riga.innerHTML = `<div class="agenda-data"><small>${gg}</small><b>${n}</b></div>
+      <div class="agenda-lavori">${lavs.length > 0
+        ? lavs.map(v => { const c = prendiExtra(v.l.nome).colore || 'var(--foglia)'; return `<div class="agenda-lavoro" style="border-color:${c}">${sicuro(v.l.nome)}${v.l.cosa ? ' · ' + sicuro(v.l.cosa) : ''}</div>`; }).join('')
+        : '<div class="agenda-vuoto">Nessun lavoro</div>'}</div>`;
+    riga.onclick = () => scegli(s);
+    g.appendChild(riga);
+  }
+}
+
+function riempiAnno(g) {
+  const a = meseVisto.getFullYear();
+  const mp = mappaGiorni();
+  g.className = 'anno-griglia';
+  g.innerHTML = '';
+  for (let mm = 0; mm < 12; mm++) {
+    const nt = maiuscola(new Intl.DateTimeFormat('it-IT', { month: 'long' }).format(new Date(a, mm, 1)));
+    const qm = new Date(a, mm + 1, 0).getDate();
+    const vm = (new Date(a, mm, 1).getDay() + 6) % 7;
+    const mDiv = document.createElement('div');
+    mDiv.className = 'anno-mese' + (mm === meseVisto.getMonth() ? ' attivo' : '');
+    let gh = `<div class="anno-mese-nome">${nt.slice(0, 3)}</div><div class="anno-mese-g">`;
+    for (let i = 0; i < vm; i++) gh += '<div class="anno-cella"></div>';
+    for (let n = 1; n <= qm; n++) {
+      const s = iso(new Date(a, mm, n));
+      const cnt = (mp[s]?.lavori || []).length;
+      const op = cnt === 0 ? 0.07 : Math.min(0.2 + cnt * 0.25, 1);
+      gh += `<div class="anno-cella" style="background:var(--foglia);opacity:${op}"></div>`;
+    }
+    mDiv.innerHTML = gh + '</div>';
+    mDiv.onclick = () => { meseVisto = new Date(a, mm, 1); templateCalendario = 'mensile'; tutto(); };
+    g.appendChild(mDiv);
   }
 }
 
@@ -4799,6 +4957,8 @@ $('pp-importo').onkeydown = e => { if (e.key === 'Enter') $('pp-salva').click();
 const giorniLavoro = [true, true, true, true, true, true, false];
 const soglie = { arancio: 7, rosso: 21 };   // giorni di ritardo prima dell'etichetta arancione / rossa
 let tema = 'auto', testo = 'normale', accento = 'verde', ultimaCopia = '';
+let templateCalendario = 'mensile';
+const TEMPLATE_CAL = { mensile: 'Mensile', 'per-settimane': 'Per settimane', agenda: 'Agenda', anno: 'Anno · Report' };
 let rigaAperta = null;
 // Notifiche: quali vuole e a che ora (nella prova si scelgono soltanto, non arrivano ancora)
 const NOTIFICHE = [
@@ -4916,6 +5076,116 @@ const GRUPPI_IMP = [
         };
       });
       el.querySelector('.piu-anello').onclick = () => apriTavolozza(c => { if (!coloriMiei.includes(c)) coloriMiei.push(c); disegnaImpostazioni(); });
+    } },
+    { id: 'calendario-vista', nome: 'Vista del calendario', valore: () => TEMPLATE_CAL[templateCalendario], corpo: el => {
+      const tpl = Object.keys(TEMPLATE_CAL);
+      let idx = tpl.indexOf(templateCalendario);
+      const mp = mappaGiorni();
+      const aa = meseVisto.getFullYear(), mm = meseVisto.getMonth();
+
+      function miniMensile() {
+        const quanti = new Date(aa, mm + 1, 0).getDate();
+        const vuoti = (new Date(aa, mm, 1).getDay() + 6) % 7;
+        const nome = maiuscola(new Intl.DateTimeFormat('it-IT', { month: 'long' }).format(meseVisto));
+        let h = `<div class="mini-mens"><div class="mini-mens-testa">${nome}</div><div class="mini-mens-griglia">`;
+        for (const g of ['L','M','M','G','V','S','D']) h += `<div class="mini-g-nome">${g}</div>`;
+        for (let i = 0; i < vuoti; i++) h += '<div></div>';
+        for (let n = 1; n <= quanti; n++) {
+          const s = iso(new Date(aa, mm, n));
+          const lavs = (mp[s]?.lavori || []).slice(0, 3);
+          h += `<div class="mini-g${s === tra(0) ? ' oggi' : ''}"><span>${n}</span><div class="mini-pallini">${lavs.map(v => { const c = prendiExtra(v.l.nome).colore; return `<i${c ? ` style="background:${c}"` : ''}></i>`; }).join('')}</div></div>`;
+        }
+        return h + '</div></div>';
+      }
+
+      function miniPerSettimane() {
+        const quanti = new Date(aa, mm + 1, 0).getDate();
+        const vuoti = (new Date(aa, mm, 1).getDay() + 6) % 7;
+        const days = Array(vuoti).fill(null).concat(Array.from({length: quanti}, (_, i) => i + 1));
+        while (days.length % 7) days.push(null);
+        const weeks = [];
+        for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+        let h = '<div class="mini-sett">';
+        for (const wk of weeks.slice(0, 5)) {
+          h += '<div class="mini-sett-riga">';
+          for (const n of wk) {
+            if (!n) { h += '<div class="mini-sett-g"></div>'; continue; }
+            const s = iso(new Date(aa, mm, n));
+            const lavs = (mp[s]?.lavori || []).slice(0, 2);
+            h += `<div class="mini-sett-g"><span>${n}</span>${lavs.map(v => { const c = prendiExtra(v.l.nome).colore || 'var(--foglia)'; return `<div class="mini-sett-blocco" style="background:${c}22;color:${c}">${v.l.nome.slice(0,3)}</div>`; }).join('')}</div>`;
+          }
+          h += '</div>';
+        }
+        return h + '</div>';
+      }
+
+      function miniAgenda() {
+        let h = '<div class="mini-agenda">';
+        for (let i = 0; i < 7; i++) {
+          const s = tra(i);
+          const lavs = (mp[s]?.lavori || []);
+          const dt = daIso(s);
+          const gg = NOMI_GIORNI[dt.getDay()].slice(0, 3);
+          h += `<div class="mini-agenda-riga">
+            <div class="mini-agenda-data"><span>${gg}</span><b>${dt.getDate()}</b></div>
+            <div class="mini-agenda-lavori">${lavs.slice(0, 2).map(v => { const c = prendiExtra(v.l.nome).colore || 'var(--foglia)'; return `<div class="mini-agenda-lavoro" style="border-color:${c}">${sicuro(v.l.nome)}</div>`; }).join('') || '<div style="font-size:8px;color:var(--testo-2)">Libero</div>'}</div>
+          </div>`;
+          if (h.split('mini-agenda-riga').length > 5) break;
+        }
+        return h + '</div>';
+      }
+
+      function miniAnno() {
+        const anno = meseVisto.getFullYear();
+        let h = '<div class="mini-anno-g">';
+        for (let m2 = 0; m2 < 12; m2++) {
+          const nm = new Intl.DateTimeFormat('it-IT', { month: 'short' }).format(new Date(anno, m2, 1)).slice(0,3);
+          const qm = new Date(anno, m2 + 1, 0).getDate();
+          const vm = (new Date(anno, m2, 1).getDay() + 6) % 7;
+          h += `<div class="mini-anno-mese"><div class="mini-anno-nome">${nm}</div><div class="mini-anno-griglia">`;
+          for (let i = 0; i < vm; i++) h += '<div class="mini-anno-cella"></div>';
+          for (let n = 1; n <= qm; n++) {
+            const s = iso(new Date(anno, m2, n));
+            const cnt = (mp[s]?.lavori || []).length;
+            const op = cnt === 0 ? 0.08 : Math.min(0.2 + cnt * 0.25, 1);
+            h += `<div class="mini-anno-cella" style="background:var(--foglia);opacity:${op}"></div>`;
+          }
+          h += '</div></div>';
+        }
+        return h + '</div>';
+      }
+
+      const builders = { mensile: miniMensile, 'per-settimane': miniPerSettimane, agenda: miniAgenda, anno: miniAnno };
+
+      function render() {
+        const id = tpl[idx];
+        el.innerHTML = `<div class="cal-car">
+          <div class="cal-car-anteprima">${builders[id]()}</div>
+          <div class="cal-car-nav">
+            <button type="button" class="cal-car-nav-btn" id="cc-prec" ${idx === 0 ? 'disabled' : ''}>‹</button>
+            <div class="cal-car-dots">${tpl.map((_, i) => `<span class="${i === idx ? 'attivo' : ''}"></span>`).join('')}</div>
+            <button type="button" class="cal-car-nav-btn" id="cc-succ" ${idx === tpl.length - 1 ? 'disabled' : ''}>›</button>
+          </div>
+          <div class="cal-car-nome">${TEMPLATE_CAL[id]}</div>
+          <button type="button" class="cal-car-scegli${id === templateCalendario ? ' attivo' : ''}" id="cc-scegli">
+            ${id === templateCalendario ? '✓ Già selezionato' : 'Usa questo'}
+          </button>
+        </div>`;
+        el.querySelector('#cc-prec').onclick = () => { if (idx > 0) { idx--; render(); } };
+        el.querySelector('#cc-succ').onclick = () => { if (idx < tpl.length - 1) { idx++; render(); } };
+        el.querySelector('#cc-scegli').onclick = () => { templateCalendario = id; tutto(); disegnaImpostazioni(); };
+        // swipe
+        const ap = el.querySelector('.cal-car-anteprima');
+        let sx = null;
+        ap.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+        ap.addEventListener('touchend', e => {
+          if (sx === null) return;
+          const dx = e.changedTouches[0].clientX - sx;
+          if (Math.abs(dx) > 40) { if (dx < 0 && idx < tpl.length - 1) idx++; else if (dx > 0 && idx > 0) idx--; render(); }
+          sx = null;
+        });
+      }
+      render();
     } },
   ]],
   ['Il mio lavoro', [
@@ -5142,7 +5412,7 @@ caricaMeteo();   // previsioni del meteo all'apertura
 
 // ---- Resto della pagina ----
 // Frecce: nei giorni cambiano mese, nei mesi cambiano anno
-const spostaHome = n => { meseVisto = vistaHome === 'mesi' ? new Date(meseVisto.getFullYear() + n, meseVisto.getMonth(), 1) : new Date(meseVisto.getFullYear(), meseVisto.getMonth() + n, 1); disegnaCalendario(); };
+const spostaHome = n => { meseVisto = (vistaHome === 'mesi' || templateCalendario === 'anno') ? new Date(meseVisto.getFullYear() + n, meseVisto.getMonth(), 1) : new Date(meseVisto.getFullYear(), meseVisto.getMonth() + n, 1); disegnaCalendario(); };
 $('mese-prima').onclick = () => spostaHome(-1);
 $('mese-dopo').onclick = () => spostaHome(1);
 $('c-mese').onclick = () => { vistaHome = vistaHome === 'mesi' ? 'giorni' : 'mesi'; disegnaCalendario(); };
