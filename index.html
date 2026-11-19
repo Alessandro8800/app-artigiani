@@ -1480,76 +1480,15 @@ const OGGI = new Date(); OGGI.setHours(0, 0, 0, 0);
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const tra = n => { const d = new Date(OGGI); d.setDate(d.getDate() + n); return iso(d); };
 
-const lavori = [
-  // Lavori passati: fatti, alcuni pagati e altri no (servono alla sezione Clienti)
-  { g: -62, nome: 'Condominio Aurora', tipo: 'Condominio', dove: 'Via Cavour 3', cosa: 'Potature invernali', prezzo: 1200, fatto: true },
-  { g: -47, nome: 'Villa Sangalli', dove: 'Strada per Lesmo 2', cosa: 'Potatura tigli', prezzo: 380, fatto: true },
-  { g: -40, nome: 'Lucia Mauri', dove: 'Via Mazzini 9', cosa: 'Taglio prato', prezzo: 45, fatto: true, pagato: true },
-  { g: -33, nome: 'Fam. Colombo', dove: 'Via Manzoni 8', cosa: 'Taglio prato', prezzo: 50, fatto: true, pagato: true },
-  { g: -26, nome: 'Giorgio Pozzi', dove: 'Via Garibaldi 41', cosa: 'Rifacimento prato', prezzo: 900, fatto: true },
-  { g: -21, nome: 'Andrea Galli', dove: 'Via Dante 30', cosa: 'Impianto irrigazione', prezzo: 1450, fatto: true, pagato: true },
-  { g: -20, nome: 'Anna Riva', dove: 'Via Volta 17', cosa: 'Potatura siepe', prezzo: 140, fatto: true },
-  { g: -12, nome: 'Giorgio Pozzi', dove: 'Via Garibaldi 41', cosa: 'Taglio prato', prezzo: 50, fatto: true },
-  { g: -9, nome: 'Paolo Viganò', dove: 'Via Roma 60', cosa: 'Trattamento prato', prezzo: 85, fatto: true, pagato: true },
-  { g: -5, nome: 'Officine Brambilla', tipo: 'Fabbrica', dove: 'Via dell\'Industria 5', cosa: 'Manutenzione verde', prezzo: 300, fatto: true },
-  { g: -2, nome: 'Marta Ferri', dove: 'Via dei Tigli 14', cosa: 'Taglio prato', prezzo: 45, fatto: true },
-  { g: -1, nome: 'Condominio Le Rose', tipo: 'Condominio', dove: 'Viale Europa 22', cosa: 'Sfalcio aree comuni', prezzo: 180, fatto: true },
-  { g: -2, nome: 'Paolo Viganò', dove: 'Via Roma 60', cosa: 'Pulizia grondaie' },   // rimasto indietro, e senza prezzo
-  { g: 0, nome: 'Fam. Colombo', dove: 'Via Manzoni 8', cosa: 'Potatura siepe di lauro', prezzo: 120 },
-  { g: 0, nome: 'Giorgio Pozzi', dove: 'Via Garibaldi 41', cosa: 'Taglio prato e bordi', prezzo: 50 },
-  { g: 0, nome: 'Condominio Aurora', tipo: 'Condominio', dove: 'Via Cavour 3', cosa: 'Pulizia aiuole ingresso', prezzo: 90 },
-  { g: 1, nome: 'Villa Sangalli', dove: 'Strada per Lesmo 2', cosa: 'Abbattimento betulla', prezzo: 650 },
-  { g: 1, nome: 'Anna Riva', dove: 'Via Volta 17', cosa: 'Raccolta foglie', prezzo: 40 },
-  { g: 2, nome: 'Officine Brambilla', tipo: 'Fabbrica', dove: 'Via dell\'Industria 5', cosa: 'Manutenzione verde', prezzo: 300 },
-  { g: 4, nome: 'Marta Ferri', dove: 'Via dei Tigli 14', cosa: 'Taglio prato', prezzo: 45 },
-  { g: 5, nome: 'Paolo Viganò', dove: 'Via Roma 60', cosa: 'Trattamento prato', prezzo: 85 },
-  { g: 9, nome: 'Condominio Le Rose', tipo: 'Condominio', dove: 'Viale Europa 22', cosa: 'Potatura alberi cortile', prezzo: 420 },
-  { g: 12, nome: 'Fam. Colombo', dove: 'Via Manzoni 8', cosa: 'Taglio prato', prezzo: 50 },
-].map((l, i) => ({ ...l, id: i, data: tra(l.g), fatto: !!l.fatto, tipo: l.tipo || 'Privato' }));
-
-// Nella prova: qualche mese di lavori già fatti e pagati, così la pagina Conti ha qualcosa da mostrare
-(() => {
-  const CLIENTI_STORICO = [['Lucia Mauri', 'Via Mazzini 9', 'Privato'], ['Fam. Colombo', 'Via Manzoni 8', 'Privato'], ['Andrea Galli', 'Via Dante 30', 'Privato'],
-    ['Paolo Viganò', 'Via Roma 60', 'Privato'], ['Condominio Aurora', 'Via Cavour 3', 'Condominio'], ['Officine Brambilla', "Via dell'Industria 5", 'Fabbrica'], ['Villa Sangalli', 'Strada per Lesmo 2', 'Privato']];
-  const LAVORI_STORICO = [['Taglio prato', 50, [['Carburante', 6]]], ['Potatura siepe', 140, [['Smaltimento', 20]]], ['Manutenzione verde', 300, [['Personale', 4, 15], ['Concime', 25]]],
-    ['Messa a dimora piante', 420, [['Piante', 180], ['Terra', 45]]], ['Raccolta foglie', 60, []], ['Abbattimento albero', 650, [['Personale', 8, 15], ['Noleggio', 90], ['Smaltimento', 60]]]];
-  let seme = 7; const caso = n => (seme = (seme * 9301 + 49297) % 233280, Math.floor(seme / 233280 * n));
-  for (let mese = 8; mese >= 2; mese--) {
-    const quanti = 5 + caso(5);
-    for (let k = 0; k < quanti; k++) {
-      const [nome, dove, tipo] = CLIENTI_STORICO[caso(CLIENTI_STORICO.length)], [cosa, prezzo, costi] = LAVORI_STORICO[caso(LAVORI_STORICO.length)];
-      const g = -(mese * 30) + caso(28);
-      const voci = costi.map(([t, a, b]) => t === 'Personale' ? { tipo: t, ore: a, tariffa: b } : { tipo: t, importo: a });
-      lavori.push({ id: lavori.length, g, nome, dove, tipo, cosa, prezzo, data: tra(g), fatto: true, pagato: true, costi: caso(4) ? { generale: null, voci } : null });
-    }
-  }
-})();
-
-// Durate di prova: i lavori grossi occupano mezza giornata o tutta
-// (in ore: i lavori grossi occupano mezza giornata, una giornata o più giorni)
-const DURATE_PROVA = { 'Rifacimento prato': 16, 'Abbattimento betulla': 8, 'Potature invernali': 8, 'Impianto irrigazione': 8,
-  'Potatura tigli': 4, 'Potatura alberi cortile': 4, 'Manutenzione verde': 4, 'Potatura siepe di lauro': 4 };
-lavori.forEach(l => { l.durata = DURATE_PROVA[l.cosa] || 2; });
-
-// Costi di prova su alcuni lavori fatti: un costo generale, oppure voci (personale = ore × costo all'ora)
-const COSTI_PROVA = {
-  'Rifacimento prato': { generale: null, voci: [{ tipo: 'Terra', importo: 140 }, { tipo: 'Piante', importo: 60 }, { tipo: 'Personale', ore: 10, tariffa: 15 }] },
-  'Impianto irrigazione': { generale: 620, voci: [] },
-  'Potature invernali': { generale: null, voci: [{ tipo: 'Smaltimento', importo: 90 }, { tipo: 'Personale', ore: 16, tariffa: 18 }] },
-};
-lavori.forEach(l => { if (l.fatto && l.g > -70 && COSTI_PROVA[l.cosa]) l.costi = JSON.parse(JSON.stringify(COSTI_PROVA[l.cosa])); });
+const lavori = [];
 
 // Telefoni di prova (facoltativi: non tutti i clienti ce l'hanno)
-const TELEFONI = { 'Villa Sangalli': '339 412 7781', 'Giorgio Pozzi': '347 220 1934', 'Condominio Aurora': '039 605 1120', 'Anna Riva': '328 904 5512' };
+const TELEFONI = {};
 
 // Altre impostazioni di ogni cliente: telefoni, colore, ogni quanto si ripete il lavoro
 const extra = {};
 const prendiExtra = nome => extra[nome] || (extra[nome] = { tel: '', colore: '', ripeti: 'no', note: '', mesiSemestrale: [] });
 for (const [n, t] of Object.entries(TELEFONI)) prendiExtra(n).tel = t;
-prendiExtra('Villa Sangalli').colore = '#8a5cc7';      // nella prova: due clienti già colorati
-prendiExtra('Condominio Aurora').colore = '#3b82c4';
-prendiExtra('Condominio Aurora').semestrale = true;   // i condomini pagano a giugno e a dicembre
-prendiExtra('Condominio Le Rose').semestrale = true;
 const COLORI = [['', 'Nessuno'], ['#d64545', 'Rosso'], ['#e08a2e', 'Arancione'], ['#d4b11f', 'Giallo'], ['#3d9a5b', 'Verde'], ['#3b82c4', 'Azzurro'], ['#8a5cc7', 'Viola']];
 const RIPETI = { no: { nome: 'No' }, sett: { nome: 'Ogni settimana', giorni: 7 }, mese: { nome: 'Ogni mese', mesi: 1 }, anno: { nome: 'Ogni anno', mesi: 12 } };
 
@@ -2743,36 +2682,11 @@ $('f-nome').addEventListener('input', aggiornaCliente);
 // ---- Barra AI: icone categoria ----
 // ---- Inbox AI ----
 const INBOX_ESEMPI = {
-  cliente: { titolo: 'Nuovi lavori', cat: 'cliente', badge: 'ai-b-cliente', voci: [
-    { testa: 'Marco Brambilla', dati: 'Via dei Tigli 12 · Taglio erba · 55 € · lun 25 nov',
-      campi: [['Nome','Marco Brambilla'],['Indirizzo','Via dei Tigli 12'],['Lavoro','Taglio erba'],['Prezzo','55']] },
-    { testa: 'Condominio Le Palme', dati: 'Via Roma 7 · Potatura siepi · 120 € · gio 28 nov',
-      campi: [['Nome','Condominio Le Palme'],['Indirizzo','Via Roma 7'],['Lavoro','Potatura siepi'],['Prezzo','120']] },
-  ]},
-  nota: { titolo: 'Note', cat: 'nota', badge: 'ai-b-nota', voci: [
-    { testa: 'Villa Verdi', dati: '"cancello verde, codice 1847"',
-      campi: [['Cliente','Villa Verdi'],['Nota','cancello verde, codice 1847']] },
-    { testa: 'Sig. Rossi', dati: '"cane pastore in giardino — meglio legarlo prima di entrare"',
-      campi: [['Cliente','Sig. Rossi'],['Nota','cane pastore in giardino — meglio legarlo prima di entrare']] },
-  ]},
-  riprogramma: { titolo: 'Riprogramma', cat: 'riprogramma', badge: 'ai-b-sposta', voci: [
-    { testa: 'Marta Ferri', dati: 'Ven 22 nov → Mar 26 nov', cal: true,
-      campi: [['Cliente','Marta Ferri'],['Da','Ven 22 nov'],['A','Mar 26 nov']] },
-    { testa: 'Condominio Aurora', dati: 'Lun 25 nov → Mer 27 nov, pomeriggio', cal: true,
-      campi: [['Cliente','Condominio Aurora'],['Da','Lun 25 nov'],['A','Mer 27 nov, pomeriggio']] },
-  ]},
-  costo: { titolo: 'Costi', cat: 'costo', badge: 'ai-b-costo', voci: [
-    { testa: 'Filo per decespugliatore', dati: '18 € · oggi',
-      campi: [['Descrizione','Filo per decespugliatore'],['Importo','18']] },
-    { testa: 'Carburante furgone', dati: '65 € · oggi',
-      campi: [['Descrizione','Carburante furgone'],['Importo','65']] },
-  ]},
-  paga: { titolo: 'Pagamenti', cat: 'paga', badge: 'ai-b-paga', voci: [
-    { testa: 'Villa Verdi — ha pagato', dati: '300 € · oggi',
-      campi: [['Cliente','Villa Verdi'],['Importo','300']] },
-    { testa: 'Sig. Rossi — ha pagato', dati: '85 € · 20 nov',
-      campi: [['Cliente','Sig. Rossi'],['Importo','85']] },
-  ]},
+  cliente:     { titolo: 'Nuovi lavori',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [] },
+  nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [] },
+  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [] },
+  costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [] },
+  paga:        { titolo: 'Pagamenti',    cat: 'paga',        badge: 'ai-b-paga',    voci: [] },
   extra: { titolo: 'Extra', cat: 'extra', badge: null, voci: [] },
 };
 
