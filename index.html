@@ -2863,7 +2863,7 @@ function confermaInboxCliente() {
     animaCard(_inboxCard, 'ok');
   }
   _inboxCard = null; _inboxItem = null; _inboxCat = null;
-  chiudiFoglio();
+  salva();
 }
 
 // --- Riprogramma: apre popup calendario con info cliente ---
@@ -3054,6 +3054,27 @@ function confermaCarta(card, item, cat) {
 
   if (cat === 'cliente') {
     apriModificaInboxCliente(card, item);
+    return;
+  }
+
+  if (cat === 'nota') {
+    const panel = card.querySelector('.inbox-edit-panel');
+    const inputs = panel ? panel.querySelectorAll('input, textarea') : [];
+    const cliente = (inputs[0]?.value?.trim()) || getCampo('Cliente');
+    const nota = (inputs[1]?.value?.trim()) || getCampo('Nota') || getCampo('Trascritto') || item.dati || '';
+    if (cliente) {
+      const e = prendiExtra(cliente);
+      if (nota) e.note = e.note ? e.note + '\n' + nota : nota;
+      avvisa(`Nota salvata per ${cliente}`);
+      tutto();
+    } else if (nota) {
+      const titolo = item.testa && item.testa !== nota ? item.testa : generaTitoloAuto(nota);
+      noteRapide.unshift({ id: ++_nrId, titolo, testo: nota, fatta: false });
+      avvisa('Nota rapida salvata');
+      disegnaNoteRapide(); aggiornaBadgeNote();
+    }
+    rimuoviVoceInbox(cat, item, 'ok');
+    animaCard(card, 'ok');
     return;
   }
 
