@@ -306,6 +306,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-header-azioni { display: flex; gap: 4px; }
 .inbox-ic { width: 40px; height: 40px; border-radius: 10px; border: none; background: var(--carta); cursor: pointer; color: var(--testo-2); display: grid; place-items: center; flex-shrink: 0; }
 .inbox-ic.attivo { background: var(--foglia-chiara); color: var(--foglia); }
+.inbox-ic.ascolta { background: var(--rosso-chiaro); color: var(--rosso); }
 .inbox-ic svg { width: 20px; height: 20px; }
 .inbox-sezione { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); margin: 20px 0 8px; flex-shrink: 0; }
 .inbox-sezione:first-child { margin-top: 0; }
@@ -2582,6 +2583,8 @@ function inbox_cardHtml(item, cat) {
 // --- Nuovi clienti: apre il foglio completo pre-compilato ---
 let _inboxCard = null; // card da animare dopo conferma
 let _ritornaInboxKey = null; // se impostata, chiudiFoglio riapre l'inbox
+let _inboxCatCorrente = null; // categoria inbox aperta in questo momento
+let _micSorgente = null; // 'globale' | 'inbox': quale mic ha avviato il riconoscimento
 
 function apriModificaInboxCliente(card, item) {
   _inboxCard = card;
@@ -2726,9 +2729,12 @@ function aggiornaBadge() {
 }
 
 function apriInbox(key) {
+  _inboxCatCorrente = key;
   const lista = $('ai-inbox-lista');
   lista.classList.remove('edit-mode');
   $('ai-inbox-edit').classList.remove('attivo');
+  $('ai-inbox-mic').hidden = key === 'tutto';
+  $('ai-inbox-mic').classList.remove('ascolta');
   const addBtn = $('ai-inbox-add');
   if (key === 'cliente') {
     addBtn.hidden = false;
@@ -2773,7 +2779,54 @@ $('ai-inbox-edit').onclick = () => {
 };
 $('ai-inbox-mic').onclick = () => {
   const btn = $('ai-inbox-mic');
-  btn.classList.toggle('attivo');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { btn.classList.toggle('attivo'); return; }
+  const catCorrente = _inboxCatCorrente || 'nota';
+  const box = $('mic-box');
+  $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
+  const catEl = $('mic-box-cat');
+  const catWrap = $('mic-box-cat-wrap');
+  const info = CAT_INFO[catCorrente] || { nome: catCorrente, emoji: '📝' };
+  catEl.textContent = info.emoji + ' ' + info.nome;
+  catEl.className = 'mic-box-cat cat-' + catCorrente;
+  catWrap.hidden = false;
+  box.hidden = false;
+  document.body.classList.add('bloccato');
+  btn.classList.add('ascolta');
+  _micFinaleTrovato = false;
+  _micSorgente = 'inbox';
+  const sr = new SpeechRecognition();
+  _micRiconosc = sr;
+  sr.lang = 'it-IT';
+  sr.interimResults = true;
+  sr.continuous = false;
+  sr.maxAlternatives = 1;
+  sr.onresult = (e) => {
+    let interim = '', finale = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finale += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    if (finale) {
+      _micFinaleTrovato = true;
+      $('mic-box-testo').textContent = finale;
+      setTimeout(() => { aggiungiVoceInbox(finale, catCorrente); chiudiMicBox(); }, 1200);
+    } else if (interim) {
+      $('mic-box-testo').innerHTML = `<em>${interim}</em>`;
+    }
+  };
+  sr.onerror = (e) => {
+    if (e.error === 'no-speech') {
+      $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>';
+      setTimeout(chiudiMicBox, 1800);
+    } else if (e.error !== 'aborted') {
+      chiudiMicBox();
+    }
+  };
+  sr.onend = () => {
+    if (!_micFinaleTrovato) setTimeout(() => { if ($('mic-box') && !$('mic-box').hidden) chiudiMicBox(); }, 400);
+  };
+  sr.start();
 };
 
 aggiornaBadge();
@@ -2864,10 +2917,16 @@ function chiudiMicBox() {
   if (_micRiconosc) { try { _micRiconosc.stop(); } catch(e){} _micRiconosc = null; }
   box.hidden = true;
   document.body.classList.remove('bloccato');
-  const btn = $('ai-mic');
-  btn.classList.remove('ascolta');
-  const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
-  btn.innerHTML = SVG_MIC + ' Parla';
+  if (_micSorgente === 'inbox') {
+    const inboxMic = $('ai-inbox-mic');
+    if (inboxMic) inboxMic.classList.remove('ascolta');
+  } else {
+    const btn = $('ai-mic');
+    btn.classList.remove('ascolta');
+    const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
+    btn.innerHTML = SVG_MIC + ' Parla';
+  }
+  _micSorgente = null;
 }
 
 $('ai-mic').onclick = () => {
@@ -2894,6 +2953,7 @@ $('ai-mic').onclick = () => {
   btn.classList.add('ascolta');
   btn.innerHTML = SVG_MIC + ' In ascolto…';
   _micFinaleTrovato = false;
+  _micSorgente = 'globale';
   const sr = new SpeechRecognition();
   _micRiconosc = sr;
   sr.lang = 'it-IT';
