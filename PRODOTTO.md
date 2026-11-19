@@ -416,6 +416,36 @@ una alla volta → offline e installazione → prova sul telefono.
 
 ---
 
-## 3. Domande aperte
+## 3. AI vocale — logica di smistamento (decisa il 19/11/2026)
+
+Quando l'utente parla al microfono, l'AI decide dove mandare ciò che ha detto seguendo queste regole **in ordine di priorità**:
+
+### Regola 1 — C'è una data o un giorno?
+Se la frase contiene un riferimento temporale (giorno della settimana, numero del mese, "domani", "dopodomani", ecc.) → **nota-appuntamento nel calendario**, indipendentemente dal resto.
+
+**Logica "primo disponibile":**
+- Giorno della settimana (es. "giovedì"): il prossimo giovedì futuro
+- Numero del mese (es. "il 7"): il prossimo 7 futuro (anche del mese dopo se già passato)
+- Se il giorno è oggi: vale oggi
+
+Esempio: è martedì 18, dico "giovedì devo chiamare Gigi" → appuntamento al giovedì più vicino (20), anche se Gigi è in rubrica.
+
+### Regola 2 — C'è il nome di un cliente (senza data)?
+- Cliente **in rubrica** → nota interna nella **scheda del cliente**
+  *(es. "il Sig. Rossi ha un cane in giardino", "codice cancello Villa Verdi 1234")*
+- Cliente **non in rubrica** → **note rapide**
+
+### Regola 3 — Nessuna categoria riconoscibile
+→ **note rapide**
+
+---
+
+**Differenza tra note cliente e appuntamenti:**
+- **Note cliente** = informazioni permanenti sul cliente/lavoro ("ha un cane", "risponde la moglie", "codice 1234"). Utili ogni volta che ci torni. Non spariscono.
+- **Appuntamenti** = reminder temporanei con data. Spariscono o si archiviano una volta passati.
+
+---
+
+## 4. Domande aperte
 
 _(vedi la conversazione in corso)_
