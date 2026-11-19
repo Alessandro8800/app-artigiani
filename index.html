@@ -152,6 +152,33 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .cerca { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 14px; padding: 0 14px; color: var(--testo-2); }
 .cerca input { flex: 1; min-width: 0; border: 0; background: none; min-height: 52px; font-size: 17px; font-weight: 600; outline: none; color: var(--testo); }
 .cerca:focus-within { border-color: var(--foglia); }
+/* Barra azioni sezione Clienti */
+.c-azioni { display: flex; gap: 8px; margin-bottom: 14px; }
+.c-az-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 64px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 12px; font-weight: 700; cursor: pointer; position: relative; transition: background .12s; }
+.c-az-btn svg { width: 22px; height: 22px; }
+.c-az-btn:active { background: var(--foglia-chiara); color: var(--foglia); }
+/* Stats strip minimal */
+.c-stats { display: flex; align-items: center; background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 12px 16px; margin: 12px 0 0; }
+.c-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.c-stat strong { font-size: 17px; font-weight: 800; color: var(--testo); font-variant-numeric: tabular-nums; }
+.c-stat span { font-size: 11px; font-weight: 700; color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
+.c-stat-sep { width: 1px; height: 28px; background: var(--linea); flex-shrink: 0; }
+/* Filtro ordinamento devono pagare */
+.c-filtro-wrap { position: relative; }
+.c-filtro-btn { background: none; border: none; color: var(--testo-2); font-size: 14px; font-weight: 700; cursor: pointer; padding: 4px 8px; border-radius: 8px; display: flex; align-items: center; gap: 3px; }
+.c-filtro-btn::after { content: ' ▾'; font-size: 11px; }
+.c-filtro-btn:active { background: var(--sfondo); }
+.c-filtro-menu { position: absolute; right: 0; top: calc(100% + 4px); background: var(--carta); border: 1.5px solid var(--linea); border-radius: 12px; padding: 4px; z-index: 15; min-width: 170px; display: flex; flex-direction: column; box-shadow: 0 4px 16px rgba(0,0,0,.12); animation: apri .15s ease-out; }
+.c-filtro-menu button { padding: 9px 12px; border: none; background: none; color: var(--testo); font-size: 14px; font-weight: 600; text-align: left; border-radius: 8px; cursor: pointer; }
+.c-filtro-menu button:active { background: var(--sfondo); }
+.c-filtro-menu button.attivo { color: var(--foglia); font-weight: 800; }
+/* Rubrica clienti */
+.rubrica-alfa { display: flex; gap: 2px; overflow-x: auto; padding: 8px 16px 4px; scrollbar-width: none; border-bottom: 1px solid var(--linea); flex-shrink: 0; }
+.rubrica-alfa::-webkit-scrollbar { display: none; }
+.rubrica-alfa button { min-width: 32px; height: 32px; border-radius: 8px; border: none; background: none; color: var(--testo-2); font-weight: 800; font-size: 14px; flex-shrink: 0; cursor: pointer; }
+.rubrica-alfa button:active { background: var(--foglia-chiara); color: var(--foglia); }
+.rubrica-sez { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--testo-2); padding: 16px 0 8px; flex-shrink: 0; }
+#rubrica .foglio { height: auto; max-height: calc(85vh - env(safe-area-inset-bottom, 0px)); }
 .c-titolo { display: flex; align-items: baseline; justify-content: space-between; padding-top: 20px; margin-bottom: 10px; }
 .c-titolo h2 { font-family: var(--font-titoli); font-size: 22px; margin: 0; }
 .c-titolo span { color: var(--testo-2); font-weight: 700; font-size: 14px; }
@@ -820,18 +847,50 @@ button.s-riga:first-child { border-top: 0; }
   <section id="vista-clienti" class="gutter" hidden>
     <header class="testata">
       <h1>Clienti</h1>
-      <p id="c-quanti"></p>
+      <p id="c-quanti" hidden></p>
     </header>
-    <div class="riepilogo">
-      <span>Ti devono</span>
-      <strong id="c-totale"></strong>
-      <small id="c-da-chi"></small>
+    <!-- Barra 4 azioni -->
+    <div class="c-azioni">
+      <button class="c-az-btn" onclick="apriFoglio()" aria-label="Nuovo cliente manuale">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Nuovo
+      </button>
+      <button class="c-az-btn" id="c-btn-mic" aria-label="Aggiungi cliente con voce">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+        Voce
+      </button>
+      <button class="c-az-btn" onclick="apriRubrica()" aria-label="Rubrica clienti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Rubrica
+      </button>
+      <button class="c-az-btn" style="position:relative" onclick="apriInbox('cliente')" aria-label="Notifiche clienti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 004-3V9a8 8 0 1116 0v5a3 3 0 004 3"/><path d="M9 17v1a3 3 0 006 0v-1"/></svg>
+        <span class="ai-badge" id="c-b-notifiche" hidden>0</span>
+        Notifiche
+      </button>
     </div>
+    <!-- Cerca -->
     <label class="cerca">
       <svg width="20" height="20" viewBox="0 0 24 24"><path d="M11 18a7 7 0 100-14 7 7 0 000 14zM20 20l-4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       <input id="c-cerca" type="search" autocomplete="off" placeholder="Cerca un cliente" aria-label="Cerca un cliente">
     </label>
-    <div class="azioni-centro" id="azioni-cli"></div>
+    <!-- Stats strip -->
+    <div class="c-stats">
+      <div class="c-stat">
+        <strong id="c-totale">€0</strong>
+        <span>Ti devono</span>
+      </div>
+      <div class="c-stat-sep"></div>
+      <div class="c-stat">
+        <strong id="c-in-ritardo">0</strong>
+        <span>In ritardo</span>
+      </div>
+      <div class="c-stat-sep"></div>
+      <div class="c-stat">
+        <strong id="c-quanti-num">0</strong>
+        <span>Clienti</span>
+      </div>
+    </div>
     <div id="c-elenco"></div>
   </section>
 
@@ -876,6 +935,19 @@ button.s-riga:first-child { border-top: 0; }
 </nav>
 
 <div class="avviso" id="avviso" role="status" hidden><span id="avviso-testo"></span><span class="avviso-tasti"><button id="avviso-azione2" hidden></button><button id="avviso-azione" hidden></button></span><i class="avviso-tempo" id="avviso-tempo" hidden></i></div>
+
+<!-- Rubrica clienti -->
+<div class="foglio-sfondo" id="rubrica" hidden>
+  <div class="foglio" style="display:flex;flex-direction:column;max-height:85vh;">
+    <header class="foglio-testa gutter">
+      <button class="foglio-x" onclick="chiudiRubrica()" aria-label="Chiudi rubrica">×</button>
+      <h2>Rubrica</h2>
+      <span></span>
+    </header>
+    <div class="rubrica-alfa" id="rubrica-alfa"></div>
+    <div class="f-corpo gutter" id="rubrica-lista" style="overflow-y:auto;flex:1;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))"></div>
+  </div>
+</div>
 
 <!-- Box microfono vocale -->
 <div id="mic-box" hidden>
@@ -2726,6 +2798,9 @@ function aggiornaBadge() {
   });
   const bt = $('ai-b-tutto');
   if (bt) { bt.textContent = totale; bt.hidden = totale === 0; }
+  const clientiN = INBOX_ESEMPI.cliente?.voci.length || 0;
+  const cbn = $('c-b-notifiche');
+  if (cbn) { cbn.textContent = clientiN; cbn.hidden = clientiN === 0; }
 }
 
 function apriInbox(key) {
@@ -3074,6 +3149,8 @@ $('foglio').addEventListener('click', e => { if (e.target === $('foglio')) chiud
 
 // ---- Sezione Clienti ----
 // Un cliente "deve" i lavori fatti e non pagati. Il ritardo si conta dal lavoro non pagato più vecchio.
+let cFiltro = 'ritardo-desc';
+const FILTRO_LABEL = { 'ritardo-desc': 'i più in ritardo', 'ritardo-asc': 'i meno in ritardo', 'importo-desc': 'i più costosi', 'importo-asc': 'i meno costosi' };
 function disegnaClienti() {
   const t = normalizza($('c-cerca').value);
   const tutti = clientiConosciuti().map(c => {
@@ -3081,13 +3158,14 @@ function disegnaClienti() {
     const fatti = lavori.filter(l => l.nome === c.nome && l.fatto).map(l => l.data).sort();
     return { ...c, dovuto: k.dovuto, lavori: k.daPagare.length, giorni: k.giorni, rit: etichettaRitardo(k), k, ultimo: fatti[fatti.length - 1] || '' };
   });
-  const devono = tutti.filter(c => c.dovuto > 0).sort((a, b) => b.giorni - a.giorni || b.dovuto - a.dovuto);
+  const sortCli = arr => { switch(cFiltro) { case 'ritardo-asc': return [...arr].sort((a,b)=>a.giorni-b.giorni||a.dovuto-b.dovuto); case 'importo-desc': return [...arr].sort((a,b)=>b.dovuto-a.dovuto); case 'importo-asc': return [...arr].sort((a,b)=>a.dovuto-b.dovuto); default: return [...arr].sort((a,b)=>b.giorni-a.giorni||b.dovuto-a.dovuto); } };
+  const devono = sortCli(tutti.filter(c => c.dovuto > 0));
   const saldati = tutti.filter(c => c.dovuto === 0).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
   const totale = devono.reduce((s, c) => s + c.dovuto, 0);
 
-  $('c-quanti').textContent = `${tutti.length} in tutto`;
   $('c-totale').textContent = euro(totale);
-  $('c-da-chi').textContent = devono.length === 0 ? 'Nessuno ti deve soldi' : devono.length === 1 ? 'da 1 cliente' : `da ${devono.length} clienti`;
+  const cir = $('c-in-ritardo'); if (cir) cir.textContent = devono.length;
+  const cqn = $('c-quanti-num'); if (cqn) cqn.textContent = tutti.length;
 
   const filtro = c => !t || normalizza(c.nome).includes(t) || normalizza(c.dove || '').includes(t);
   const d = devono.filter(filtro), r = saldati.filter(filtro);
@@ -3116,7 +3194,7 @@ function disegnaClienti() {
   const rigaSaldato = c => `<button class="apri" data-nome="${sicuro(c.nome)}"><span class="nome">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}${sicuro(c.nome)}</span><small>${ultimo(c.ultimo)}</small></button>`;
 
   $('c-elenco').innerHTML =
-    (d.length ? `<div class="c-titolo"><h2>Devono pagare</h2><span>i più in ritardo in cima</span></div>
+    (d.length ? `<div class="c-titolo"><h2>Devono pagare</h2><div class="c-filtro-wrap"><button class="c-filtro-btn" onclick="toggleFiltroMenu()">${FILTRO_LABEL[cFiltro]}</button><div class="c-filtro-menu" id="c-filtro-menu" hidden>${Object.entries(FILTRO_LABEL).map(([k,v])=>`<button class="${k===cFiltro?'attivo':''}" onclick="scegliFiltroCli('${k}')">${v}</button>`).join('')}</div></div></div>
       ${perTipo(d, rigaDeve, x => `<div class="lista">${x}</div>`)}` : '')
     + (r.length ? `<div class="c-titolo"><h2>Tutto pagato</h2><span>${r.length}</span></div>
       ${perTipo(r, rigaSaldato, x => `<div class="in-regola">${x}</div>`)}` : '')
@@ -3127,6 +3205,64 @@ function disegnaClienti() {
   });
   $('c-elenco').querySelectorAll('.cliente .spunta').forEach(b => { b.onclick = () => segnaPagato(b.closest('.cliente')); });
 }
+
+// Filtro ordinamento "Devono pagare"
+function toggleFiltroMenu() { const m = $('c-filtro-menu'); if (m) m.hidden = !m.hidden; }
+function scegliFiltroCli(f) { cFiltro = f; const m = $('c-filtro-menu'); if (m) m.hidden = true; disegnaClienti(); }
+document.addEventListener('click', e => { if (!e.target.closest('.c-filtro-wrap')) { const m = $('c-filtro-menu'); if (m) m.hidden = true; } });
+
+// Rubrica clienti (bottom sheet A-Z)
+function apriRubrica() { disegnaRubrica(); $('rubrica').hidden = false; document.body.classList.add('bloccato'); }
+function chiudiRubrica() { $('rubrica').hidden = true; document.body.classList.remove('bloccato'); }
+function disegnaRubrica() {
+  const tutti = clientiConosciuti().sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+  const lettere = [...new Set(tutti.map(c => normalizza(c.nome[0] || '').toUpperCase()).filter(Boolean))].sort();
+  $('rubrica-alfa').innerHTML = lettere.map(l => `<button onclick="document.getElementById('rs-${l}')?.scrollIntoView({behavior:'smooth'})">${l}</button>`).join('');
+  let html = '';
+  for (const l of lettere) {
+    const gr = tutti.filter(c => normalizza(c.nome[0] || '').toUpperCase() === l);
+    html += `<div class="rubrica-sez" id="rs-${l}">${l}</div>`;
+    html += `<div class="in-regola">${gr.map(c => `<button class="apri" data-nome="${sicuro(c.nome)}"><span class="nome">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}${sicuro(c.nome)}</span></button>`).join('')}</div>`;
+  }
+  if (!tutti.length) html = '<div class="vuoto">Nessun cliente ancora.</div>';
+  $('rubrica-lista').innerHTML = html;
+  $('rubrica-lista').querySelectorAll('.apri').forEach(b => { b.onclick = () => { chiudiRubrica(); apriScheda(b.dataset.nome); }; });
+}
+
+// Mic dalla pagina Clienti → va direttamente nella categoria 'cliente'
+document.addEventListener('DOMContentLoaded', () => {
+  const cb = $('c-btn-mic');
+  if (cb) cb.onclick = () => {
+    _inboxCatCorrente = 'cliente';
+    _micSorgente = 'inbox';
+    const inboxMic = $('ai-inbox-mic');
+    if (inboxMic) { inboxMic.classList.add('ascolta'); }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const box = $('mic-box');
+    $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
+    const catEl = $('mic-box-cat');
+    const catWrap = $('mic-box-cat-wrap');
+    catEl.textContent = '👤 Nuovo cliente';
+    catEl.className = 'mic-box-cat cat-cliente';
+    catWrap.hidden = false;
+    box.hidden = false;
+    document.body.classList.add('bloccato');
+    _micFinaleTrovato = false;
+    const sr = new SpeechRecognition();
+    _micRiconosc = sr;
+    sr.lang = 'it-IT'; sr.interimResults = true; sr.continuous = false; sr.maxAlternatives = 1;
+    sr.onresult = e => {
+      let interim = '', finale = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) finale += e.results[i][0].transcript; else interim += e.results[i][0].transcript; }
+      if (finale) { _micFinaleTrovato = true; $('mic-box-testo').textContent = finale; setTimeout(() => { aggiungiVoceInbox(finale, 'cliente'); chiudiMicBox(); }, 1200); }
+      else if (interim) { $('mic-box-testo').innerHTML = `<em>${interim}</em>`; }
+    };
+    sr.onerror = e => { if (e.error === 'no-speech') { $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>'; setTimeout(chiudiMicBox, 1800); } else if (e.error !== 'aborted') chiudiMicBox(); };
+    sr.onend = () => { if (!_micFinaleTrovato) setTimeout(() => { if (!$('mic-box').hidden) chiudiMicBox(); }, 400); };
+    sr.start();
+  };
+});
 
 // Sollecito: arancione = ora del messaggio (WhatsApp con il testo già scritto), rosso = ora di telefonare
 let firma = '', modelloSollecito = 'Ciao {nome}, ti ricordo il pagamento di {importo} per {lavoro}. Grazie! {firma}';
