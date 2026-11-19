@@ -152,6 +152,22 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .cerca { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 14px; padding: 0 14px; color: var(--testo-2); }
 .cerca input { flex: 1; min-width: 0; border: 0; background: none; min-height: 52px; font-size: 17px; font-weight: 600; outline: none; color: var(--testo); }
 .cerca:focus-within { border-color: var(--foglia); }
+#storico { z-index: 21; }
+/* Footer "Vedi in dettaglio" nell'inbox */
+.inbox-vedi-btn { width: 100%; padding: 14px 0; display: flex; align-items: center; justify-content: center; gap: 8px; background: none; border: none; color: var(--testo-2); font-size: 15px; font-weight: 700; cursor: pointer; }
+.inbox-vedi-btn svg { flex-shrink: 0; }
+.inbox-vedi-btn:active { color: var(--testo); }
+/* Storico bottom sheet */
+.storico-card { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--linea); }
+.storico-card:last-child { border-bottom: none; }
+.storico-stato { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; flex-shrink: 0; }
+.storico-stato.ok { background: color-mix(in srgb, var(--foglia) 15%, transparent); color: var(--foglia); }
+.storico-stato.no { background: rgba(200,50,50,.12); color: #c83232; }
+.storico-info { flex: 1; min-width: 0; }
+.storico-info strong { display: block; font-size: 15px; font-weight: 700; color: var(--testo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.storico-info span { font-size: 13px; color: var(--testo-2); }
+.storico-reattiva { padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.storico-reattiva:active { background: var(--carta); }
 /* Barra azioni sezione Clienti */
 .c-azioni { display: flex; gap: 6px; margin-bottom: 14px; }
 .c-az-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; position: relative; transition: background .12s; }
@@ -947,6 +963,18 @@ button.s-riga:first-child { border-top: 0; }
 </nav>
 
 <div class="avviso" id="avviso" role="status" hidden><span id="avviso-testo"></span><span class="avviso-tasti"><button id="avviso-azione2" hidden></button><button id="avviso-azione" hidden></button></span><i class="avviso-tempo" id="avviso-tempo" hidden></i></div>
+
+<!-- Storico inbox (riprogrammi, costi, note già decisi) -->
+<div class="foglio-sfondo" id="storico" hidden>
+  <div class="foglio" role="dialog" aria-modal="true" aria-labelledby="storico-titolo" style="max-height:75vh;height:auto">
+    <header class="f-testa gutter">
+      <button class="chiudi" onclick="chiudiStorico()" aria-label="Chiudi storico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+      <h2 id="storico-titolo" style="margin:0;font-family:var(--font-titoli);font-size:22px">Storico</h2>
+      <span></span>
+    </header>
+    <div class="f-corpo gutter" id="storico-lista" style="padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))"></div>
+  </div>
+</div>
 
 <!-- Rubrica clienti -->
 <div class="foglio-sfondo" id="rubrica" hidden>
@@ -2860,11 +2888,79 @@ function apriInbox(key) {
     $('ai-inbox-footer').hidden = true;
   }
   lista.innerHTML = html;
+  // Footer "Vedi in dettaglio"
+  const footer = $('ai-inbox-footer');
+  if (key === 'tutto') {
+    footer.hidden = true;
+  } else if (key === 'cliente' || key === 'paga') {
+    footer.hidden = false;
+    footer.innerHTML = `<button class="inbox-vedi-btn" onclick="chiudiInbox();document.querySelectorAll('.barra button').forEach(b=>{if(b.dataset.vista==='clienti')b.click()})">Vai alla scheda Clienti <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>`;
+  } else {
+    footer.hidden = false;
+    footer.innerHTML = `<button class="inbox-vedi-btn" onclick="apriStorico('${key}')">Vedi storico <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>`;
+  }
   $('ai-inbox').hidden = false;
   document.body.classList.add('bloccato');
 }
 
 function chiudiInbox() { $('ai-inbox').hidden = true; document.body.classList.remove('bloccato'); }
+
+// Storico: ultimi 10 già decisi per ogni categoria
+const STORICO_ESEMPI = {
+  riprogramma: [
+    { testa: 'Fam. Colombo', dati: 'Taglio prato', extra: '→ 22 nov', stato: 'ok' },
+    { testa: 'Villa Sangalli', dati: 'Potatura tigli', extra: 'annullato', stato: 'no' },
+    { testa: 'Giorgio Pozzi', dati: 'Taglio prato e bordi', extra: '→ 18 nov', stato: 'ok' },
+    { testa: 'Marta Ferri', dati: 'Messa a dimora', extra: 'annullato', stato: 'no' },
+    { testa: 'Condominio Aurora', dati: 'Pulizia aiuole', extra: '→ 5 dic', stato: 'ok' },
+  ],
+  costo: [
+    { testa: 'Carburante', dati: '€ 45 · Personale', extra: '14 nov', stato: 'ok' },
+    { testa: 'Diserbante Pro', dati: '€ 28 · Fam. Colombo', extra: '8 nov', stato: 'ok' },
+    { testa: 'Smaltimento potature', dati: '€ 60 · Villa Sangalli', extra: '3 nov', stato: 'no' },
+    { testa: 'Guanti da lavoro', dati: '€ 12 · Personale', extra: '1 nov', stato: 'ok' },
+    { testa: 'Concime granulare', dati: '€ 35 · Condominio Aurora', extra: '28 ott', stato: 'ok' },
+  ],
+  nota: [
+    { testa: 'Chiamare Sig. Rossi', dati: 'giovedì 27 — tel: 335 1234567', stato: 'ok' },
+    { testa: 'Comprare guanti antitaglio', dati: 'memo · nessuna data', stato: 'ok' },
+    { testa: 'Preventivo siepe', dati: 'Villa Sangalli · scaduto', stato: 'no' },
+    { testa: 'Portare la scala alta', dati: 'mercoledì 20 — Condominio Aurora', stato: 'ok' },
+  ],
+};
+const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note' };
+
+function apriStorico(key) {
+  $('storico-titolo').textContent = STORICO_TITOLI[key] || 'Storico';
+  const items = [...(STORICO_ESEMPI[key] || [])];
+  // In cima: quelli ancora da decidere (dall'inbox)
+  const inAttesa = (INBOX_ESEMPI[key]?.voci || []).map(v => ({ testa: v.testa, dati: v.dati || '', extra: 'da decidere', stato: 'attesa' }));
+  const tutto = [...inAttesa, ...items];
+  if (!tutto.length) {
+    $('storico-lista').innerHTML = '<div class="vuoto">Nessun elemento nello storico.</div>';
+  } else {
+    $('storico-lista').innerHTML = tutto.map((it, i) => {
+      const icona = it.stato === 'ok' ? '✓' : it.stato === 'no' ? '✕' : '…';
+      const cls = it.stato === 'ok' ? 'ok' : it.stato === 'no' ? 'no' : 'attesa';
+      const stile = cls === 'attesa' ? 'background:rgba(255,165,0,.12);color:orange' : '';
+      const btnReattiva = (it.stato === 'ok' || it.stato === 'no')
+        ? `<button class="storico-reattiva" onclick="riativaStorico('${key}',${i - inAttesa.length})">Rivedi</button>` : '';
+      return `<div class="storico-card"><div class="storico-stato ${cls}" style="${stile}">${icona}</div><div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sicuro(it.dati)}${it.extra ? ' · ' + sicuro(it.extra) : ''}</span></div>${btnReattiva}</div>`;
+    }).join('');
+  }
+  $('storico').hidden = false;
+}
+function chiudiStorico() { $('storico').hidden = true; }
+function riativaStorico(key, idx) {
+  const it = STORICO_ESEMPI[key]?.[idx];
+  if (!it) return;
+  const v = { testa: it.testa, dati: it.dati, campi: [] };
+  INBOX_ESEMPI[key]?.voci.unshift(v);
+  STORICO_ESEMPI[key].splice(idx, 1);
+  aggiornaBadge();
+  chiudiStorico();
+  apriInbox(key);
+}
 $('ai-inbox-chiudi').onclick = chiudiInbox;
 $('ai-inbox').addEventListener('click', e => { if (e.target === $('ai-inbox')) chiudiInbox(); });
 $('ai-inbox-edit').onclick = () => {
@@ -3246,7 +3342,7 @@ function disegnaRubrica(filtroQ = '') {
   const ALFA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const q = normalizza(filtroQ);
   const fonte = clientiConosciuti().sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
-  const tutti = q ? fonte.filter(c => normalizza(c.nome).includes(q)) : fonte;
+  const tutti = q ? fonte.filter(c => normalizza(c.nome).includes(q) || normalizza(c.dove || '').includes(q)) : fonte;
   const letterePresenti = new Set(tutti.map(c => normalizza(c.nome[0] || '').toUpperCase()));
 
   // Indice alfabetico: tutte le 26 lettere, disabilitate se non ci sono clienti
