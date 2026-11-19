@@ -2712,11 +2712,26 @@ $('f-nome').addEventListener('input', aggiornaCliente);
 // ---- Barra AI: icone categoria ----
 // ---- Inbox AI ----
 const INBOX_ESEMPI = {
-  cliente:     { titolo: 'Nuovi lavori',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [] },
-  nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [] },
-  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [] },
-  costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [] },
-  paga:        { titolo: 'Pagamenti',    cat: 'paga',        badge: 'ai-b-paga',    voci: [] },
+  cliente:     { titolo: 'Nuovi lavori',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [
+    { testa: 'Fam. Bianchi', dati: 'Via Leopardi 8 · taglio prato · €70', campi: [['Nome','Fam. Bianchi'],['Indirizzo','Via Leopardi 8'],['Lavoro','Taglio prato e bordi'],['Prezzo','70']] },
+    { testa: 'Condominio Le Rose', dati: 'Via Garibaldi 15 · potatura · €280', campi: [['Nome','Condominio Le Rose'],['Indirizzo','Via Garibaldi 15'],['Lavoro','Potatura tigli e siepi'],['Prezzo','280']] },
+  ] },
+  nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [
+    { testa: 'Comprare concime', dati: 'memo · nessuna data', campi: [['Nota','Comprare concime granulare sacchi 25 kg']] },
+    { testa: 'Nota Villa Verdi', dati: 'codice cancello', campi: [['Cliente','Villa Verdi'],['Nota','Cancello automatico: codice 2024, telecomando di riserva in cassetta']] },
+  ] },
+  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [
+    { testa: 'Marta Ferri', dati: 'Taglio prato · ven 21 nov → gio 20 nov', campi: [['Cliente','Marta Ferri'],['Da','ven 21 nov'],['A','giovedì']] },
+    { testa: 'Villa Verdi', dati: 'Potatura alberi · gio 20 nov (scegli data)', campi: [['Cliente','Villa Verdi'],['Da','gio 20 nov'],['A','']] },
+  ] },
+  costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [
+    { testa: 'Carburante', dati: 'Diesel · €52', campi: [['Descrizione','Carburante'],['Importo','52']] },
+    { testa: 'Sacchi ramaglie', dati: '10 sacchi · €18', campi: [['Descrizione','Sacchi ramaglie'],['Importo','18']] },
+  ] },
+  paga:        { titolo: 'Pagamenti',    cat: 'paga',        badge: 'ai-b-paga',    voci: [
+    { testa: 'Villa Verdi', dati: 'Taglio prato e bordi · €90', campi: [['Cliente','Villa Verdi'],['Importo','90']] },
+    { testa: 'Sig. Rossi', dati: 'Potatura siepe · €150', campi: [['Cliente','Sig. Rossi'],['Importo','150']] },
+  ] },
   extra: { titolo: 'Extra', cat: 'extra', badge: null, voci: [] },
 };
 
