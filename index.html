@@ -575,13 +575,23 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-domanda small { color: var(--testo-2); font-size: 13px; font-weight: 600; margin-top: -6px; }
 .prev-slider-wrap { display: flex; flex-direction: column; gap: 6px; }
 .prev-slider-valore { font-family: var(--font-titoli); font-size: 22px; color: var(--foglia); font-weight: 700; }
-.prev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--linea); outline: none; cursor: pointer; }
+.prev-slider-track { position: relative; width: 100%; height: 28px; display: flex; align-items: center; }
+.prev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--linea); outline: none; cursor: pointer; position: relative; z-index: 1; background: transparent; }
 .prev-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--foglia); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
 .prev-slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: var(--foglia); cursor: pointer; border: none; }
+.prev-slider-bg { position: absolute; left: 0; right: 0; height: 6px; border-radius: 3px; background: var(--linea); pointer-events: none; }
+.prev-media-mark { position: absolute; width: 3px; height: 16px; background: var(--foglia); border-radius: 2px; opacity: .45; pointer-events: none; transform: translateX(-50%); }
 .prev-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .prev-chip { padding: 8px 16px; border-radius: 20px; border: 2px solid var(--linea); background: var(--sfondo); font-size: 15px; font-weight: 700; cursor: pointer; transition: all .15s; }
 .prev-chip.sel { border-color: var(--foglia); background: var(--foglia-chiara); color: var(--foglia); }
 .prev-nota { width: 100%; min-height: 80px; border: 1.5px solid var(--linea); border-radius: 12px; padding: 10px 12px; font-size: 15px; resize: none; background: var(--sfondo); }
+.prev-label-riga { display: flex; align-items: center; gap: 6px; }
+.prev-info-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--testo-2); background: none; color: var(--testo-2); font-size: 12px; font-weight: 800; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
+.prev-info-pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); }
+.prev-info-box { background: var(--carta); border-radius: 22px 22px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom,0px)); max-width: 480px; width: 100%; display: flex; flex-direction: column; gap: 12px; animation: sali .2s ease-out; }
+.prev-info-box h4 { margin: 0; font-family: var(--font-titoli); font-size: 18px; }
+.prev-info-box p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--testo-2); }
+.prev-info-box button { align-self: flex-end; padding: 8px 20px; border-radius: 10px; border: 0; background: var(--foglia); color: #fff; font-weight: 800; cursor: pointer; }
 
 /* Impostazioni */
 .imp-gruppo { background: var(--carta); border: 1px solid var(--linea); border-radius: 18px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -4824,114 +4834,148 @@ document.querySelectorAll('.barra button').forEach(b => {
 
 // ======== PREVENTIVI ========
 
-let prevDati = null; // null = mai compilato
+let prevDati = null;
 
 const PREV_FORM = [
   {
     sezione: 'La tua tariffa base',
     domande: [
-      { id: 'tariffa-ora', label: 'Quanto prendi all\'ora?', small: 'Usato per lavori a tempo', tipo: 'slider', min: 20, max: 100, step: 5, unita: '€/h', default: 40 },
-      { id: 'minimo', label: 'Importo minimo per un lavoro', small: 'Sotto questa cifra non conviene uscire', tipo: 'slider', min: 30, max: 300, step: 10, unita: '€', default: 80 },
+      { id: 'tariffa-ora', label: "Quanto prendi all'ora?", tipo: 'slider', min: 20, max: 120, step: 5, unita: '€/h', media: 40,
+        info: { titolo: "Tariffa oraria", testo: "La media per un giardiniere in nord Italia è 35–50 €/h. Usala come punto di partenza: se hai molta esperienza o lavori su zone costose, puoi andare più alto." } },
+      { id: 'minimo', label: "Importo minimo per un lavoro", tipo: 'slider', min: 30, max: 300, step: 10, unita: '€', media: 80,
+        info: { titolo: "Lavoro minimo", testo: "Il minimo copre il tempo di spostamento e preparazione anche per lavori brevi. La maggior parte dei giardinieri usa 60–100 €. Sotto quella cifra spesso non conviene uscire." } },
     ]
   },
   {
-    sezione: 'Taglio erba',
+    sezione: 'Taglio erba (per 100 m²)',
     domande: [
-      { id: 'erba-s', label: 'Prato piccolo (fino a 100 m²)', tipo: 'slider', min: 20, max: 150, step: 5, unita: '€', default: 40 },
-      { id: 'erba-m', label: 'Prato medio (100–300 m²)', tipo: 'slider', min: 40, max: 250, step: 10, unita: '€', default: 80 },
-      { id: 'erba-l', label: 'Prato grande (oltre 300 m²)', small: 'Per m² in più rispetto ai 300', tipo: 'slider', min: 10, max: 60, step: 5, unita: '€ ogni 100 m²', default: 25 },
+      { id: 'erba-ok', label: "Scenario semplice", tipo: 'slider', min: 15, max: 120, step: 5, unita: '€', media: 35,
+        info: { titolo: "Taglio erba semplice", testo: "Prato di 100 m², erba bassa (5–15 cm), nessun ostacolo, non porti via l'erba. È il caso migliore: vai, tagli, finisci in fretta." } },
+      { id: 'erba-no', label: "Scenario difficile", tipo: 'slider', min: 30, max: 200, step: 5, unita: '€', media: 80,
+        info: { titolo: "Taglio erba difficile", testo: "Stesso prato di 100 m², ma erba alta (30–50 cm), pietre o alberi intorno, e devi smaltire il materiale tagliato. Ci vuole il doppio del tempo." } },
     ]
   },
   {
-    sezione: 'Potatura siepi',
+    sezione: 'Potatura siepi (per metro lineare)',
     domande: [
-      { id: 'siepe-b', label: 'Siepe bassa (meno di 1 m)', tipo: 'slider', min: 1, max: 15, step: 0.5, unita: '€/m lineare', default: 4 },
-      { id: 'siepe-m', label: 'Siepe media (1–2 m)', tipo: 'slider', min: 2, max: 25, step: 0.5, unita: '€/m lineare', default: 8 },
-      { id: 'siepe-a', label: 'Siepe alta (oltre 2 m)', tipo: 'slider', min: 4, max: 40, step: 1, unita: '€/m lineare', default: 14 },
+      { id: 'siepe-ok', label: "Siepe semplice (dritta, accessibile)", tipo: 'slider', min: 1, max: 20, step: 0.5, unita: '€/m', media: 5,
+        info: { titolo: "Siepe semplice", testo: "Siepe dritta, buon accesso su entrambi i lati, altezza normale (1–1.5 m). Puoi andare spedito con il canneto o le cesoie." } },
+      { id: 'siepe-no', label: "Siepe difficile (tortuosa, alta, scarso accesso)", tipo: 'slider', min: 3, max: 40, step: 0.5, unita: '€/m', media: 12,
+        info: { titolo: "Siepe difficile", testo: "Siepe irregolare, alta (2+ m), accessibile solo da un lato, con rami duri o pianta spinosa. Spesso serve scala e più passate." } },
     ]
   },
   {
     sezione: 'Potatura piante e alberi',
     domande: [
-      { id: 'pot-s', label: 'Pianta piccola (cespugli, rose, arbusti)', tipo: 'slider', min: 15, max: 100, step: 5, unita: '€', default: 30 },
-      { id: 'pot-m', label: 'Albero medio (3–8 m)', tipo: 'slider', min: 50, max: 400, step: 10, unita: '€', default: 120 },
-      { id: 'pot-g', label: 'Albero grande (oltre 8 m)', tipo: 'slider', min: 150, max: 1000, step: 25, unita: '€', default: 300 },
+      { id: 'pot-ok', label: "Pianta semplice (cespuglio, arbusto libero)", tipo: 'slider', min: 20, max: 150, step: 5, unita: '€', media: 40,
+        info: { titolo: "Potatura semplice", testo: "Rose, lavanda, arbusti ornamentali: pianta libera, facile accesso, non ci sono ostacoli sopra. Lavoro da 20–40 minuti." } },
+      { id: 'pot-no', label: "Albero complicato (vicino a strutture, scala necessaria)", tipo: 'slider', min: 80, max: 800, step: 20, unita: '€', media: 250,
+        info: { titolo: "Potatura complicata", testo: "Albero grande o vicino a muri, cavi, tetti. Serve la scala, ci vuole attenzione, i rami devono essere abbassati piano. Comprende un albero medio (5–10 m) in condizioni difficili." } },
     ]
   },
   {
     sezione: 'Abbattimento alberi',
     domande: [
-      { id: 'abb-s', label: 'Albero piccolo (fino a 5 m)', tipo: 'slider', min: 100, max: 600, step: 25, unita: '€', default: 200 },
-      { id: 'abb-m', label: 'Albero medio (5–15 m)', tipo: 'slider', min: 300, max: 1500, step: 50, unita: '€', default: 600 },
-      { id: 'abb-g', label: 'Albero grande (oltre 15 m)', tipo: 'slider', min: 800, max: 5000, step: 100, unita: '€', default: 1800 },
+      { id: 'abb-ok', label: "Albero in campo aperto (fino a 10 m)", tipo: 'slider', min: 150, max: 1200, step: 50, unita: '€', media: 400,
+        info: { titolo: "Abbattimento semplice", testo: "Albero in spazio aperto, puoi farlo cadere senza problemi, nessun ostacolo vicino. Include lo smontaggio in pezzi e l'accatastamento sul posto." } },
+      { id: 'abb-no', label: "Albero vicino a strutture o molto grande (10–20 m)", tipo: 'slider', min: 400, max: 4000, step: 100, unita: '€', media: 1200,
+        info: { titolo: "Abbattimento difficile", testo: "Albero grande o vicino a casa, recinzioni, cavi. Serve smontare ramo per ramo dall'alto, spesso con fune. Lavoro da mezza giornata intera." } },
     ]
   },
   {
-    sezione: 'Altri lavori comuni',
+    sezione: 'Piantumazione',
     domande: [
-      { id: 'piantum', label: 'Piantumazione (per pianta, lavoro incluso)', small: 'Solo la manodopera, i materiali a parte', tipo: 'slider', min: 5, max: 60, step: 5, unita: '€/pianta', default: 15 },
-      { id: 'pulizia', label: 'Pulizia giardino / raccolta foglie', tipo: 'slider', min: 20, max: 80, step: 5, unita: '€/h', default: 35 },
-      { id: 'irrigaz', label: 'Lavori di irrigazione', tipo: 'slider', min: 25, max: 90, step: 5, unita: '€/h', default: 45 },
+      { id: 'piant-ok', label: "Pianta piccola (fiori, arbusti, bulbi)", tipo: 'slider', min: 5, max: 40, step: 5, unita: '€/pianta', media: 10,
+        info: { titolo: "Piantumazione semplice", testo: "Un fiore, una piantina annuale, un arbusto leggero. Scavo piccolo, lavoro veloce. Solo manodopera, i materiali sono a parte." } },
+      { id: 'piant-no', label: "Pianta grande (albicocco, oleandro, cipresso...)", tipo: 'slider', min: 20, max: 150, step: 10, unita: '€/pianta', media: 50,
+        info: { titolo: "Piantumazione importante", testo: "Un albero da frutto o una pianta ornamentale grande: serve scavare profondo, mettere tutori, annaffiare abbondante. Comprende solo il lavoro, non la pianta." } },
     ]
   },
   {
-    sezione: 'Spese e costi',
+    sezione: 'Altri lavori (per ora)',
     domande: [
-      { id: 'spese-fisse', label: 'Spese fisse da aggiungere per lavoro di mezza giornata', small: 'Carburante, attrezzatura, assicurazione... tutto insieme', tipo: 'slider', min: 10, max: 150, step: 5, unita: '€', default: 30 },
-      { id: 'materiali', label: 'Quando usi materiali (terra, piante, pali...)', tipo: 'chips', opzioni: ['Li passo al cliente al costo esatto', 'Li includo nel preventivo', 'Li passo con ricarico del 15%', 'Li passo con ricarico del 30%'], default: 0 },
+      { id: 'pulizia', label: "Pulizia giardino / raccolta foglie", tipo: 'slider', min: 20, max: 80, step: 5, unita: '€/h', media: 35,
+        info: { titolo: "Pulizia e raccolta", testo: "Lavoro manuale continuo: raccolta foglie, diserbo, pulizia ghiaia. Media dei giardinieri: 30–40 €/h." } },
+      { id: 'irrigaz', label: "Installazione / manutenzione irrigazione", tipo: 'slider', min: 25, max: 100, step: 5, unita: '€/h', media: 50,
+        info: { titolo: "Irrigazione", testo: "Lavoro tecnico più specializzato. Media: 40–60 €/h. Se sai farlo bene puoi stare nella fascia alta." } },
+    ]
+  },
+  {
+    sezione: 'Spese di trasferta e usura',
+    domande: [
+      { id: 'spese-fisse', label: "Aggiungo al preventivo per coprire le spese fisse", tipo: 'slider', min: 0, max: 120, step: 5, unita: '€ per mezza giornata', media: 25,
+        info: { titolo: "Spese fisse", testo: "In media un giardiniere aggiunge 20–35 € per mezza giornata per coprire: carburante (8–12 €), usura attrezzatura (5–10 €), assicurazione e telefono (5–8 €). L'AI scala automaticamente in base alla durata del lavoro e alla distanza." } },
+      { id: 'materiali', label: "Quando usi materiali (terra, pali, legacci...)", tipo: 'chips',
+        opzioni: ['Li passo al cliente al costo esatto', 'Li includo nel preventivo', 'Li passo con +15% di ricarico', 'Li passo con +30% di ricarico'], default: 0 },
     ]
   },
   {
     sezione: 'Personale',
     domande: [
-      { id: 'collaboratori', label: 'Lavori mai con collaboratori?', tipo: 'chips', opzioni: ['No, lavoro sempre da solo', 'A volte, per lavori grandi'], default: 0 },
-      { id: 'costo-collab', label: 'Costo di un collaboratore al giorno', small: 'Usato quando il preventivo prevede aiuto', tipo: 'slider', min: 80, max: 400, step: 10, unita: '€/giorno', default: 150 },
+      { id: 'collaboratori', label: "Lavori mai con collaboratori?", tipo: 'chips',
+        opzioni: ['No, lavoro sempre da solo', 'A volte, per lavori grandi'], default: 0 },
+      { id: 'costo-collab', label: "Costo orario di un collaboratore", tipo: 'slider', min: 8, max: 35, step: 1, unita: '€/h', media: 14,
+        info: { titolo: "Costo collaboratore", testo: "Se paghi in nero: 10–15 €/h. Con regolare contratto: 14–20 €/h lordi. L'AI lo aggiunge al preventivo solo quando serve un secondo paio di mani." } },
     ]
   },
   {
-    sezione: 'Altro che l\'AI deve sapere',
+    sezione: "Altro che l'AI deve sapere",
     domande: [
-      { id: 'extra', label: 'Aggiunte libere', small: 'Es. faccio solo zone entro 30 km, non lavoro con scale oltre 6 m, ho un trincia rami professionale...', tipo: 'textarea' },
+      { id: 'extra', label: "Note libere", tipo: 'textarea',
+        placeholder: "Es. lavoro solo entro 30 km, non salgo su scale oltre 4 m, ho un trincia rami professionale, non faccio siepi di cipresso..." },
     ]
   },
 ];
 
 function sliderLabel(d, val) {
-  if (d.step < 1) return `${val.toFixed(1)} ${d.unita}`;
-  return `${val} ${d.unita}`;
+  return `${d.step < 1 ? parseFloat(val).toFixed(1) : val} ${d.unita}`;
+}
+
+function marcaMedia(d) {
+  if (d.media == null) return '';
+  const pct = ((d.media - d.min) / (d.max - d.min)) * 100;
+  return `<div class="prev-media-mark" style="left:${pct}%"></div>`;
+}
+
+function infoBtn(d) {
+  if (!d.info) return '';
+  const titolo = d.info.titolo.replace(/'/g, "\\'");
+  const testo = d.info.testo.replace(/'/g, "\\'");
+  return `<button type="button" class="prev-info-btn" onclick="apriPrevInfo('${titolo}','${testo}')" aria-label="Informazioni">i</button>`;
 }
 
 function disegnaSezioneForm(s) {
   const domande = s.domande.map(d => {
     if (d.tipo === 'slider') {
-      const val = prevDati?.[d.id] ?? d.default;
+      const val = prevDati?.[d.id] ?? d.default ?? d.media ?? d.min;
       return `<div class="prev-domanda">
-        <label>${d.label}</label>
-        ${d.small ? `<small>${d.small}</small>` : ''}
+        <div class="prev-label-riga"><label>${d.label}</label>${infoBtn(d)}</div>
         <div class="prev-slider-wrap">
           <div class="prev-slider-valore" id="sv-${d.id}">${sliderLabel(d, val)}</div>
-          <input type="range" class="prev-slider" id="sl-${d.id}" min="${d.min}" max="${d.max}" step="${d.step}" value="${val}"
-            oninput="document.getElementById('sv-${d.id}').textContent = (this.step<1 ? parseFloat(this.value).toFixed(1) : this.value) + ' ${d.unita}'">
+          <div class="prev-slider-track">
+            <div class="prev-slider-bg"></div>
+            ${marcaMedia(d)}
+            <input type="range" class="prev-slider" id="sl-${d.id}" min="${d.min}" max="${d.max}" step="${d.step}" value="${val}"
+              oninput="const v=parseFloat(this.value);document.getElementById('sv-${d.id}').textContent=(${d.step}<1?v.toFixed(1):v)+' ${d.unita}'">
+          </div>
         </div>
       </div>`;
     }
     if (d.tipo === 'chips') {
-      const sel = prevDati?.[d.id] ?? d.default;
+      const sel = prevDati?.[d.id] ?? d.default ?? 0;
       const chips = d.opzioni.map((o, i) =>
-        `<button type="button" class="prev-chip${sel === i ? ' sel' : ''}" onclick="prevChipSel(this, '${d.id}')">${o}</button>`
+        `<button type="button" class="prev-chip${sel === i ? ' sel' : ''}" onclick="prevChipSel(this,'${d.id}')">${o}</button>`
       ).join('');
       return `<div class="prev-domanda">
-        <label>${d.label}</label>
-        ${d.small ? `<small>${d.small}</small>` : ''}
+        <div class="prev-label-riga"><label>${d.label}</label>${infoBtn(d)}</div>
         <div class="prev-chips" id="chips-${d.id}">${chips}</div>
       </div>`;
     }
     if (d.tipo === 'textarea') {
       const val = prevDati?.[d.id] ?? '';
       return `<div class="prev-domanda">
-        <label>${d.label}</label>
-        ${d.small ? `<small>${d.small}</small>` : ''}
-        <textarea class="prev-nota" id="ta-${d.id}" placeholder="${d.small || ''}" rows="4">${val}</textarea>
+        <div class="prev-label-riga"><label>${d.label}</label></div>
+        <textarea class="prev-nota" id="ta-${d.id}" placeholder="${d.placeholder || ''}" rows="4">${val}</textarea>
       </div>`;
     }
     return '';
@@ -4944,6 +4988,28 @@ function prevChipSel(btn, id) {
   btn.classList.add('sel');
 }
 
+function apriPrevInfo(titolo, testo) {
+  let pop = document.getElementById('prev-info-pop');
+  if (!pop) {
+    pop = document.createElement('div');
+    pop.id = 'prev-info-pop';
+    pop.className = 'prev-info-pop';
+    pop.onclick = e => { if (e.target === pop) chiudiPrevInfo(); };
+    document.body.appendChild(pop);
+  }
+  pop.innerHTML = `<div class="prev-info-box">
+    <h4>${titolo}</h4>
+    <p>${testo}</p>
+    <button onclick="chiudiPrevInfo()">Chiudi</button>
+  </div>`;
+  pop.hidden = false;
+}
+
+function chiudiPrevInfo() {
+  const pop = document.getElementById('prev-info-pop');
+  if (pop) pop.hidden = true;
+}
+
 function apriPrevForm() {
   $('prev-form-corpo').innerHTML = PREV_FORM.map(disegnaSezioneForm).join('');
   $('prev-form').hidden = false;
@@ -4952,6 +5018,7 @@ function apriPrevForm() {
 }
 
 function chiudiPrevForm() {
+  chiudiPrevInfo();
   $('prev-form').hidden = true;
   document.body.classList.remove('bloccato');
 }
@@ -4961,11 +5028,11 @@ function salvaPrevForm() {
   PREV_FORM.forEach(s => s.domande.forEach(d => {
     if (d.tipo === 'slider') {
       const el = $(`sl-${d.id}`);
-      dati[d.id] = el ? parseFloat(el.value) : d.default;
+      dati[d.id] = el ? parseFloat(el.value) : (d.media ?? d.min);
     } else if (d.tipo === 'chips') {
       const chips = document.querySelectorAll(`#chips-${d.id} .prev-chip`);
       chips.forEach((c, i) => { if (c.classList.contains('sel')) dati[d.id] = i; });
-      if (dati[d.id] === undefined) dati[d.id] = d.default;
+      if (dati[d.id] === undefined) dati[d.id] = d.default ?? 0;
     } else if (d.tipo === 'textarea') {
       const el = $(`ta-${d.id}`);
       dati[d.id] = el ? el.value.trim() : '';
@@ -4989,12 +5056,12 @@ function disegnaPreventivi() {
         <p>Rispondi a qualche domanda sui tuoi prezzi (5 minuti) e poi basterà dirti un lavoro a voce — l'AI ti dà subito una stima.</p>
         <div class="prev-azioni">
           <button class="salva" onclick="apriPrevForm()">Compila ora →</button>
-          <button class="prev-salta" onclick="prevDati = {}; disegnaPreventivi()">Salta per ora</button>
+          <button class="prev-salta" onclick="prevDati={}; disegnaPreventivi()">Salta per ora</button>
         </div>
       </div>`;
   } else {
     $('prev-corpo').innerHTML = `
-      <div style="padding:24px 0 16px; text-align:center; color:var(--testo-2); font-size:15px; font-weight:600;">
+      <div style="padding:24px 0 16px;text-align:center;color:var(--testo-2);font-size:15px;font-weight:600;">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--foglia)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
         I preventivi AI arrivano presto.<br>
         <span style="font-size:13px">Per ora i tuoi prezzi sono salvati.</span>
