@@ -2786,7 +2786,7 @@ function inbox_cardHtml(item, cat) {
     <div class="inbox-card-testa">${item.testa}</div>
     <div class="inbox-card-dati">${item.dati}</div>
     <div class="inbox-card-azioni">
-      <button class="inbox-btn-ok" onclick="animaCard(this.closest('.inbox-card'),'ok')">✓ Conferma</button>
+      <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')}, '${cat}')">✓ Conferma</button>
       <button class="inbox-btn-no" onclick="animaCard(this.closest('.inbox-card'),'no')">Scarta</button>
     </div>
     ${campiHtml}
@@ -2879,6 +2879,10 @@ function disegnaRiprCalendario() {
       $('ripr-pop').hidden = true;
       apriStorico(_storicoKey);
     } else if (_riprogrammaCard) {
+      const cliente = $('ripr-nome').value.trim();
+      const nuovaData = iso(giorno);
+      const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
+      if (lavoroTarget) spostaLavoro(lavoroTarget, nuovaData);
       animaCard(_riprogrammaCard, 'ok');
       _riprogrammaCard = null;
       setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
@@ -2941,6 +2945,50 @@ function animaCard(card, tipo) {
     card.style.cssText = `height:${h}px;overflow:hidden;transition:height .22s ease,margin .22s ease,padding .22s ease;`;
     requestAnimationFrame(() => { card.style.height = '0'; card.style.marginBottom = '0'; card.style.paddingTop = '0'; card.style.paddingBottom = '0'; });
   }, { once: true });
+}
+
+function confermaCarta(card, item, cat) {
+  const getCampo = l => (item.campi?.find(([k]) => k === l) || [])[1] || '';
+
+  if (cat === 'paga') {
+    const panel = card.querySelector('.inbox-edit-panel');
+    const inputs = panel ? panel.querySelectorAll('input') : [];
+    const nome = (inputs[0]?.value || getCampo('Cliente')).trim();
+    const importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    if (nome && importo > 0) {
+      registraPagamento(nome, importo);
+      avvisa(`${nome}: ${euro(importo)} registrati`);
+      tutto();
+    }
+    animaCard(card, 'ok');
+    return;
+  }
+
+  if (cat === 'costo') {
+    const panel = card.querySelector('.inbox-edit-panel');
+    const inputs = panel ? panel.querySelectorAll('input') : [];
+    const desc = (inputs[0]?.value || getCampo('Descrizione')).trim() || 'Costo';
+    const importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    if (importo > 0) {
+      spese.push({ id: Math.max(0, ...spese.map(x => x.id)) + 1, tipo: desc, nota: '', importo, data: tra(0), modo: 'una' });
+      avvisa(`Costo registrato: ${desc} ${euro(importo)}`);
+      tutto();
+    }
+    animaCard(card, 'ok');
+    return;
+  }
+
+  if (cat === 'riprogramma') {
+    apriRiprogrammaInbox(card, item);
+    return;
+  }
+
+  if (cat === 'cliente') {
+    apriModificaInboxCliente(card, item);
+    return;
+  }
+
+  animaCard(card, 'ok');
 }
 
 function aggiornaBadge() {
