@@ -401,8 +401,12 @@ const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condomini
 - ✅ Riprogramma con data parsabile → sposta direttamente senza popup
 - ✅ Conferma/Scarta rimuove voce da inbox, aggiorna badge, sposta in storico
 - ✅ Nuovi clienti inbox sempre sospesi (giorno mai fornito dall'AI vocale), campi mancanti evidenziati
-- ✅ Note inbox: Giorno → nota evento (`memo: true` in lavori[], pallino blu), no data → noteRapide, nota vuota → avviso
+- ✅ Note inbox: Giorno → nota evento (`memo: true` in lavori[], pallino blu), no data → noteRapide, nota vuota → avviso (non si rimuove)
 - ✅ Riprogramma senza data destinazione → 📅 Pianifica + select+confirm nel popup calendario
+- ✅ `pagaTutto` aggiorna la scheda immediatamente (rimosso setTimeout 700ms — era il bug)
+- ✅ Agenda: giorno selezionato fuori range futuro va in fondo alla lista (non in cima)
+- ✅ Foglio lavoro (report mode): bottoni Modifica ed Elimina con undo; stato pagamento parziale corretto
+- ✅ Card inbox rimosse dal DOM dopo l'animazione (non solo nascoste a h:0)
 
 ---
 
