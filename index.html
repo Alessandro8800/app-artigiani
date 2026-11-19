@@ -3444,6 +3444,47 @@ function chiediChiaveAI() {
 async function categorizzaVoceAI(testo) {
   const oggi = new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   const clienti = CLIENTI_FAKE.join(', ');
+
+  // Lavori non ancora fatti nei prossimi 30 giorni (max 25)
+  const fine30 = tra(30);
+  const lavoriFuturi = lavori
+    .filter(l => !l.fatto && l.data >= tra(0) && l.data <= fine30)
+    .slice(0, 25)
+    .map(l => {
+      const d = new Date(l.data + 'T12:00:00').toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
+      return `${l.nome} · ${d} · ${l.cosa}`;
+    })
+    .join('\n');
+
+  const system = `Sei l'assistente vocale di un giardiniere. Rispondi SOLO con JSON valido.
+
+CONTESTO
+Clienti in rubrica: ${clienti}
+Lavori in agenda: ${lavoriFuturi || '(nessuno)'}
+Oggi: ${oggi}
+
+REGOLE (priorità decrescente)
+1. Cliente in rubrica + tipo di lavoro (con o senza data) → "cliente"
+2. Spostare/rimandare/anticipare un lavoro in agenda → "riprogramma" [campo A: data naturale]
+3. Pagamento ricevuto dal cliente → "paga"
+4. Spesa sostenuta → "costo"
+5. Cliente in rubrica + informazione/nota su di lui → "nota-cliente"
+6. Data o ora senza lavoro specifico → "calendario"
+7. Tutto il resto → "nota-rapida"
+
+ESEMPI
+FRASE: "domani Villa Verdi, potatura alberi"
+JSON: {"categoria":"cliente","titolo":"Potatura Villa Verdi","dati":"domani","campi":[["Nome","Villa Verdi"],["Lavoro","potatura alberi"],["Data","domani"]]}
+
+FRASE: "sposta Sig. Rossi a giovedì"
+JSON: {"categoria":"riprogramma","titolo":"Sposta Sig. Rossi","dati":"giovedì","campi":[["Cliente","Sig. Rossi"],["Da","data attuale"],["A","giovedì"]]}
+
+FRASE: "Villa Verdi ha pagato"
+JSON: {"categoria":"paga","titolo":"Pagamento Villa Verdi","dati":"importo da verificare","campi":[["Cliente","Villa Verdi"],["Importo",""]]}
+
+FRASE: "Villa Verdi: cancello verde, codice 1847"
+JSON: {"categoria":"nota-cliente","titolo":"Nota Villa Verdi","dati":"codice cancello","campi":[["Cliente","Villa Verdi"],["Nota","cancello verde, codice 1847"]]}`;
+
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -3454,23 +3495,11 @@ async function categorizzaVoceAI(testo) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-5-5',
-      max_tokens: 300,
-      system: `Sei l'assistente di un giardiniere italiano. Analizza la frase e rispondi SOLO con JSON valido, senza altri testi.
-
-Regole di smistamento (priorità dall'alto):
-1. C'è il nome di un cliente dalla rubrica + una descrizione di lavoro da fare (con o senza data) → categoria "cliente" (nuovo lavoro)
-2. Si chiede di spostare o rimandare un appuntamento → categoria "riprogramma"; estrai campo "A" con la data in linguaggio naturale (es. "domani", "martedì")
-3. Riguarda un pagamento ricevuto → categoria "paga"
-4. Riguarda una spesa sostenuta → categoria "costo"
-5. C'è un riferimento a data/giorno/ora senza lavoro da fare → categoria "calendario"
-6. C'è il nome di un cliente dalla rubrica (informazione o nota sul cliente) → categoria "nota-cliente"
-7. Si vuole aggiungere un nuovo cliente senza lavoro specifico → categoria "cliente"
-8. Altrimenti → categoria "nota-rapida"
-
-Oggi è ${oggi}. Clienti in rubrica: ${clienti}.`,
+      max_tokens: 200,
+      system,
       messages: [{
         role: 'user',
-        content: `Frase: "${testo}"\n\nRispondi SOLO con JSON:\n{"categoria":"...","titolo":"max 6 parole","dati":"dettaglio principale","campi":[["Etichetta","Valore"]],"nome_cliente":null}`
+        content: `FRASE: "${testo}"\nJSON:`
       }]
     })
   });
