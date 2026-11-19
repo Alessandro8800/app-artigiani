@@ -52,17 +52,22 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
       <button id="ai-inbox-chiudi">×</button>
       <h2 id="ai-inbox-titolo">Notifiche</h2>
       <div class="inbox-header-azioni">
+        <button id="ai-inbox-add">   ← icona +, visibile solo per cliente/nota/costo
         <button id="ai-inbox-edit">  ← matita, attiva edit mode
         <button id="ai-inbox-mic">   ← mic specifico per la scheda
       </div>
     </header>
-    <div class="f-corpo gutter" id="ai-inbox-lista"></div>  ← qui va l'HTML delle card
-    <footer id="ai-inbox-footer" hidden>  ← visibile solo nella scheda "cliente"
-      <button id="ai-inbox-nuovo">+ Nuovo cliente</button>
-    </footer>
+    <div class="f-corpo gutter" id="ai-inbox-lista"></div>
+    <footer id="ai-inbox-footer" hidden></footer>  ← sempre nascosto (il + è in alto)
   </div>
 </div>
 ```
+
+**Icona + (`#ai-inbox-add`):**
+- Visibile solo per schede `cliente`, `nota`, `costo` (nascosta per `riprogramma`, `paga`, `tutto`)
+- `cliente` → `apriFoglio()` con `_ritornaInboxKey = 'cliente'` (X sul foglio torna all'inbox)
+- `nota` → `aggiungiItemSimulato()`
+- `costo` → placeholder (da implementare)
 
 **Edit mode:** `#ai-inbox-lista.classList.toggle('edit-mode')` → mostra il bottone "Modifica ›" su ogni card.
 
@@ -85,6 +90,11 @@ Le voci riprogramma hanno anche `cal: true`.
 
 **Badge:** `aggiornaBadge()` — rilegge `INBOX_ESEMPI` e aggiorna tutti i badge numerici.
 
+**ATTENZIONE — bug risolto:** il `JSON.stringify(item)` nell'attributo `onclick` delle card usava `replace(/"/g, '&quot;')` per evitare che le virgolette spezzassero l'HTML. Se aggiungi nuovi tipi di card, usa sempre questo pattern:
+```js
+`onclick="funzione(this.closest('.inbox-card'), ${JSON.stringify(item).replace(/"/g, '&quot;')})"`
+```
+
 ---
 
 ## Card inbox: comportamento per categoria
@@ -97,7 +107,7 @@ Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat
 | `riprogramma` | `apriRiprogrammaInbox(card, item)` | Apre popup calendario `#ripr-pop` |
 | `nota` | Espande panel inline | Textarea auto-espansa |
 | `costo` | Espande panel inline | Stepper ± importo, toggle Personale/Cliente |
-| `paga` | Espande panel inline | Stepper ± importo, ricerca cliente |
+| `paga` | Espande panel inline | Stepper ± importo (solo + e −, senza frecce browser), ricerca cliente |
 
 **Animazione card:** `animaCard(card, 'ok')` → slide destra verde + collassa. `animaCard(card, 'no')` → cade giù.
 
@@ -106,8 +116,10 @@ Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat
 ## Foglio "Nuovo cliente" (`#foglio`)
 
 **Id importanti:**
-- `f-titolo` — titolo del foglio (es. "Nuovo cliente" / "Modifica cliente" / "Conferma nuovo cliente")
-- `f-nome`, `f-dove`, `f-cosa`, `f-prezzo`, `f-tel`, `f-note` — campi principali
+- `f-titolo` — titolo del foglio
+- `f-nome`, `f-dove`, `f-cosa`, `f-prezzo` (hidden input), `f-tel`, `f-note` — campi principali
+- `f-prezzo-drum` — drum visivo del prezzo (separato dall'input hidden)
+- `f-durata` — drum visivo della durata
 - `f-tel-wrap` — contenitore righe telefono
 - `f-piede` — footer del foglio (**ha id**, usalo con `$('f-piede')`)
 - `f-salva`, `f-micro`, `f-errore` — bottone salva, mic, messaggio errore
@@ -115,13 +127,32 @@ Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat
 **`modoFoglio`** — valori possibili:
 - `'nuovo'` — form vuoto per creare un cliente
 - `'modifica'` — form pre-compilato per modificare cliente esistente
-- `'conferma-inbox'` — aperto da inbox, footer personalizzato (← Indietro / ✓ Conferma)
+- `'conferma-inbox'` — aperto da inbox "Modifica" card, footer personalizzato (← Indietro / ✓ Conferma)
 
 **Attenzione:** in `modoFoglio === 'conferma-inbox'`, `f-salva` e `f-micro` **non esistono nel DOM** (il footer è stato sostituito con bottoni custom). `chiudiFoglio()` li ripristina automaticamente.
 
+**_ritornaInboxKey** — variabile globale. Se impostata quando `chiudiFoglio()` viene chiamato (senza salvataggio), riapre l'inbox con quella key. Viene azzerata da `salva()` e `salvaModifica()`.
+
 ---
 
-## Popup calendario
+## Popup calendario riprogramma (`#ripr-pop`)
+
+```html
+<div class="q-pop" id="ripr-pop" hidden>
+  <div class="q-pop-box">
+    <div class="q-pop-testa">
+      <div class="ripr-info-row">
+        <input type="text" id="ripr-nome" class="ripr-nome-input">  ← nome modificabile
+        <span id="ripr-data-vec" class="ripr-data-vec"></span>       ← data vecchia a destra
+      </div>
+      <button id="ripr-chiudi">×</button>
+    </div>
+    ...calendario...
+  </div>
+</div>
+```
+
+`apriRiprogrammaInbox(card, item)` popola `ripr-nome` e `ripr-data-vec` dai campi `Cliente` e `Da`.
 
 Ci sono **due** popup calendario distinti:
 
@@ -130,8 +161,6 @@ Ci sono **due** popup calendario distinti:
 | `#q-pop` | `apriCalFoglio()` | Foglio "Nuovo cliente" per scegliere il giorno |
 | `#ripr-pop` | `apriRiprogrammaInbox()` | Inbox "Riprogramma" per scegliere nuovo giorno |
 
-`#ripr-pop` ha: `ripr-info` (testo cliente+data), `ripr-mese`, `ripr-anno`, `ripr-prima`, `ripr-dopo`, `ripr-griglia`, `ripr-chiudi`.
-
 ---
 
 ## Funzioni JS chiave
@@ -139,13 +168,18 @@ Ci sono **due** popup calendario distinti:
 ### Form cliente
 | Funzione | Cosa fa |
 |---|---|
-| `apriFoglio(giorno?, perCliente?)` | Apre form nuovo cliente, resetta tutto |
+| `apriFoglio(giorno?, perCliente?)` | Apre form nuovo cliente, resetta tutto inclusi i drum |
 | `apriModifica(nome)` | Apre form modifica cliente esistente |
-| `chiudiFoglio()` | Chiude foglio, ripristina footer se era in `conferma-inbox` |
-| `salva()` | Salva nuovo cliente |
-| `salvaModifica()` | Salva modifiche cliente esistente |
-| `preparaFoglio(modo)` | Reset interno prima di aprire il foglio |
+| `chiudiFoglio()` | Chiude foglio, ripristina footer se era in `conferma-inbox`, riapre inbox se `_ritornaInboxKey` è impostata |
+| `salva()` | Salva nuovo cliente (azzera `_ritornaInboxKey` prima di chiudere) |
+| `salvaModifica()` | Salva modifiche cliente (azzera `_ritornaInboxKey` prima di chiudere) |
+| `preparaFoglio(modo)` | Reset base (titolo, visibilità f-lavoro/f-micro/f-salva). NON disegna i drum |
 | `mostraFoglio()` | Rende visibile `#foglio` |
+| `disegnaPrezzoDrum()` | Disegna il drum del prezzo da zero |
+| `scorriPrezzoDrum()` | Scorre il drum sul valore attuale di `f-prezzo` |
+| `disegnaDurata()` | Disegna il drum della durata |
+
+**ATTENZIONE:** `preparaFoglio()` da sola non basta per pre-compilare il foglio — i drum restano vuoti. Occorre chiamare tutte le funzioni `disegna*` come fa `apriFoglio()`. Vedi `apriModificaInboxCliente` per l'esempio corretto.
 
 ### Inbox
 | Funzione | Cosa fa |
@@ -159,7 +193,7 @@ Ci sono **due** popup calendario distinti:
 | `apriModificaInboxCliente(card, item)` | Apre foglio pre-compilato per confermare nuovo cliente |
 | `indietroInboxCliente()` | Dal foglio, torna alla scheda "Nuovi clienti" |
 | `confermaInboxCliente()` | Anima card ok, chiude foglio |
-| `apriRiprogrammaInbox(card, item)` | Apre popup `#ripr-pop` con info cliente e data |
+| `apriRiprogrammaInbox(card, item)` | Apre popup `#ripr-pop` con input nome e data vecchia |
 | `disegnaRiprCalendario()` | Ridisegna griglia `#ripr-griglia` |
 | `aggiungiItemSimulato()` | Aggiunge item fake all'inbox Note (simulazione mic) |
 | `stepperCambia(btn, delta)` | Incrementa/decrementa valore stepper ±1 |
@@ -190,6 +224,7 @@ let clienteScelto, modoFoglio, nomeInModifica
 
 // Inbox
 let _inboxCard        // card da animare dopo confermaInboxCliente()
+let _ritornaInboxKey  // se impostata, chiudiFoglio riapre l'inbox con questa key
 let _riprogrammaCard  // card da animare dopo scelta data in ripr-pop
 let _riprogrammaMese  // Date() del mese corrente in ripr-pop
 
