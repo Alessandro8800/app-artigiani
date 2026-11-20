@@ -202,7 +202,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .storico-stato.attesa { background: rgba(255,165,0,.12); color: orange; }
 .storico-info { flex: 1; min-width: 0; }
 .storico-info strong { display: block; font-size: 15px; font-weight: 700; color: var(--testo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.storico-info span { font-size: 13px; color: var(--testo-2); }
+.storico-info span { font-size: 14px; color: var(--testo-2); }
 /* Pulsante Rivedi */
 .storico-reattiva { padding: 5px 10px; border-radius: 7px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 .storico-reattiva:active { background: var(--carta); }
@@ -430,7 +430,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-card[data-cat="riprogramma"] { border-left-color: #3b82c4; }
 .inbox-card[data-cat="costo"] { border-left-color: #8a5cc7; }
 .inbox-card-testa { font-weight: 800; font-size: 17px; }
-.inbox-card-dati { font-size: 15px; font-weight: 600; color: var(--testo); margin-top: 3px; line-height: 1.4; }
+.inbox-card-dati { font-size: 16px; font-weight: 600; color: var(--testo); margin-top: 3px; line-height: 1.4; }
 .inbox-card-azioni { display: flex; gap: 8px; margin-top: 10px; }
 .inbox-btn-ok { flex: 2; height: 30px; border-radius: 9px; background: var(--foglia); color: var(--sul-foglia); border: none; font-weight: 800; font-size: 13px; cursor: pointer; }
 .inbox-btn-no { flex: 1; height: 30px; border-radius: 9px; background: none; border: 1.5px solid var(--linea); color: var(--testo-2); font-weight: 700; font-size: 13px; cursor: pointer; }
@@ -513,6 +513,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .mic-box-elabora { display:inline-flex; align-items:center; gap:5px; padding:2px 0; }
 .mic-box-elabora span { width:7px; height:7px; border-radius:50%; background:var(--foglia); animation:onda-mic .9s ease-in-out infinite; }
 .mic-box-elabora span:nth-child(1){animation-delay:0s} .mic-box-elabora span:nth-child(2){animation-delay:.2s} .mic-box-elabora span:nth-child(3){animation-delay:.4s}
+.mic-box-auto-wrap { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.mic-box-auto-bar { flex: 1; height: 3px; background: var(--linea); border-radius: 2px; overflow: hidden; }
+.mic-box-auto-progresso { height: 100%; background: var(--foglia); transform-origin: left; transform: scaleX(0); }
+.mic-box-auto-progresso.corre { animation: tempo 4s linear forwards; }
+.mic-box-annulla-btn { border: none; background: none; color: var(--testo-2); font-size: 14px; font-weight: 700; cursor: pointer; padding: 4px 0; text-decoration: underline; white-space: nowrap; }
 /* Mostra altro, in fondo all'agenda */
 .mostra-altro { width: 100%; margin-top: 18px; min-height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); font-weight: 800; font-size: 16px; }
 .mostra-nota { margin: 8px 4px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--testo-2); }
@@ -796,7 +801,7 @@ button.s-riga:first-child { border-top: 0; }
 .avviso { overflow: hidden; }
 /* Linea del tempo per "Annulla": si riempie da sinistra a destra in 3 secondi */
 .avviso-tempo { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--sfondo); opacity: .85; transform-origin: left; transform: scaleX(0); }
-.avviso-tempo.corre { animation: tempo 3s linear forwards; }
+.avviso-tempo.corre { animation: tempo 5s linear forwards; }
 @keyframes tempo { to { transform: scaleX(1); } }
 .avviso button { border: 0; background: none; color: var(--sfondo); font-weight: 800; text-decoration: underline; padding: 10px 12px; }
 
@@ -1022,28 +1027,6 @@ button.s-riga:first-child { border-top: 0; }
       </div>
       <!-- Barra AI: 5 categorie + inbox + microfono -->
       <div class="ai-barra">
-        <div class="ai-barra-cat">
-          <button class="ai-ic" id="ai-cat-cliente" aria-label="Nuovi lavori da confermare">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M2 20c0-4 3.6-7 8-7"/><path d="M19 12v6M16 15h6"/></svg>
-            <span class="ai-badge" id="ai-b-cliente" hidden>0</span>
-          </button>
-          <button class="ai-ic" id="ai-cat-nota" aria-label="Note da confermare">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-            <span class="ai-badge" id="ai-b-nota" hidden>0</span>
-          </button>
-          <button class="ai-ic" id="ai-cat-sposta" aria-label="Spostamenti da confermare">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/></svg>
-            <span class="ai-badge" id="ai-b-sposta" hidden>0</span>
-          </button>
-          <button class="ai-ic" id="ai-cat-costo" aria-label="Costi da confermare">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-            <span class="ai-badge" id="ai-b-costo" hidden>0</span>
-          </button>
-          <button class="ai-ic" id="ai-cat-paga" aria-label="Pagamenti da confermare">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h2a2 2 0 100-4h-1a2 2 0 110-4h2m0 8h-2"/></svg>
-            <span class="ai-badge" id="ai-b-paga" hidden>0</span>
-          </button>
-        </div>
         <button class="ai-ic-tutto" id="ai-tutto" aria-label="Tutte le notifiche">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 004-3V9a8 8 0 1116 0v5a3 3 0 004 3"/><path d="M9 17v1a3 3 0 006 0v-1"/></svg>
           <span class="ai-badge" id="ai-b-tutto" hidden>0</span>
@@ -2010,7 +1993,7 @@ function avvisa(testo, azione, azione2) {
   t.hidden = !conTasti;
   t.classList.remove('corre'); void t.offsetWidth; if (conTasti) t.classList.add('corre');
   a.hidden = false;
-  clearTimeout(timer); timer = setTimeout(() => (a.hidden = true), conTasti ? 3000 : 2500);
+  clearTimeout(timer); timer = setTimeout(() => (a.hidden = true), conTasti ? 5000 : 2500);
 }
 
 // ---- Foglio "Nuovo cliente" ----
@@ -3733,11 +3716,6 @@ document.addEventListener('input', e => {
   }
 });
 
-$('ai-cat-cliente').onclick  = () => apriInbox('cliente');
-$('ai-cat-nota').onclick     = () => apriInbox('nota');
-$('ai-cat-sposta').onclick   = () => apriInbox('riprogramma');
-$('ai-cat-costo').onclick    = () => apriInbox('costo');
-$('ai-cat-paga').onclick     = () => apriInbox('paga');
 $('ai-tutto').onclick        = () => apriInbox('tutto');
 
 // ---- AI vocale: chiave API e classificazione con Claude Haiku ----
@@ -3877,6 +3855,12 @@ function categorizzaVoce(testo) {
       if (basso.includes(p)) return cat;
     }
   }
+  // Nessuna parola chiave ma è presente un nome cliente → trattalo come 'cliente'
+  if (typeof CLIENTI_FAKE !== 'undefined') {
+    for (const c of CLIENTI_FAKE) {
+      if (basso.includes(c.toLowerCase())) return 'cliente';
+    }
+  }
   return 'tutto';
 }
 
@@ -3973,7 +3957,15 @@ $('ai-mic').onclick = () => {
         const info = CAT_INFO[cat] || CAT_INFO['tutto'];
         catEl.className = 'mic-box-cat cat-' + cat;
         catEl.textContent = info.emoji + ' ' + info.nome;
-        setTimeout(() => { aggiungiVoceInbox(finale, ris); chiudiMicBox(); }, 1200);
+        if (navigator.vibrate && vibrazioneAttiva) navigator.vibrate(60);
+        const autoWrap = document.createElement('div');
+        autoWrap.className = 'mic-box-auto-wrap';
+        autoWrap.innerHTML = '<div class="mic-box-auto-bar"><div class="mic-box-auto-progresso"></div></div><button class="mic-box-annulla-btn">Annulla</button>';
+        $('mic-box-cat-wrap').appendChild(autoWrap);
+        void autoWrap.offsetWidth;
+        autoWrap.querySelector('.mic-box-auto-progresso').classList.add('corre');
+        let salvaTimer = setTimeout(() => { aggiungiVoceInbox(finale, ris); chiudiMicBox(); }, 4000);
+        autoWrap.querySelector('.mic-box-annulla-btn').onclick = () => { clearTimeout(salvaTimer); chiudiMicBox(); };
       };
       if (!ANTHROPIC_KEY) {
         if (!chiediChiaveAI()) { mostraCat(categorizzaVoce(finale)); return; }
@@ -3997,6 +3989,9 @@ $('ai-mic').onclick = () => {
       $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>';
       $('mic-box-cat-wrap').hidden = true;
       setTimeout(chiudiMicBox, 1800);
+    } else if (e.error === 'not-allowed') {
+      $('mic-box-testo').innerHTML = '<em>Microfono bloccato. Vai in Impostazioni del browser → Autorizzazioni → Microfono.</em>';
+      setTimeout(chiudiMicBox, 4000);
     } else if (e.error !== 'aborted') {
       chiudiMicBox();
     }
@@ -4204,7 +4199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (finale) { _micFinaleTrovato = true; $('mic-box-testo').textContent = finale; setTimeout(() => { aggiungiVoceInbox(finale, 'cliente'); chiudiMicBox(); }, 1200); }
       else if (interim) { $('mic-box-testo').innerHTML = `<em>${interim}</em>`; }
     };
-    sr.onerror = e => { if (e.error === 'no-speech') { $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>'; setTimeout(chiudiMicBox, 1800); } else if (e.error !== 'aborted') chiudiMicBox(); };
+    sr.onerror = e => { if (e.error === 'no-speech') { $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>'; setTimeout(chiudiMicBox, 1800); } else if (e.error === 'not-allowed') { $('mic-box-testo').innerHTML = '<em>Microfono bloccato. Vai in Impostazioni del browser → Autorizzazioni → Microfono.</em>'; setTimeout(chiudiMicBox, 4000); } else if (e.error !== 'aborted') chiudiMicBox(); };
     sr.onend = () => { if (!_micFinaleTrovato) setTimeout(() => { if (!$('mic-box').hidden) chiudiMicBox(); }, 400); };
     sr.start();
   };
@@ -4960,6 +4955,7 @@ const giorniLavoro = [true, true, true, true, true, true, false];
 const soglie = { arancio: 7, rosso: 21 };   // giorni di ritardo prima dell'etichetta arancione / rossa
 let tema = 'auto', testo = 'normale', accento = 'verde', ultimaCopia = '';
 let templateCalendario = 'mensile';
+let vibrazioneAttiva = true;
 const TEMPLATE_CAL = { mensile: 'Mensile', 'per-settimane': 'Per settimane', agenda: 'Agenda', anno: 'Anno · Report' };
 let rigaAperta = null;
 // Notifiche: quali vuole e a che ora (nella prova si scelgono soltanto, non arrivano ancora)
@@ -5301,6 +5297,12 @@ const GRUPPI_IMP = [
     } },
   ]],
   ['Notifiche', [
+    { id: 'vibrazione', nome: 'Vibrazione', valore: () => vibrazioneAttiva ? 'Attiva' : 'Disattivata', corpo: el => {
+      el.innerHTML = `<p class="imp-testo">Vibra quando l'assistente vocale riconosce quello che hai detto.</p>
+        <div class="notifica"><div class="notifica-testa"><span><strong>Vibrazione al riconoscimento</strong></span>
+          <button type="button" class="interruttore${vibrazioneAttiva ? ' acceso' : ''}" id="vib-toggle" role="switch" aria-checked="${vibrazioneAttiva}"><i></i></button></div></div>`;
+      el.querySelector('#vib-toggle').onclick = () => { vibrazioneAttiva = !vibrazioneAttiva; disegnaImpostazioni(); };
+    } },
     { id: 'notifiche', nome: 'Notifiche', valore: () => `${NOTIFICHE.filter(n => n.attiva).length} attive su ${NOTIFICHE.length} · in arrivo`, corpo: el => {
       el.innerHTML = `<span class="imp-in-arrivo">In arrivo: per ora si scelgono soltanto</span>
         ${NOTIFICHE.map((n, i) => `<div class="notifica">
