@@ -453,7 +453,7 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - ✅ **Step 3** (21/11): unifica 3 mic in `avviaMicrofono(sorgente)`
 - ✅ **Step 4** (21/11): `parsaDataOra` date assolute ("25 novembre"), "prossima settimana", "tra 3 giorni"
 - ✅ **Step 5** (21/11): build ok + 54 frasi del test (53 come attese, l'unica diversa — "mi deve ancora 200" → pagamento — segue la regola 3) + 4 frasi multi-operazione tutte giuste. Microfoni provati nel browser con voce simulata. **Manca la prova col microfono vero sul telefono.**
-- ⬜ **Step 6** (dopo test reali sul telefono): contesto clienti+agenda nel prompt
+- ✅ **Step 6** (21/11): contesto clienti+agenda nel prompt — `contestoAI()`: data di oggi, fino a 60 nomi di clienti, prossimi 10 lavori (giorno per esteso + nome + lavoro). Regole: un solo cliente corrispondente → nome esatto della rubrica ("Rossi" → "Mario Rossi", "girasole" → "Girasoli"); più clienti → nome come detto; "quello di giovedì" → il cliente se quel giorno c'è un solo lavoro. App vuota → niente contesto. Prova: 8/8 casi con rubrica finta, 54/54 + 4/4 del test senza rubrica. Da dichiarare nel foglio privacy: nomi clienti e agenda vanno all'AI insieme alla frase.
 - ⬜ **Step 7** (prima di produzione): backend proxy chiave API
 
 ### Come è stato fatto (step 1–5) — cose da sapere

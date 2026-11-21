@@ -4235,6 +4235,35 @@ function motivoErroreAI(e) {
   return 'niente internet';
 }
 
+// STEP 6 — Contesto per l'AI: nomi dei clienti e prossimi lavori, così capisce
+// "Rossi" → "Mario Rossi" e "sposta quello di giovedì". Corto apposta (al massimo 60 nomi e 10 lavori).
+function contestoAI() {
+  try {
+    const oggi = tra(0);
+    // Sempre giorno + data per esteso ("giovedì 26 novembre"), mai "oggi"/"domani": l'AI deve poter abbinare "quello di giovedì"
+    const giornoEsteso = s => new Date(s + 'T12:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+    const clienti = nomiClienti().slice(0, 60);
+    const prossimi = lavori.filter(l => !l.fatto && !l.memo && l.data >= oggi)
+      .sort((a, b) => a.data.localeCompare(b.data)).slice(0, 10)
+      .map(l => `- ${giornoEsteso(l.data)}: ${l.nome}${l.cosa ? ' — ' + l.cosa : ''}`);
+    if (!clienti.length && !prossimi.length) return '';
+    return `
+
+CONTESTO (dati del giardiniere: servono solo a riconoscere i nomi)
+Oggi: ${giornoEsteso(oggi)}
+Clienti: ${clienti.join(', ') || 'nessuno'}
+Lavori in agenda:
+${prossimi.join('\n') || 'nessuno'}
+
+REGOLE PER IL CONTESTO
+- Se il nome detto corrisponde chiaramente a UN SOLO cliente della lista (anche solo il cognome, o con piccoli errori di dettatura: "Rossi" → "Mario Rossi", "condominio girasole" → "Condominio Girasoli"), scrivi il nome ESATTO della lista.
+- Se corrisponde a più clienti (dice "Rossi" e ci sono "Mario Rossi" e "Anna Rossi"), lascia il nome come detto.
+- "Sposta il lavoro di giovedì" senza nome: se in agenda quel giorno c'è UN SOLO lavoro, metti quel cliente come nome; altrimenti nome null.
+- Un nome che non è nella lista va bene lo stesso (cliente nuovo): non inventare corrispondenze.
+- La "data" resta sempre come detta a voce (non scrivere date prese dall'agenda).`;
+  } catch (e) { return ''; } // fuori dall'app (es. test da computer) senza dati: niente contesto
+}
+
 // Schema: {"operations":[{tipo, nome, lavoro, data, importo, testo, missing_fields}]}
 // Una frase può contenere più operazioni → una card per ognuna (Step 2 in HANDOFF.md).
 async function categorizzaVoceAI(testo) {
@@ -4299,7 +4328,7 @@ ESEMPI
 → {"operations":[{"tipo":"nota","nome":"Villa Verdi","lavoro":null,"data":null,"importo":null,"testo":"cancello verde, codice 1847","missing_fields":[]}]}
 
 "quella cosa lì poi vediamo"
-→ {"operations":[{"tipo":"nota","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"quella cosa lì poi vediamo","missing_fields":[]}]}`;
+→ {"operations":[{"tipo":"nota","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"quella cosa lì poi vediamo","missing_fields":[]}]}` + (typeof contestoAI === 'function' ? contestoAI() : '');
 
   // Se la risposta non è leggibile, la frase diventa una nota: non si perde mai.
   const notaGrezza = { operations: [{ tipo: 'nota', nome: null, lavoro: null, data: null, importo: null, testo, missing_fields: [] }], _fallback: true, _motivo: 'risposta AI incompleta' };
