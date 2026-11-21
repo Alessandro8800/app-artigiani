@@ -1,0 +1,321 @@
+/*
+ * DESIGN SYSTEM — TOKENS
+ * App Artigiani · Verde Foresta
+ *
+ * Questo file sostituisce tutti i valori hardcoded del CSS attuale.
+ * Per applicarlo: importa questo file PRIMA di qualsiasi altro foglio stile.
+ *
+ * COME USARLO:
+ *   var(--color-accento)      → verde principale
+ *   var(--space-4)            → 16px (4 × 4px base)
+ *   var(--radius-card)        → arrotondamento delle card
+ *   var(--text-body)          → testo normale
+ */
+
+/* ─────────────────────────────────────────────────────────────
+   1. FONDAMENTALI (invarianti tra temi)
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Font */
+  --font-display:  'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-body:     'Manrope', 'Segoe UI', system-ui, sans-serif;
+
+  /* Scale tipografica (base 16px, ratio 1.2) */
+  --text-xs:   11px;   /* etichette uppercase, badge */
+  --text-sm:   13px;   /* testo secondario, caption */
+  --text-base: 15px;   /* testo normale */
+  --text-md:   17px;   /* corpo principale */
+  --text-lg:   19px;   /* titoli schermata */
+  --text-xl:   22px;   /* titoli sezione */
+  --text-2xl:  26px;   /* headline */
+  --text-3xl:  32px;   /* numeri grandi (importi) */
+  --text-4xl:  40px;   /* eroe numerici (totale dovuto) */
+
+  /* Pesi */
+  --weight-normal:   600;
+  --weight-semi:     700;
+  --weight-bold:     800;
+  --weight-black:    900;
+
+  /* Altezze di riga */
+  --leading-tight:  1.2;
+  --leading-normal: 1.35;
+  --leading-loose:  1.55;
+
+  /* Spaziatura — griglia 4px */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Arrotondamenti — scala semantica */
+  --radius-xs:    6px;   /* chip piccoli, badge */
+  --radius-sm:    8px;   /* elementi mini, tooltip */
+  --radius-md:    12px;  /* bottoni, input, card piccole */
+  --radius-lg:    16px;  /* card standard */
+  --radius-xl:    20px;  /* card grandi, calendario */
+  --radius-2xl:   22px;  /* fogli/modal */
+  --radius-full:  999px; /* pill, switch */
+
+  /* Ombre */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,.14), 0 4px 8px rgba(0,0,0,.08);
+  --shadow-xl:  0 16px 40px rgba(0,0,0,.18);
+  --shadow-btn: 0 8px 22px rgba(20,60,30,.28); /* bottone primario verde */
+
+  /* Transizioni */
+  --transition-fast:   .12s ease-out;
+  --transition-normal: .2s ease-out;
+  --transition-slow:   .35s ease-out;
+
+  /* Altezza barra navigazione inferiore */
+  --barra: 68px;
+
+  /* Altezza touch target minima (Android guideline: 48dp) */
+  --touch-min: 48px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   2. TEMA CHIARO (default — Verde Foresta)
+   ───────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  /* Sfondi */
+  --color-sfondo:     #f3f6f2;   /* pagina principale */
+  --color-carta:      #ffffff;   /* card, fogli */
+  --color-overlay:    rgba(0,0,0,.45); /* sfondo modal */
+
+  /* Testo */
+  --color-testo:      #18231b;   /* testo primario */
+  --color-testo-2:    #5b675e;   /* testo secondario */
+  --color-testo-3:    #8a9d8d;   /* placeholder, disabilitato */
+
+  /* Bordi */
+  --color-linea:      #dfe6de;   /* bordi, separatori */
+  --color-linea-2:    #c8d6c5;   /* bordi più marcati */
+
+  /* Accento principale — Verde */
+  --color-accento:        #2d6a3e;
+  --color-accento-chiaro: #e2efe4;
+  --color-su-accento:     #ffffff;   /* testo su sfondo verde */
+
+  /* Stato: Attenzione — Ambra */
+  --color-warning:        #b5651d;
+  --color-warning-chiaro: #fbecd9;
+  --color-warning-testo:  #d97706;  /* versione più brillante per UI */
+
+  /* Stato: Errore — Rosso */
+  --color-danger:         #b42318;
+  --color-danger-chiaro:  #fde4e1;
+
+  /* Stato: Successo (alias di accento) */
+  --color-success:        #2d6a3e;
+  --color-success-chiaro: #e2efe4;
+
+  /* Colori semantici fissi (non cambiano con i temi) */
+  --color-nota:        #3b82c4;   /* riprogramma / nota evento */
+  --color-nota-bg:     #e0eaf9;
+  --color-costo:       #8a5cc7;   /* spese */
+  --color-costo-bg:    #f0eafc;
+  --color-nr:          #d97706;   /* note rapide */
+  --color-nr-bg:       #fef3c7;
+
+  /* Meteo */
+  --color-pioggia-1:   #dcecfb;
+  --color-pioggia-2:   #a9cff3;
+  --color-goccia:      #1c5cab;
+
+  /* Alias per compatibilità con il CSS esistente */
+  --sfondo:        var(--color-sfondo);
+  --carta:         var(--color-carta);
+  --testo:         var(--color-testo);
+  --testo-2:       var(--color-testo-2);
+  --linea:         var(--color-linea);
+  --foglia:        var(--color-accento);
+  --foglia-chiara: var(--color-accento-chiaro);
+  --sul-foglia:    var(--color-su-accento);
+  --ambra:         var(--color-warning);
+  --ambra-chiara:  var(--color-warning-chiaro);
+  --rosso:         var(--color-danger);
+  --rosso-chiaro:  var(--color-danger-chiaro);
+  --font-titoli:   var(--font-display);
+  --font-testo:    var(--font-body);
+  --pioggia-1:     var(--color-pioggia-1);
+  --pioggia-2:     var(--color-pioggia-2);
+  --goccia:        var(--color-goccia);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   3. TEMA SCURO (automatico dal sistema)
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-sfondo:     #111613;
+    --color-carta:      #1a211c;
+    --color-testo:      #e8eee9;
+    --color-testo-2:    #9aa79d;
+    --color-testo-3:    #5a6a5d;
+    --color-linea:      #2a332d;
+    --color-linea-2:    #3a4a3d;
+
+    --color-accento:        #6fbf86;
+    --color-accento-chiaro: #1f3326;
+    --color-su-accento:     #0f1a12;
+
+    --color-warning:        #e8a25c;
+    --color-warning-chiaro: #3a2a19;
+    --color-warning-testo:  #f59e0b;
+
+    --color-danger:         #f08a7e;
+    --color-danger-chiaro:  #3d1f1c;
+
+    --color-nota:     #86b6ef;
+    --color-nota-bg:  #17304a;
+    --color-costo:    #b08ae0;
+    --color-costo-bg: #2a1f3d;
+    --color-nr:       #f59e0b;
+    --color-nr-bg:    #3a2a19;
+
+    --color-pioggia-1: #17304a;
+    --color-pioggia-2: #1f4f80;
+    --color-goccia:    #86b6ef;
+  }
+}
+
+/* Tema scuro forzato da impostazione */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-sfondo:     #111613;
+  --color-carta:      #1a211c;
+  --color-testo:      #e8eee9;
+  --color-testo-2:    #9aa79d;
+  --color-testo-3:    #5a6a5d;
+  --color-linea:      #2a332d;
+  --color-linea-2:    #3a4a3d;
+
+  --color-accento:        #6fbf86;
+  --color-accento-chiaro: #1f3326;
+  --color-su-accento:     #0f1a12;
+
+  --color-warning:        #e8a25c;
+  --color-warning-chiaro: #3a2a19;
+  --color-warning-testo:  #f59e0b;
+
+  --color-danger:         #f08a7e;
+  --color-danger-chiaro:  #3d1f1c;
+
+  --color-nota:     #86b6ef;
+  --color-nota-bg:  #17304a;
+  --color-costo:    #b08ae0;
+  --color-costo-bg: #2a1f3d;
+  --color-nr:       #f59e0b;
+  --color-nr-bg:    #3a2a19;
+
+  --color-pioggia-1: #17304a;
+  --color-pioggia-2: #1f4f80;
+  --color-goccia:    #86b6ef;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   4. TEMA ACCIAIO (dark premium, stile Linear)
+   HANDOFF: sfondo #0D0D0D, card #161616, neon #00E5B0
+   ───────────────────────────────────────────────────────────── */
+:root[data-tema="acciaio"] {
+  color-scheme: dark;
+
+  --color-sfondo:     #0d0d0d;
+  --color-carta:      #161616;
+  --color-testo:      #f0f0f0;
+  --color-testo-2:    #808080;
+  --color-testo-3:    #4a4a4a;
+  --color-linea:      #232323;
+  --color-linea-2:    #2e2e2e;
+  --color-overlay:    rgba(0,0,0,.7);
+
+  --color-accento:        #00e5b0;
+  --color-accento-chiaro: rgba(0,229,176,.12);
+  --color-su-accento:     #0d0d0d;
+
+  --color-warning:        #f59e0b;
+  --color-warning-chiaro: rgba(245,158,11,.12);
+  --color-warning-testo:  #f59e0b;
+
+  --color-danger:         #ff5252;
+  --color-danger-chiaro:  rgba(255,82,82,.12);
+
+  --color-nota:     #60a5fa;
+  --color-nota-bg:  rgba(96,165,250,.12);
+  --color-costo:    #c084fc;
+  --color-costo-bg: rgba(192,132,252,.12);
+  --color-nr:       #f59e0b;
+  --color-nr-bg:    rgba(245,158,11,.12);
+
+  /* Font Inter per il tema acciaio */
+  --font-body:     'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-display:  'Inter', 'Segoe UI', system-ui, sans-serif;
+  /* JetBrains Mono solo per numeri — applicare con .numero { font-family: 'JetBrains Mono', monospace } */
+  --font-mono:     'JetBrains Mono', 'Cascadia Code', monospace;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   5. TEMA CARTA (editoriale, stile Moleskine digitale)
+   HANDOFF: sfondo #FEFCF7, font Cormorant Garamond + Crimson Pro
+   ───────────────────────────────────────────────────────────── */
+:root[data-tema="carta"] {
+  color-scheme: light;
+
+  --color-sfondo:     #fefcf7;
+  --color-carta:      #fffef9;
+  --color-testo:      #1c1c1a;
+  --color-testo-2:    #6b6b65;
+  --color-testo-3:    #a0a09a;
+  --color-linea:      #e8e4da;
+  --color-linea-2:    #d4cfc4;
+  --color-overlay:    rgba(28,28,26,.4);
+
+  /* Il verde è desaturato, quasi invisibile: solo i dot clienti hanno colore */
+  --color-accento:        #3d6b4e;
+  --color-accento-chiaro: rgba(61,107,78,.08);
+  --color-su-accento:     #ffffff;
+
+  --color-warning:        #9e6520;
+  --color-warning-chiaro: rgba(158,101,32,.08);
+  --color-warning-testo:  #9e6520;
+
+  --color-danger:         #9e2a2a;
+  --color-danger-chiaro:  rgba(158,42,42,.08);
+
+  /* Font Cormorant (titoli pesanti) + Crimson Pro (testo serif) */
+  --font-display: 'Cormorant Garamond', 'Georgia', serif;
+  --font-body:    'Crimson Pro', 'Georgia', serif;
+
+  /* Nel tema Carta: radius molto ridotti (max 6px) */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   6px;
+  --radius-xl:   6px;
+  --radius-2xl:  8px;
+  --radius-full: 6px; /* anche i pill sono quasi quadrati */
+
+  /* Ombre: nessuna */
+  --shadow-sm:  none;
+  --shadow-md:  none;
+  --shadow-lg:  none;
+  --shadow-xl:  none;
+  --shadow-btn: none;
+}
