@@ -883,6 +883,10 @@ button.s-riga:first-child { border-top: 0; }
 .f-testa { display: flex; align-items: center; gap: 8px; padding-block: 12px 4px; }
 .f-testa h2 { font-family: var(--font-titoli); font-size: 24px; margin: 0; flex: 1; }
 .chiudi { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--carta); display: grid; place-items: center; margin-left: -4px; }
+/* PROVA (solo "Nuovo cliente"): con la tastiera aperta il foglio si accorcia fino alla tastiera,
+   così il piede con "Salva" resta subito sopra i tasti */
+#foglio.con-tastiera .foglio { height: 100%; border-radius: 0; animation: none; }
+#foglio.con-tastiera #f-piede { box-shadow: 0 -6px 16px rgba(0, 0, 0, .18); }
 .f-corpo { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-block: 8px 20px; display: flex; flex-direction: column; gap: 18px; }
 .f-corpo > * { flex-shrink: 0; }
 .campo { display: flex; flex-direction: column; gap: 6px; }
@@ -6931,6 +6935,26 @@ function disegnaPreventivi() {
   aggiornaBadge(); aggiornaBadgeNote(); // numeri dell'inbox e delle note ricaricati dal telefono
   if (zonaScelta) caricaMeteo();        // previsioni della tua zona (all'avvio erano partite con quella di prova)
 })();
+
+// PROVA "Salva sopra la tastiera" (solo foglio Nuovo cliente).
+// Quando la tastiera si apre, la parte visibile dello schermo (visualViewport) si accorcia:
+// il foglio prende esattamente quell'altezza, e il suo piede con "Salva" finisce subito sopra la tastiera.
+function adattaFoglioTastiera() {
+  const vv = window.visualViewport, f = $('foglio');
+  if (!vv || !f) return;
+  const tastiera = window.innerHeight - vv.height - vv.offsetTop;   // quanto spazio occupa la tastiera
+  if (!f.hidden && tastiera > 80) {
+    f.classList.add('con-tastiera');
+    f.style.top = vv.offsetTop + 'px'; f.style.height = vv.height + 'px'; f.style.bottom = 'auto';
+  } else if (f.classList.contains('con-tastiera')) {
+    f.classList.remove('con-tastiera');
+    f.style.top = f.style.height = f.style.bottom = '';
+  }
+}
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', adattaFoglioTastiera);
+  visualViewport.addEventListener('scroll', adattaFoglioTastiera);
+}
 
 // Data della versione in uso (quando è stata pubblicata): serve a capire se il telefono ha l'ultima
 try {
