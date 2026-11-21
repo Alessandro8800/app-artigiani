@@ -5690,17 +5690,31 @@ $('i-ripristina').onchange = async e => {
   } catch { avvisa('Questo file non è una copia dei dati'); }
 };
 // ---- Autocompletamento indirizzo (Nominatim / OpenStreetMap — gratuito, nessuna chiave) ----
+// La zona usata è quella già impostata per il meteo (Impostazioni → Meteo → usa posizione GPS)
 let _doveTimer = null, _doveAbort = null;
+const _doveCache = new Map();  // cache in memoria per la sessione
+
+async function _nomFetch(q, bounded, signal) {
+  const { lat, lon } = zonaMeteo;
+  const dl = 0.72, dL = 1.04;   // box ~80 km: copre tutta la provincia e confinanti
+  const vb = `${lon-dL},${lat+dl},${lon+dL},${lat-dl}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=it&limit=5&addressdetails=1&viewbox=${vb}&bounded=${bounded}`;
+  const r = await fetch(url, { signal, headers: { 'Accept-Language': 'it,en' } });
+  return r.json();
+}
 
 async function _nomCerca(q) {
   if (_doveAbort) _doveAbort.abort();
   _doveAbort = new AbortController();
-  const { lat, lon } = zonaMeteo;  // usa la città già impostata per il meteo
-  const dl = 0.45, dL = 0.63;     // box ~50 km intorno alla città
-  const vb = `${lon-dL},${lat+dl},${lon+dL},${lat-dl}`;
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=it&limit=5&addressdetails=1&viewbox=${vb}`;
-  const r = await fetch(url, { signal: _doveAbort.signal, headers: { 'Accept-Language': 'it,en' } });
-  return r.json();
+  const signal = _doveAbort.signal;  // cattura prima che arrivi una nuova chiamata
+  const key = q.toLowerCase();
+  if (_doveCache.has(key)) return _doveCache.get(key);
+  // Prima prova locale (bounded=1, più veloce): se non trova niente, cerca in tutta Italia
+  let ris = await _nomFetch(q, 1, signal);
+  if (!ris.length) ris = await _nomFetch(q, 0, signal);
+  if (_doveCache.size > 60) _doveCache.delete(_doveCache.keys().next().value);
+  _doveCache.set(key, ris);
+  return ris;
 }
 
 function _doveFormatta(r) {
