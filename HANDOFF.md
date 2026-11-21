@@ -628,6 +628,7 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 6. **Preventivi AI** — box testo/voce → Claude genera stima usando i dati dei form preventivi (`prevDati`).
 7. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
 8. **Idea futura (21/11): cronometro lavori a voce** — "ok, inizio il taglio prato da Rossi" … "ok, ho finito da Rossi" → l'app conta le ore passate su quel lavoro. Serve per il report (ore lavorate) e per capire se il prezzo era giusto (€ all'ora reali). Da progettare insieme prima di scrivere codice.
+9. **Idea futura (21/11): clienti da WhatsApp** — WhatsApp non lascia leggere i suoi contatti alle altre app; la rubrica del telefono (già in "Per iniziare") copre quasi tutti. Per chi ti ha scritto su WhatsApp ma non è in rubrica: in WhatsApp apri il contatto → "Condividi" → scegli l'app → diventa un cliente (nome + numero). Si fa con il "share target" della PWA nel manifest (riceve il file contatto .vcf). Funziona solo con l'app installata, non dal browser. Da progettare insieme prima di scrivere codice.
 
 **Già fatto:**
 - ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)
