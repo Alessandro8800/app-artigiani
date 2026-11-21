@@ -634,7 +634,7 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 
 1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. `confermaCarta` per cat=`nota` con `Cliente` presente salva già in `prendiExtra(cliente).note`, ma la scheda cliente non mostra ancora queste note extra in modo prominente.
 2. **Collegare pagamenti ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. (21/11: i **costi** detti a voce vanno già nel lavoro del cliente; `CLIENTI_FAKE` è stato tolto, si usano i clienti veri. Manca il legame pagamento → lavoro.)
-3. **Mic per scheda specifica** — se il mic dentro l'inbox "Note" registra, l'item va in Note; se è dentro "Costi", va in Costi. Ora va sempre nella categoria globale.
+3. ✅ **Mic per scheda specifica** — fatto (21/11): i 3 microfoni passano tutti dall'AI, che smista nella categoria giusta.
 4. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente.
 5. **Scheda conti — grafica** — migliorare aspetto grafico (non bug critici).
 6. **Preventivi AI** — box testo/voce → Claude genera stima usando i dati dei form preventivi (`prevDati`).
