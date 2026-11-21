@@ -922,6 +922,13 @@ button.s-riga:first-child { border-top: 0; }
 .q-pop-testa { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .q-pop-testa strong { font-family: var(--font-titoli); font-size: 20px; color: #fff; }
 .q-pop .g:disabled { opacity: .35; }
+.chiave-box { background: var(--carta); color: var(--testo); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.chiave-testa { display: flex; align-items: center; justify-content: space-between; }
+.chiave-testa strong { font-family: var(--font-titoli); font-size: 20px; }
+.chiave-spiega { margin: 0; font-size: 14px; color: var(--testo-2); }
+.chiave-motivo { margin: 0; font-size: 14px; font-weight: 700; color: var(--rosso); background: var(--rosso-chiaro); border-radius: 12px; padding: 8px 10px; }
+#chiave-input { width: 100%; height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--sfondo); color: var(--testo); padding: 0 12px; font-size: 16px; }
+#chiave-input:focus { outline: none; border-color: var(--foglia); }
 /* Testata dei calendari: frecce, mese e anno su un'unica barra scura, ma restano tasti separati */
 .cal-testa { background: var(--sfondo); border-radius: 14px; padding: 3px; margin-bottom: 6px; }
 .cal-testa .freccia { background: none; height: 38px; }
@@ -1514,6 +1521,21 @@ button.s-riga:first-child { border-top: 0; }
     <div class="ripr-conferma-row" id="ripr-conferma-row" hidden>
       <button id="ripr-conferma-btn" onclick="confRiprCalendario()">Conferma</button>
     </div>
+  </div>
+</div>
+
+<!-- Chiave AI: si chiede qui (mai con prompt), poi il microfono parte subito -->
+<div class="q-pop" id="chiave-pop" hidden>
+  <div class="q-pop-box chiave-box" role="dialog" aria-modal="true" aria-labelledby="chiave-titolo">
+    <div class="chiave-testa">
+      <strong id="chiave-titolo">Chiave per l'assistente</strong>
+      <button class="chiudi" id="chiave-chiudi" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <p class="chiave-motivo" id="chiave-motivo" hidden></p>
+    <p class="chiave-spiega">Incolla la chiave Anthropic (inizia con <b>sk-ant-</b>). Resta salvata solo su questo telefono.</p>
+    <input type="text" id="chiave-input" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <p class="errore" id="chiave-errore" hidden></p>
+    <button class="salva" id="chiave-salva" type="button">Salva e parla</button>
   </div>
 </div>
 
@@ -4072,15 +4094,46 @@ $('ai-chiudi').onclick = () => {
 let ANTHROPIC_KEY = '';
 try { ANTHROPIC_KEY = localStorage.getItem('anthropic_key') || ''; } catch(e){}
 
-function chiediChiaveAI() {
-  const k = prompt('Per usare l\'AI inserisci la tua chiave Anthropic (sk-ant-...).\nViene salvata sul tuo telefono, non la vede nessun altro.');
-  if (k && k.trim().startsWith('sk-ant-')) {
-    ANTHROPIC_KEY = k.trim();
-    try { localStorage.setItem('anthropic_key', ANTHROPIC_KEY); } catch(e){}
-    return true;
+// Popup della chiave: si apre prima di ascoltare se la chiave manca, o dopo un errore "chiave non valida".
+// Dopo "Salva e parla" il microfono riparte subito dalla stessa sorgente.
+let _chiaveSorgente = null;
+function apriChiaveAI(sorgente, motivo) {
+  _chiaveSorgente = sorgente || 'globale';
+  $('chiave-motivo').textContent = motivo || '';
+  $('chiave-motivo').hidden = !motivo;
+  $('chiave-errore').hidden = true;
+  $('chiave-input').value = '';
+  $('chiave-pop').hidden = false;
+  setTimeout(() => $('chiave-input').focus(), 50);
+}
+function chiudiChiaveAI() { $('chiave-pop').hidden = true; _chiaveSorgente = null; }
+$('chiave-chiudi').onclick = chiudiChiaveAI;
+$('chiave-pop').addEventListener('click', e => { if (e.target === $('chiave-pop')) chiudiChiaveAI(); });
+$('chiave-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('chiave-salva').click(); });
+$('chiave-salva').onclick = () => {
+  const k = $('chiave-input').value.replace(/\s+/g, ''); // toglie spazi e a capo incollati per sbaglio
+  if (!k.startsWith('sk-ant-') || k.length < 30) {
+    $('chiave-errore').textContent = 'Non sembra una chiave giusta: deve iniziare con sk-ant-';
+    $('chiave-errore').hidden = false;
+    return;
   }
-  alert('Chiave non valida. Uso il riconoscimento base senza AI.');
-  return false;
+  ANTHROPIC_KEY = k;
+  try { localStorage.setItem('anthropic_key', k); } catch(e){}
+  const sorgente = _chiaveSorgente;
+  chiudiChiaveAI();
+  avviaMicrofono(sorgente); // si parla subito (il tocco su "Salva" permette di accendere il microfono)
+};
+
+// Spiega in parole semplici perché l'AI non ha risposto
+function motivoErroreAI(e) {
+  if (e && e.name === 'AbortError') return 'ci ha messo troppo';
+  const s = e && e.stato;
+  if (s === 401 || s === 403) return 'la chiave non è valida';
+  if (s === 400 && /credit|balance/i.test(e.dettaglio || '')) return 'credito Anthropic finito';
+  if (s === 429) return 'troppe richieste, riprova tra poco';
+  if (s >= 500) return 'il servizio AI ha un problema';
+  if (s) return 'errore ' + s;
+  return 'niente internet';
 }
 
 // Schema: {"operations":[{tipo, nome, lavoro, data, importo, testo, missing_fields}]}
@@ -4166,7 +4219,12 @@ ESEMPI
       messages: [{ role: 'user', content: testo }]
     })
   }).finally(() => clearTimeout(scadenza));
-  if (!resp.ok) throw new Error('API ' + resp.status);
+  if (!resp.ok) {
+    const err = new Error('API ' + resp.status);
+    err.stato = resp.status;
+    try { err.dettaglio = (await resp.json())?.error?.message || ''; } catch (_) {}
+    throw err;
+  }
   const json = await resp.json();
   try {
     // La risposta può avere più blocchi (es. un blocco "thinking" prima del testo): prendo solo il testo.
@@ -4366,7 +4424,7 @@ function _aggiungiOperazioni(testo, risultato, giorno) {
   // Se l'inbox è aperta (mic dentro l'inbox), ridisegna la lista per mostrare le nuove card
   if (inbox && !$('ai-inbox').hidden && _inboxCatCorrente) apriInbox(_inboxCatCorrente);
 
-  if (risultato._fallback) { avvisa('Salvato come nota, controlla'); return; }
+  if (risultato._fallback) { avvisa(`Salvato come nota${risultato._motivo ? ' (' + risultato._motivo + ')' : ''}, controlla`); return; }
   const pezzi = [];
   if (inbox) pezzi.push(inbox === 1 ? '1 voce da confermare' : `${inbox} voci da confermare`);
   if (note) pezzi.push(note === 1 ? '1 nota salvata' : `${note} note salvate`);
@@ -4512,7 +4570,7 @@ function chiudiMicBox() {
 // Cosa scrivere nel riquadro del microfono dopo la risposta dell'AI
 function etichettaRisultato(ris) {
   if (ris && typeof ris === 'object' && Array.isArray(ris.operations)) {
-    if (ris._fallback) return { cat: 'nota', testo: '📝 Salvo come nota (AI non raggiungibile)' };
+    if (ris._fallback) return { cat: 'nota', testo: `📝 Salvo come nota (${ris._motivo || 'AI non raggiungibile'})` };
     const tipi = ris.operations.map(o => _TIPO_ALIAS[o.tipo] || o.tipo);
     const info = t => CAT_INFO[t] || CAT_INFO.nota;
     if (tipi.length === 1) return { cat: tipi[0], testo: info(tipi[0]).emoji + ' ' + info(tipi[0]).nome };
@@ -4548,6 +4606,9 @@ function avviaMicrofono(sorgente) {
     }
     return;
   }
+
+  // 0. Senza chiave: prima il popup della chiave, poi il microfono parte da solo
+  if (!ANTHROPIC_KEY) { apriChiaveAI(sorgente); return; }
 
   // 1. Resetta lo stato e apre il riquadro
   const catWrap = $('mic-box-cat-wrap');
@@ -4604,16 +4665,21 @@ function avviaMicrofono(sorgente) {
         catWrap.appendChild(autoWrap);
         void autoWrap.offsetWidth;
         autoWrap.querySelector('.mic-box-auto-progresso').classList.add('corre');
-        const salvaTimer = setTimeout(() => { aggiungiVoceInbox(finale, ris); chiudiMicBox(); }, 4000);
+        const salvaTimer = setTimeout(() => {
+          aggiungiVoceInbox(finale, ris);
+          chiudiMicBox();
+          // Chiave rifiutata: la frase è salvata come nota, ora si chiede una chiave nuova
+          if (ris && ris._chiaveErrata) apriChiaveAI(sorgente, 'La chiave salvata non funziona. Incollane una nuova.');
+        }, 4000);
         autoWrap.querySelector('.mic-box-annulla-btn').onclick = () => { clearTimeout(salvaTimer); chiudiMicBox(); };
       };
-      if (!ANTHROPIC_KEY && !chiediChiaveAI()) {
-        // Senza chiave: riconoscimento base a parole chiave (dentro l'inbox resta nella scheda aperta)
-        mostra(sorgente === 'inbox' ? catIniziale : categorizzaVoce(finale));
-        return;
-      }
-      // 5. Se l'AI fallisce (rete, errore, tempo scaduto) → nota grezza, la trascrizione non si perde
-      categorizzaVoceAI(finale).then(mostra).catch(() => mostra({ operations: [{ tipo: 'nota', testo: finale }], _fallback: true }));
+      // 5. Se l'AI fallisce (rete, errore, tempo scaduto) → nota grezza con il motivo, la trascrizione non si perde
+      categorizzaVoceAI(finale).then(mostra).catch(e => {
+        const motivo = motivoErroreAI(e);
+        const chiaveErrata = e && (e.stato === 401 || e.stato === 403);
+        if (chiaveErrata) { ANTHROPIC_KEY = ''; try { localStorage.removeItem('anthropic_key'); } catch(_){} }
+        mostra({ operations: [{ tipo: 'nota', testo: finale }], _fallback: true, _motivo: motivo, _chiaveErrata: chiaveErrata });
+      });
     } else if (interim) {
       $('mic-box-testo').innerHTML = `<em>${sicuro(interim)}</em>`;
       // 3. Indovina la categoria mentre si parla: solo per il bottone globale
