@@ -424,6 +424,29 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .ai-ic-chiudi { width: 36px; min-height: 44px; display: flex; align-items: center; justify-content: center; background: none; border-radius: 10px; border: 1.5px solid var(--linea); cursor: pointer; color: var(--testo-2); flex-shrink: 0; }
 .ai-ic-chiudi:active { background: var(--linea); }
 .ai-ic-chiudi svg { width: 18px; height: 18px; }
+/* Pannello giorno calendario */
+.gp-card { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--linea); }
+.gp-card:first-child { border-top: none; }
+.gp-card-btn { flex: 1; text-align: left; background: none; border: none; cursor: pointer; padding: 0; min-width: 0; }
+.gp-nome { display: block; font-size: 16px; font-weight: 800; color: var(--testo); }
+.gp-cosa { display: block; font-size: 14px; font-weight: 600; color: var(--testo-2); margin-top: 2px; }
+.gp-card.gp-fatto .gp-nome, .gp-card.gp-fatto .gp-cosa { opacity: .45; text-decoration: line-through; }
+.gp-card.colorato { border-left: 3px solid var(--c); padding-left: 10px; }
+.gp-spunta-fatto { width: 28px; height: 28px; border-radius: 50%; background: var(--foglia-chiara); color: var(--foglia); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gp-spunta-fatto svg { width: 16px; height: 16px; }
+.gp-vuoto { font-size: 15px; color: var(--testo-2); font-weight: 600; padding: 20px 0; text-align: center; }
+.gp-azioni { display: flex; gap: 8px; padding: 12px 0; flex-wrap: wrap; }
+.gp-azioni button { flex: 1; min-width: 0; height: 44px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.gp-azioni .gp-ripr { background: var(--foglia-chiara); color: var(--foglia); border-color: var(--foglia); }
+.gp-azioni .gp-torna { background: none; color: var(--testo-2); flex: none; padding: 0 16px; }
+.gp-sezione { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--testo-2); padding: 14px 0 6px; }
+.gp-ripr-card { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--linea); }
+.gp-ripr-card:first-of-type { border-top: none; }
+.gp-ripr-info { flex: 1; min-width: 0; }
+.gp-ripr-info .gp-nome { font-size: 15px; }
+.gp-ripr-info .gp-cosa { font-size: 13px; }
+.gp-sposta-btn { flex-shrink: 0; height: 34px; padding: 0 12px; border-radius: 9px; background: var(--foglia-chiara); color: var(--foglia); border: 1.5px solid var(--foglia); font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.gp-sposta-btn:active { background: var(--foglia); color: var(--sul-foglia); }
 /* Pannello inbox AI */
 .inbox-nota-sim { font-size: 13px; color: var(--testo-2); font-weight: 600; margin: 0 0 12px; flex-shrink: 0; }
 .inbox-header-azioni { display: flex; gap: 4px; }
@@ -1534,6 +1557,20 @@ button.s-riga:first-child { border-top: 0; }
   </div>
 </div>
 
+<!-- Pannello giorno calendario -->
+<div class="foglio-sfondo" id="giorno-panel" hidden>
+  <div class="foglio" role="dialog" aria-modal="true" aria-labelledby="gp-titolo">
+    <header class="f-testa gutter">
+      <button class="chiudi" onclick="chiudiGiornoPanel()" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+      <h2 id="gp-titolo"></h2>
+    </header>
+    <div class="f-corpo gutter" id="gp-corpo"></div>
+    <footer class="f-piede gutter">
+      <div class="gp-azioni" id="gp-azioni"></div>
+    </footer>
+  </div>
+</div>
+
 <!-- Per iniziare: chi ti deve già soldi e clienti dalla rubrica -->
 <div class="foglio-sfondo" id="inizio" hidden>
   <div class="foglio" role="dialog" aria-modal="true" aria-labelledby="in-titolo">
@@ -1871,7 +1908,7 @@ function riempiGrigliaSettimane(g) {
         const fg = c || 'var(--foglia)';
         return `<div class="sett-blocco" style="background:${bg};color:${fg}">${sicuro(v.l.nome.split(' ')[0])}</div>`;
       }).join('')}`;
-      col.onclick = () => scegli(s);
+      col.onclick = () => apriGiornoPanel(s);
       riga.appendChild(col);
     }
     g.appendChild(riga);
@@ -1895,7 +1932,7 @@ function riempiAgenda(g) {
       <div class="agenda-lavori">${lavs.length > 0
         ? lavs.map(v => { const c = prendiExtra(v.l.nome).colore || 'var(--foglia)'; return `<div class="agenda-lavoro" style="border-color:${c}">${sicuro(v.l.nome)}${v.l.cosa ? ' · ' + sicuro(v.l.cosa) : ''}</div>`; }).join('')
         : '<div class="agenda-vuoto">Nessun lavoro</div>'}</div>`;
-    riga.onclick = () => scegli(s);
+    riga.onclick = () => apriGiornoPanel(s);
     g.appendChild(riga);
   }
 }
@@ -2007,13 +2044,122 @@ function segnaFatto(carta, prezzoChiesto) {
   }, 1250);
 }
 
-function scegli(s) {
+// ---- Pannello giorno calendario ----
+let _gpGiorno = null;
+
+function apriGiornoPanel(s) {
+  _gpGiorno = s;
   scelto = s;
   const d = daIso(s);
-  meseVisto = new Date(d.getFullYear(), d.getMonth(), 1);
-  tutto();
-  const el = document.getElementById('g-' + s);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (meseVisto.getFullYear() !== d.getFullYear() || meseVisto.getMonth() !== d.getMonth()) {
+    meseVisto = new Date(d.getFullYear(), d.getMonth(), 1);
+    disegnaCalendario();
+  }
+  $('gp-titolo').textContent = nomeGiorno(s);
+  _gpVistaMain();
+  $('giorno-panel').hidden = false;
+  document.body.classList.add('bloccato');
+}
+
+function chiudiGiornoPanel() {
+  $('giorno-panel').hidden = true;
+  document.body.classList.remove('bloccato');
+}
+
+function _gpVistaMain() {
+  const mp = mappaGiorni();
+  const entrie = mp[_gpGiorno]?.lavori || [];
+  let html = '';
+  if (entrie.length === 0) {
+    html = '<p class="gp-vuoto">Nessun lavoro questo giorno.</p>';
+  } else {
+    html = entrie.map(({l, parte, di}) => {
+      const c = prendiExtra(l.nome).colore;
+      const fatto = l.fatto;
+      return `<article class="gp-card${fatto ? ' gp-fatto' : ''}${c ? ' colorato' : ''}"${c ? ` style="--c:${c}"` : ''} data-id="${l.id}">
+        <button class="gp-card-btn">
+          <span class="gp-nome">${sicuro(l.nome)}${l.memo ? ' <span class="etichetta">Promemoria</span>' : ''}${di > 1 ? ` <span class="etichetta piu-giorni">giorno ${parte} di ${di}</span>` : ''}</span>
+          <span class="gp-cosa">${l.cosa ? sicuro(l.cosa) : ''}${l.prezzo ? ' · ' + euro(l.prezzo) : ''}</span>
+        </button>
+        ${fatto ? `<span class="gp-spunta-fatto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+      </article>`;
+    }).join('');
+  }
+  $('gp-corpo').innerHTML = html;
+  $('gp-corpo').querySelectorAll('.gp-card').forEach(card => {
+    card.querySelector('.gp-card-btn').onclick = () => { chiudiGiornoPanel(); apriLavoro(+card.dataset.id); };
+  });
+  $('gp-azioni').innerHTML = `
+    <button onclick="gpNuovoLavoro()">+ Nuovo lavoro</button>
+    <button onclick="gpNuovaNota()">+ Nota</button>
+    <button class="gp-ripr" onclick="_gpVistaRiprogramma()">↺ Riprogramma</button>`;
+}
+
+function gpNuovoLavoro() { chiudiGiornoPanel(); apriFoglio(_gpGiorno); }
+function gpNuovaNota()   { chiudiGiornoPanel(); apriNoteRapide(); }
+
+function _gpVistaRiprogramma() {
+  const s = _gpGiorno;
+  const mp = mappaGiorni();
+  const entrie = (mp[s]?.lavori || []).filter(e => !e.l.fatto);
+  let html = '';
+
+  if (entrie.length > 0) {
+    // Giorno con lavori: mostra i lavori da spostare altrove
+    html = entrie.map(({l}) =>
+      `<div class="gp-ripr-card">
+        <div class="gp-ripr-info">
+          <span class="gp-nome">${sicuro(l.nome)}</span>
+          <span class="gp-cosa">${sicuro(l.cosa || '')}</span>
+        </div>
+        <button class="gp-sposta-btn" data-id="${l.id}">Sposta →</button>
+      </div>`).join('');
+  } else {
+    // Giorno vuoto: mostra lavori da assegnare a questo giorno
+    const oggi = tra(0);
+    const senzaFuturo = lavori.filter(l => !l.fatto && !l.iniziale && l.data < oggi);
+    const giaProg  = lavori.filter(l => !l.fatto && !l.iniziale && l.data >= oggi && l.data !== s);
+    if (senzaFuturo.length) {
+      html += `<div class="gp-sezione">Da programmare</div>`;
+      html += senzaFuturo.map(l =>
+        `<div class="gp-ripr-card">
+          <div class="gp-ripr-info">
+            <span class="gp-nome">${sicuro(l.nome)}</span>
+            <span class="gp-cosa">${sicuro(l.cosa || '')}</span>
+          </div>
+          <button class="gp-sposta-btn" data-id="${l.id}" data-modo="qui">Metti qui</button>
+        </div>`).join('');
+    }
+    if (giaProg.length) {
+      html += `<div class="gp-sezione">Già programmati</div>`;
+      html += giaProg.map(l =>
+        `<div class="gp-ripr-card">
+          <div class="gp-ripr-info">
+            <span class="gp-nome">${sicuro(l.nome)}</span>
+            <span class="gp-cosa">${nomeGiorno(l.data).toLowerCase()} · ${sicuro(l.cosa || '')}</span>
+          </div>
+          <button class="gp-sposta-btn" data-id="${l.id}" data-modo="qui">Sposta qui</button>
+        </div>`).join('');
+    }
+    if (!html) html = '<p class="gp-vuoto">Nessun lavoro da riprogrammare.</p>';
+  }
+
+  $('gp-corpo').innerHTML = html;
+  $('gp-corpo').querySelectorAll('.gp-sposta-btn').forEach(btn => {
+    const l = lavori.find(x => x.id === +btn.dataset.id);
+    if (!l) return;
+    if (btn.dataset.modo === 'qui') {
+      btn.onclick = () => { spostaLavoro(l, s); chiudiGiornoPanel(); };
+    } else {
+      // Sposta altrove: apri calendario
+      btn.onclick = () => { chiudiGiornoPanel(); apriCalSposta(l.id); };
+    }
+  });
+  $('gp-azioni').innerHTML = `<button class="gp-torna" onclick="_gpVistaMain()">← Indietro</button>`;
+}
+
+function scegli(s) {
+  apriGiornoPanel(s);
 }
 
 function tutto() { if (typeof disegnaAvvisiHome === 'function') disegnaAvvisiHome(); disegnaTestata(); disegnaCalendario(); disegnaAgenda(); if (typeof disegnaClienti === 'function') disegnaClienti(); }
