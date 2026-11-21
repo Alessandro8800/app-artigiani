@@ -1078,8 +1078,8 @@ button.s-riga:first-child { border-top: 0; }
 <div class="app">
   <div class="esempio gutter">Prova grafica · i tuoi dati si salvano sul telefono</div>
   <div style="background:#ef4444;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-    <span style="color:#fff;font-size:13px;font-weight:700;">⚠️ Se non vedi gli ultimi aggiornamenti:</span>
-    <button onclick="(async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();const keys=await caches.keys();for(const k of keys)await caches.delete(k);}catch(e){}location.reload(true);})()" style="background:#fff;color:#ef4444;border:none;border-radius:8px;padding:8px 14px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;">🔄 Aggiorna app</button>
+    <span style="color:#fff;font-size:13px;font-weight:700;">⚠️ Se non vedi gli ultimi aggiornamenti:<br><small id="versione-app" style="font-weight:600;opacity:.9;"></small></span>
+    <button onclick="(async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();const keys=await caches.keys();for(const k of keys)await caches.delete(k);}catch(e){}location.replace(location.pathname+'?v='+Date.now());})()" style="background:#fff;color:#ef4444;border:none;border-radius:8px;padding:8px 14px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;">🔄 Aggiorna app</button>
   </div>
 
   <section id="vista-calendario">
@@ -2499,7 +2499,7 @@ function aggiornaCliente() {
   $('campo-nome').hidden = !!clienteScelto;
   $('campo-tipo').hidden = !!clienteScelto;   // il tipo di un cliente già esistente è già noto
   $('f-scelto').hidden = !clienteScelto;
-  $('campo-dove').hidden = !!clienteScelto;
+  $('campo-dove').hidden = !!clienteScelto && !!clienteScelto.dove; // cliente della rubrica senza via: la via si può ancora scrivere
   // Telefoni e colore sono del cliente: se è già tuo, si cambiano da "Modifica cliente"
   for (const id of ['f-tel', 'f-colore', 'f-note']) $(id).closest('.campo').hidden = !!clienteScelto;
   $('campo-semestrale').hidden = !!clienteScelto || tipo !== 'Condominio';
@@ -2953,7 +2953,7 @@ function salva() {
   if (salvaBt) { salvaBt.disabled = true; salvaBt.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Salvato'; }
   const nuovo = {
     id: lavori.length, nome, data: quando, fatto: false, prezzo,
-    dove: clienteScelto ? clienteScelto.dove : $('f-dove').value.trim(),
+    dove: (clienteScelto && clienteScelto.dove) || $('f-dove').value.trim(),
     tipo: clienteScelto ? clienteScelto.tipo : tipo,
     durata,
     ora,
@@ -6601,6 +6601,12 @@ function disegnaPreventivi() {
   tutto();
   aggiornaBadge(); aggiornaBadgeNote(); // numeri dell'inbox e delle note ricaricati dal telefono
 })();
+
+// Data della versione in uso (quando è stata pubblicata): serve a capire se il telefono ha l'ultima
+try {
+  const v = new Date(document.lastModified);
+  if (!isNaN(v)) $('versione-app').textContent = 'Versione del ' + v.toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+} catch (e) {}
 </script>
 </body>
 </html>
