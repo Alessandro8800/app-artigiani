@@ -13,9 +13,11 @@ Leggi questo file all'inizio di ogni nuova sessione **prima di toccare codice**.
 ## Cos'è l'app
 
 PWA Android per un giardiniere (artigiano che lavora da solo).
-Un unico file: `index.html` — prova grafica approvata, dati inventati, si azzera a ogni apertura.
-Stack: HTML + CSS + JS vanilla (Vite 6 solo per build/PWA). Database futuro: Dexie (IndexedDB).
+Un unico file: `index.html`. **Dal 21/11: niente dati di esempio, l'app parte vuota e salva tutto sul telefono con Dexie** (lavori, pagamenti, clienti, inbox, storico, spese, note, zona, cronometro). Impostazioni → "Ricomincia da zero" cancella tutto (tiene solo la chiave AI).
+Stack: HTML + CSS + JS vanilla (Vite 6 solo per build/PWA). Pubblicazione: push su `main` → GitHub Actions → GitHub Pages (alessandro8800.github.io/app-artigiani). Sul telefono: "Aggiorna app" + controllare "Versione del…" nella barra rossa.
 La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). Non servono.
+
+**⚠️ Trappola:** `const $ = id => …` è definita a metà dello script (~riga 2300). Codice che gira al caricamento **prima** di quella riga non può usare `$` (né `soglie`, `NOTIFICHE`, altre `const` definite dopo): blocca tutta l'app. Lì usare `document.getElementById`, oppure metterlo dentro una funzione chiamata dopo.
 
 ---
 
@@ -25,18 +27,18 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
 ┌──────────────────────────────┐
 │  Calendario settimana        │  ← giorno selezionato evidenziato
 │  Agenda (lavori del giorno)  │  ← lista lavori, giorni liberi, 2 mesi avanti
-│  Barra AI                    │  ← 5 icone categoria + campanella "tutte"
-│  Bottone microfono           │  ← grande, in fondo
+│  Barra AI                    │  ← SOLO "Parla" + campanella (21/11)
 └──────────────────────────────┘
 ```
+In testata, accanto alla data: icona **Avvisi** (`av-btn`, `apriAvvisi`) e **Note rapide** (`nr-btn`). In cima (`#avvisi-home`): barretta del cronometro e banner "Inizia da qui".
 
 **Barra AI — id degli elementi:**
 | Element | id | Ruolo |
 |---|---|---|
-| Campanella "tutte" | `ai-tutto` | Badge: `ai-b-tutto` — apre inbox con tutte le voci |
-| Microfono globale | `ai-mic` | Classe `ascolta` = sta registrando |
+| Campanella | `ai-tutto` | Badge: `ai-b-tutto` — apre l'inbox "tutto" (`apriInbox('tutto')`) |
+| Microfono globale | `ai-mic` | `avviaMicrofono('globale')`; classe `ascolta` = sta registrando |
 
-Le 5 icone categoria (`ai-cat-cliente`, `ai-cat-nota`, `ai-cat-sposta`, `ai-cat-costo`, `ai-cat-paga`) sono state rimosse dalla barra — le categorie si vedono come tab dentro l'inbox. I badge per categoria (`ai-b-cliente` ecc.) sono ancora aggiornati da `aggiornaBadge()` ma gli elementi non esistono più nel DOM (il null check in `aggiornaBadge` li ignora silenziosamente).
+Le 5 icone categoria e la X sono state tolte (21/11). I badge per categoria (`ai-b-cliente` ecc.) non esistono più nel DOM: `aggiornaBadge()` li ignora.
 
 ---
 
@@ -49,9 +51,9 @@ Le 5 icone categoria (`ai-cat-cliente`, `ai-cat-nota`, `ai-cat-sposta`, `ai-cat-
       <button id="ai-inbox-chiudi">×</button>
       <h2 id="ai-inbox-titolo">Notifiche</h2>
       <div class="inbox-header-azioni">
-        <button id="ai-inbox-add">   ← icona +, visibile solo per cliente/nota/costo
+        <button id="ai-inbox-add">   ← icona +: cliente/nota/costo e anche "tutto" (lì chiede la categoria)
         <button id="ai-inbox-edit">  ← matita, attiva edit mode
-        <button id="ai-inbox-mic">   ← mic specifico per la scheda
+        <button id="ai-inbox-mic">   ← mic, sempre visibile (anche in "tutto"): passa dall'AI
       </div>
     </header>
     <div class="f-corpo gutter" id="ai-inbox-lista"></div>
@@ -60,11 +62,14 @@ Le 5 icone categoria (`ai-cat-cliente`, `ai-cat-nota`, `ai-cat-sposta`, `ai-cat-
 </div>
 ```
 
-**Icona + (`#ai-inbox-add`):**
-- Visibile solo per schede `cliente`, `nota`, `costo` (nascosta per `riprogramma`, `paga`, `tutto`)
+**Icona + (`#ai-inbox-add`)** — definita in `INBOX_AGGIUNGI` (21/11):
 - `cliente` → `apriFoglio()` con `_ritornaInboxKey = 'cliente'` (X sul foglio torna all'inbox)
-- `nota` → `aggiungiItemSimulato()`
-- `costo` → aggiunge item vuoto all'inbox costo e riapre la tab
+- `nota` → nota vuota con il testo da scrivere già aperto (`aggiungiVoceVuota`; prima era la finta "Simulazione AI")
+- `costo` → spesa vuota con il pannello aperto
+- `tutto` → popup `#scegli-pop` "Cosa vuoi aggiungere?" → una delle tre sopra
+- nascosta per `riprogramma` e `paga`
+
+**Calendario "sposta" (`#ripr-pop`):** il nome del cliente è solo da leggere (`<strong id="ripr-nome">`); lo spostamento usa sempre il `Cliente` della card (cambiarlo faceva perdere il lavoro).
 
 **Edit mode:** `#ai-inbox-lista.classList.toggle('edit-mode')` → mostra il bottone "Modifica ›" su ogni card.
 
