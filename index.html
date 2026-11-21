@@ -930,9 +930,10 @@ button.s-riga:first-child { border-top: 0; }
 .q-pop-testa { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .q-pop-testa strong { font-family: var(--font-titoli); font-size: 20px; color: #fff; }
 .q-pop .g:disabled { opacity: .35; }
-.zona-cerca { display: flex; gap: 8px; align-items: stretch; }
-.zona-cerca .imp-input { flex: 1; min-width: 0; }
-.zona-cerca .secondario { min-height: 48px; padding: 0 16px; font-size: 15px; }
+.zona-ok { background: var(--foglia-chiara); border: 1.5px solid var(--foglia); color: var(--testo); border-radius: 12px; padding: 10px 12px; font-size: 15px; animation: sali .25s ease-out; }
+.zona-gira { display: inline-block; width: 16px; height: 16px; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: zona-gira .8s linear infinite; vertical-align: -3px; margin-right: 4px; }
+@keyframes zona-gira { to { transform: rotate(360deg); } }
+#i-zona-gps:disabled { opacity: .8; }
 .zona-risultati { display: flex; flex-direction: column; border: 1.5px solid var(--linea); border-radius: 12px; overflow: hidden; }
 .zona-risultati button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--linea); background: var(--carta); color: var(--testo); text-align: left; }
 .zona-risultati button:last-child { border-bottom: 0; }
@@ -3989,7 +3990,7 @@ async function dbCarica() {
   try {
     const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona']);
     if (r[6]) inizioChiuso = !!r[6].valore;
-    if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon }; zonaScelta = true; }
+    if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' }; zonaScelta = true; }
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
     if (r[7]) { const ib = JSON.parse(r[7].valore); for (const k of Object.keys(INBOX_ESEMPI)) INBOX_ESEMPI[k].voci.splice(0, Infinity, ...(ib[k] || [])); }
     if (r[8]) { const st = JSON.parse(r[8].valore); for (const k of Object.keys(STORICO_ESEMPI)) STORICO_ESEMPI[k].splice(0, Infinity, ...(st[k] || [])); }
@@ -5659,9 +5660,11 @@ $('spesa-pop').addEventListener('click', e => { if (e.target === $('spesa-pop'))
 // meteo, suggerimenti delle vie (cerca prima qui intorno) e "Apri in Maps" per le vie senza paese.
 let zonaMeteo = { nome: 'Monza', lat: 45.5845, lon: 9.2744 };   // finché non la scegli: una zona della Brianza
 let zonaScelta = false;                                          // true quando l'utente l'ha impostata
+let zonaConferma = null;  // per mostrare "✓ Zona impostata" subito dopo la scelta
 function impostaZona(z) {
-  zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon };
+  zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' };
   zonaScelta = true;
+  zonaConferma = { ...zonaMeteo, quando: Date.now() };
   _doveCache.clear();               // i suggerimenti delle vie ora cercano nella nuova zona
   dbSalva(); caricaMeteo();
   avvisa(`La tua zona: ${z.nome}`);
@@ -5683,7 +5686,24 @@ async function zonaDaPosizione(lat, lon) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=12&addressdetails=1`;
   const r = await fetch(url, { headers: { 'Accept-Language': 'it' } });
   const a = (await r.json()).address || {};
-  return { nome: a.city || a.town || a.village || a.municipality || 'La tua zona', lat, lon };
+  return { nome: a.city || a.town || a.village || a.municipality || 'La tua zona', dettaglio: [a.county, a.state].filter(Boolean).join(', '), lat, lon };
+}
+// Ricerca mentre scrivi ("conegl" → Conegliano, Treviso): Photon (OpenStreetMap, gratis) capisce le parole a metà
+const _zonaCache = new Map();
+async function cercaZonaRapida(testo) {
+  const q = normalizza(testo);
+  if (_zonaCache.has(q)) return _zonaCache.get(q);
+  const PAESI = ['city', 'town', 'village', 'municipality', 'suburb', 'hamlet'];
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(testo)}&limit=10&osm_tag=place&bbox=6.6,35.4,18.6,47.1`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(r.status);
+  const trovati = (await r.json()).features
+    .filter(f => f.properties.countrycode === 'IT' && PAESI.includes(f.properties.osm_value))
+    .map(f => ({ nome: f.properties.name, dettaglio: [f.properties.county, f.properties.state].filter(Boolean).join(', '), lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }))
+    .filter((z, i, tutti) => tutti.findIndex(y => y.nome === z.nome && y.dettaglio === z.dettaglio) === i)
+    .slice(0, 5);
+  _zonaCache.set(q, trovati);
+  return trovati;
 }
 // "via Roma 12" senza paese → "via Roma 12, Conegliano" (per Maps). Se il paese c'è già, non tocco niente.
 function indirizzoCompleto(dove) {
@@ -6131,33 +6151,51 @@ const GRUPPI_IMP = [
   ]],
   ['Il mio lavoro', [
     { id: 'zona', nome: 'La tua zona', valore: () => zonaScelta ? zonaMeteo.nome : 'Non ancora scelta', corpo: el => {
+      const dett = z => z.dettaglio ? ` (${sicuro(z.dettaglio)})` : '';
+      // Conferma ben visibile per 20 secondi dopo la scelta; poi resta la riga "Adesso: …"
+      const appena = zonaConferma && Date.now() - zonaConferma.quando < 20000;
       el.innerHTML = `<p class="imp-testo">Il paese o la città dove lavori di solito. Serve per le vie (se dici "via Roma 12" senza paese, Maps la cerca qui), per i suggerimenti degli indirizzi e per il meteo.</p>
-        ${zonaScelta ? `<p class="imp-testo">Adesso: <b>${sicuro(zonaMeteo.nome)}</b></p>` : ''}
-        <div class="zona-cerca"><input id="i-zona" class="imp-input" placeholder="Scrivi il paese, es. Conegliano" autocomplete="off" enterkeyhint="search"><button type="button" class="secondario" id="i-zona-cerca">Cerca</button></div>
+        ${appena ? `<div class="zona-ok">✓ Zona impostata: <b>${sicuro(zonaConferma.nome)}</b>${dett(zonaConferma)}</div>`
+          : zonaScelta ? `<p class="imp-testo">Adesso: <b>${sicuro(zonaMeteo.nome)}</b>${dett(zonaMeteo)}</p>` : ''}
+        <input id="i-zona" class="imp-input" placeholder="Scrivi il paese, es. Conegliano" autocomplete="off" autocapitalize="words" enterkeyhint="done">
         <div class="zona-risultati" id="i-zona-risultati" hidden></div>
         <button type="button" class="secondario" id="i-zona-gps">📍 Usa dove sono adesso</button>`;
-      const cerca = async () => {
+      const box = $('i-zona-risultati');
+      let trovati = [], timer = null, giro = 0;
+      const scegli = z => { impostaZona(z); disegnaImpostazioni(); };
+      const mostra = (html) => { box.hidden = !html; box.innerHTML = html || ''; };
+      // Ricerca mentre scrivi: dalla 3ª lettera, aspetta che smetti un attimo di scrivere
+      $('i-zona').oninput = () => {
+        clearTimeout(timer);
         const t = $('i-zona').value.trim();
-        if (t.length < 2) return avvisa('Scrivi il nome del paese');
-        const box = $('i-zona-risultati');
-        box.hidden = false; box.innerHTML = '<p class="imp-testo">Cerco…</p>';
-        try {
-          const trovati = await cercaZona(t);
-          if (!trovati.length) { box.innerHTML = '<p class="imp-testo">Non trovo questo paese in Italia. Controlla come è scritto.</p>'; return; }
-          box.innerHTML = trovati.map((z, i) => `<button type="button" data-i="${i}"><strong>${sicuro(z.nome)}</strong><small>${sicuro(z.dettaglio)}</small></button>`).join('');
-          box.querySelectorAll('button').forEach(b => { b.onclick = () => { impostaZona(trovati[+b.dataset.i]); disegnaImpostazioni(); }; });
-        } catch (e) { box.innerHTML = '<p class="imp-testo">Serve internet per cercare il paese.</p>'; }
+        if (t.length < 3) { trovati = []; return mostra(''); }
+        timer = setTimeout(async () => {
+          const mio = ++giro;
+          mostra('<p class="imp-testo">Cerco…</p>');
+          try {
+            let r = await cercaZonaRapida(t);
+            if (!r.length) r = await cercaZona(t);          // riserva: l'altro servizio, con il nome intero
+            if (mio !== giro) return;                       // nel frattempo hai scritto altro
+            trovati = r;
+            if (!r.length) return mostra('<p class="imp-testo">Non trovo questo paese in Italia. Controlla come è scritto.</p>');
+            mostra(r.map((z, i) => `<button type="button" data-i="${i}"><strong>${sicuro(z.nome)}</strong><small>${sicuro(z.dettaglio)}</small></button>`).join(''));
+            box.querySelectorAll('button').forEach(b => { b.onclick = () => scegli(trovati[+b.dataset.i]); });
+          } catch (e) { if (mio === giro) mostra('<p class="imp-testo">Serve internet per cercare il paese.</p>'); }
+        }, 300);
       };
-      $('i-zona-cerca').onclick = cerca;
-      $('i-zona').onkeydown = e => { if (e.key === 'Enter') cerca(); };
+      $('i-zona').onkeydown = e => { if (e.key === 'Enter' && trovati.length) scegli(trovati[0]); }; // Invio = il primo
       $('i-zona-gps').onclick = () => {
         if (!navigator.geolocation) return avvisa('Questo telefono non dà la posizione');
-        avvisa('Cerco dove sei…');
+        const b = $('i-zona-gps');
+        b.disabled = true; b.innerHTML = '<span class="zona-gira"></span> Cerco dove sei…';
+        const ripristina = () => { b.disabled = false; b.textContent = '📍 Usa dove sono adesso'; };
         navigator.geolocation.getCurrentPosition(async p => {
-          try { impostaZona(await zonaDaPosizione(p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4))); }
-          catch (e) { impostaZona({ nome: 'La tua zona', lat: p.coords.latitude, lon: p.coords.longitude }); }
-          disegnaImpostazioni();
-        }, () => avvisa('Posizione non disponibile: scrivi il paese'), { timeout: 10000 });
+          try { scegli(await zonaDaPosizione(p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4))); }
+          catch (e) { scegli({ nome: 'La tua zona', lat: p.coords.latitude, lon: p.coords.longitude }); }
+        }, err => {
+          ripristina();
+          avvisa(err && err.code === 1 ? 'Permesso posizione negato: scrivi il paese' : 'Posizione non trovata: scrivi il paese');
+        }, { timeout: 15000, maximumAge: 300000 });
       };
     } },
     { id: 'meteo', nome: 'Meteo nel calendario', valore: () => meteoAcceso ? `Acceso · ${zonaMeteo.nome} · ${meteoStato === 'ok' ? 'previsioni per 9 giorni' : meteoStato}` : 'Spento', corpo: el => {
