@@ -541,6 +541,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .mic-box-cat.cat-calendario { background:#dbeafe; color:#1d4ed8; }
 .mic-box-cat.cat-nota-cliente { background:#fef9c3; color:#ca8a04; }
 .mic-box-cat.cat-nota-rapida { background:var(--sfondo); color:var(--testo-2); }
+.mic-box-cat.cat-lavoro { background:var(--foglia-chiara); color:var(--foglia); }
+.mic-box-cat.cat-pagamento { background:var(--foglia-chiara); color:var(--foglia); }
+.mic-box-cat.cat-sposta { background:#e0eaf9; color:#3b82c4; }
 .mic-box-elabora { display:inline-flex; align-items:center; gap:5px; padding:2px 0; }
 .mic-box-elabora span { width:7px; height:7px; border-radius:50%; background:var(--foglia); animation:onda-mic .9s ease-in-out infinite; }
 .mic-box-elabora span:nth-child(1){animation-delay:0s} .mic-box-elabora span:nth-child(2){animation-delay:.2s} .mic-box-elabora span:nth-child(3){animation-delay:.4s}
@@ -4072,64 +4075,40 @@ function chiediChiaveAI() {
 }
 
 async function categorizzaVoceAI(testo) {
-  const oggi = new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  const clientiReali = clientiConosciuti().map(c => c.nome);
-  const clienti = clientiReali.length ? clientiReali.join(', ') : '(nessuno ancora)';
+  const system = `Sei l'assistente vocale di un giardiniere italiano.
+Estrai le informazioni dal suo messaggio e rispondi SOLO con JSON valido, niente altro.
 
-  // Lavori non ancora fatti nei prossimi 30 giorni (max 25)
-  const fine30 = tra(30);
-  const lavoriFuturi = lavori
-    .filter(l => !l.fatto && l.data >= tra(0) && l.data <= fine30)
-    .slice(0, 25)
-    .map(l => {
-      const d = new Date(l.data + 'T12:00:00').toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
-      return `${l.nome} · ${d} · ${l.cosa}`;
-    })
-    .join('\n');
+{
+  "tipo": "lavoro" se parla di un lavoro da fare o nuovo cliente, "nota" per promemoria o appunti, "costo" per spese sostenute, "sposta" per spostare un lavoro già in agenda, "pagamento" se un cliente ha pagato,
+  "nome": "nome del cliente, o null",
+  "indirizzo": "via e città, o null",
+  "lavoro": "tipo di lavoro da fare, o null",
+  "testo": "testo completo della nota (solo per tipo=nota), o null",
+  "data": "giorno in parole: domani, giovedì, lunedì prossimo, 25 novembre… o null",
+  "ora": "orario come HH:MM, o null",
+  "prezzo": numero in euro o null,
+  "ore": ore di lavoro stimate come numero o null,
+  "importo": importo pagato o speso come numero o null
+}
 
-  const system = `Sei l'assistente vocale di un giardiniere. Rispondi SOLO con JSON valido, nessun testo fuori dal JSON.
+ESEMPI:
+"Taglio prato Giovanni Rossi via Mazzini 7 Conegliano domani alle 9 70 euro"
+→ {"tipo":"lavoro","nome":"Giovanni Rossi","indirizzo":"via Mazzini 7 Conegliano","lavoro":"Taglio prato","data":"domani","ora":"09:00","prezzo":70,"ore":null,"testo":null,"importo":null}
 
-CONTESTO
-Clienti in rubrica: ${clienti}
-Lavori in agenda: ${lavoriFuturi || '(nessuno)'}
-Oggi: ${oggi}
+"Potatura alberi Condominio Aurora via Cavour 3 Vittorio Veneto giovedì 300 euro ci vogliono tre ore"
+→ {"tipo":"lavoro","nome":"Condominio Aurora","indirizzo":"via Cavour 3 Vittorio Veneto","lavoro":"Potatura alberi","data":"giovedì","ora":null,"prezzo":300,"ore":3,"testo":null,"importo":null}
 
-REGOLE (priorità decrescente)
-1. Descrizione di un lavoro da fare (persona + tipo di lavoro, con o senza data/prezzo) → "cliente". Vale anche se la persona NON è in rubrica: qualsiasi frase che descrive un incarico di giardinaggio per qualcuno è "cliente".
-2. Spostare/rimandare/anticipare/riprogrammare un lavoro già in agenda → "riprogramma"
-3. Pagamento ricevuto → "paga"
-4. Spesa sostenuta (acquisti, carburante, materiali) → "costo"
-5. Nota su un cliente già in rubrica (codice cancello, istruzioni, preferenze) → "nota-cliente"
-6. Data/ora senza lavoro specifico → "calendario"
-7. Tutto il resto → "nota-rapida"
+"Sposta il lavoro di Verdi a giovedì"
+→ {"tipo":"sposta","nome":"Verdi","data":"giovedì","indirizzo":null,"lavoro":null,"ora":null,"prezzo":null,"ore":null,"testo":null,"importo":null}
 
-Per categoria "cliente" usa SEMPRE questi nomi di campo (inserisci solo quelli presenti nel testo):
-- ["Nome", "nome del cliente o dell'azienda"]
-- ["Indirizzo", "indirizzo completo con via e città"]
-- ["Lavoro", "tipo di lavoro da fare"]
-- ["Data", "giorno in parole: domani, giovedì, lunedì prossimo…"]
-- ["Ora", "ora se specificata nel formato HH:MM, es: 09:00"]
-- ["Prezzo", "solo il numero in euro, senza simbolo, es: 70"]
-- ["OreStimate", "ore di lavoro previste, solo il numero, es: 3"]
+"Villa Verdi ha pagato 150 euro"
+→ {"tipo":"pagamento","nome":"Villa Verdi","importo":150,"indirizzo":null,"lavoro":null,"data":null,"ora":null,"prezzo":null,"ore":null,"testo":null}
 
-ESEMPI
-FRASE: "domani Villa Verdi, potatura alberi"
-JSON: {"categoria":"cliente","titolo":"Potatura Villa Verdi","dati":"domani · Villa Verdi","campi":[["Nome","Villa Verdi"],["Lavoro","Potatura alberi"],["Data","domani"]]}
+"Ho comprato un tagliaerba nuovo 350 euro"
+→ {"tipo":"costo","lavoro":"tagliaerba nuovo","importo":350,"nome":null,"indirizzo":null,"data":null,"ora":null,"prezzo":null,"ore":null,"testo":null}
 
-FRASE: "Taglio prato per Giovanni Rossi, via Mazzini 7 Conegliano, domani mattina alle 9, 70 euro"
-JSON: {"categoria":"cliente","titolo":"Taglio prato Giovanni Rossi","dati":"domani · €70","campi":[["Nome","Giovanni Rossi"],["Indirizzo","via Mazzini 7 Conegliano"],["Lavoro","Taglio prato"],["Data","domani"],["Ora","09:00"],["Prezzo","70"]]}
-
-FRASE: "Potatura alberi Condominio Aurora, via Cavour 3 Vittorio Veneto, giovedì, 300 euro, ci vogliono tre ore"
-JSON: {"categoria":"cliente","titolo":"Potatura Condominio Aurora","dati":"giovedì · €300","campi":[["Nome","Condominio Aurora"],["Indirizzo","via Cavour 3 Vittorio Veneto"],["Lavoro","Potatura alberi"],["Data","giovedì"],["Prezzo","300"],["OreStimate","3"]]}
-
-FRASE: "sposta Sig. Rossi a giovedì"
-JSON: {"categoria":"riprogramma","titolo":"Sposta Sig. Rossi","dati":"giovedì","campi":[["Cliente","Sig. Rossi"],["Da","data attuale"],["A","giovedì"]]}
-
-FRASE: "Villa Verdi ha pagato"
-JSON: {"categoria":"paga","titolo":"Pagamento Villa Verdi","dati":"importo da verificare","campi":[["Cliente","Villa Verdi"],["Importo",""]]}
-
-FRASE: "Villa Verdi: cancello verde, codice 1847"
-JSON: {"categoria":"nota-cliente","titolo":"Nota Villa Verdi","dati":"codice cancello","campi":[["Cliente","Villa Verdi"],["Nota","cancello verde, codice 1847"]]}`;
+"Ricordami di comprare fertilizzante per martedì"
+→ {"tipo":"nota","testo":"comprare fertilizzante per martedì","data":"martedì","nome":null,"indirizzo":null,"lavoro":null,"ora":null,"prezzo":null,"ore":null,"importo":null}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -4141,12 +4120,9 @@ JSON: {"categoria":"nota-cliente","titolo":"Nota Villa Verdi","dati":"codice can
     },
     body: JSON.stringify({
       model: 'claude-haiku-5-5',
-      max_tokens: 1000,
+      max_tokens: 400,
       system,
-      messages: [{
-        role: 'user',
-        content: `FRASE: "${testo}"\nJSON:`
-      }]
+      messages: [{ role: 'user', content: testo }]
     })
   });
   if (!resp.ok) throw new Error('API ' + resp.status);
@@ -4195,11 +4171,14 @@ const CATEGORIE_VOCALI = {
 };
 
 const CAT_INFO = {
+  lavoro:         { nome: 'Nuovo lavoro',   emoji: '🌿' },
+  pagamento:      { nome: 'Pagamento',      emoji: '💶' },
+  sposta:         { nome: 'Sposta lavoro',  emoji: '📅' },
   cliente:        { nome: 'Nuovo cliente',  emoji: '👤' },
   riprogramma:    { nome: 'Riprogramma',    emoji: '📅' },
   nota:           { nome: 'Nota',           emoji: '📝' },
   paga:           { nome: 'Pagamento',      emoji: '💶' },
-  costo:          { nome: 'Costo',          emoji: '🧾' },
+  costo:          { nome: 'Spesa',          emoji: '🧾' },
   tutto:          { nome: 'Extra',          emoji: '🔔' },
   calendario:     { nome: 'Calendario',     emoji: '📅' },
   'nota-cliente': { nome: 'Nota cliente',   emoji: '👤' },
@@ -4226,27 +4205,106 @@ const _CAT_TO_INBOX = { 'calendario':'nota', 'nota-cliente':'nota', 'nota-rapida
 
 function aggiungiVoceInbox(testo, risultato) {
   const giorno = new Date().toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
-  let dest, item;
+
+  // Nuovo formato AI (campo "tipo")
+  if (risultato && typeof risultato === 'object' && risultato.tipo) {
+    const r = risultato;
+
+    if (r.tipo === 'lavoro') {
+      const campi = [];
+      if (r.nome) campi.push(['Nome', r.nome]);
+      if (r.indirizzo) campi.push(['Indirizzo', r.indirizzo]);
+      if (r.lavoro) campi.push(['Lavoro', r.lavoro]);
+      if (r.data) campi.push(['Data', r.data]);
+      if (r.ora) campi.push(['Ora', r.ora]);
+      if (r.prezzo != null) campi.push(['Prezzo', String(r.prezzo)]);
+      if (r.ore != null) campi.push(['OreStimate', String(r.ore)]);
+      if (!campi.length) campi.push(['Trascritto', testo]);
+      const item = { testa: r.nome || testo, dati: giorno, campi };
+      setTimeout(() => apriModificaInboxCliente(null, item), 100);
+      return;
+    }
+
+    if (r.tipo === 'nota') {
+      const testoNota = r.testo || testo;
+      let dataNota = null;
+      if (r.data) { const { data: d } = parsaDataOra(r.data); dataNota = d; }
+      noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(testoNota), testo: testoNota, fatta: false, data: dataNota });
+      aggiornaBadgeNote();
+      avvisa('Nota salvata');
+      return;
+    }
+
+    if (r.tipo === 'costo') {
+      const item = {
+        testa: r.lavoro || 'Spesa',
+        dati: r.importo != null ? `€${r.importo}` : giorno,
+        campi: [['Descrizione', r.lavoro || testo], ['Importo', r.importo != null ? String(r.importo) : '']]
+      };
+      INBOX_ESEMPI.costo.voci.unshift(item);
+      aggiornaBadge();
+      avvisa('Spesa aggiunta');
+      return;
+    }
+
+    if (r.tipo === 'sposta') {
+      const item = {
+        testa: r.nome || testo,
+        dati: r.data || giorno,
+        campi: [['Cliente', r.nome || ''], ['Da', 'oggi'], ['A', r.data || '']]
+      };
+      setTimeout(() => apriRiprogrammaInbox(null, item), 100);
+      return;
+    }
+
+    if (r.tipo === 'pagamento') {
+      const item = {
+        testa: r.nome || testo,
+        dati: r.importo != null ? `€${r.importo}` : giorno,
+        campi: [['Cliente', r.nome || testo], ['Importo', r.importo != null ? String(r.importo) : '']]
+      };
+      INBOX_ESEMPI.paga.voci.unshift(item);
+      aggiornaBadge();
+      avvisa('Pagamento registrato');
+      return;
+    }
+
+    // Tipo sconosciuto → nota
+    noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(testo), testo, fatta: false, data: null });
+    aggiornaBadgeNote();
+    avvisa('Nota salvata');
+    return;
+  }
+
+  // Vecchio formato AI (campo "categoria") — compatibilità
   if (risultato && typeof risultato === 'object' && risultato.categoria) {
-    dest = _CAT_TO_INBOX[risultato.categoria] || 'nota';
-    item = {
+    const dest = _CAT_TO_INBOX[risultato.categoria] || 'nota';
+    const item = {
       testa: risultato.titolo || testo,
       dati: risultato.dati || giorno,
       campi: (risultato.campi && risultato.campi.length) ? risultato.campi : [['Trascritto', testo]],
-      cal: risultato.categoria === 'calendario',
     };
-    // Fast path: "nuovo lavoro" → apri il form pre-compilato senza passare dall'inbox
     if (risultato.categoria === 'cliente') {
       setTimeout(() => apriModificaInboxCliente(null, item), 100);
       return;
     }
-  } else {
-    const catStr = typeof risultato === 'string' ? risultato : 'nota';
-    dest = (catStr === 'tutto' || !INBOX_ESEMPI[catStr]) ? 'nota' : catStr;
-    item = { testa: testo, dati: giorno, campi: [['Trascritto', testo]] };
+    if (INBOX_ESEMPI[dest]) INBOX_ESEMPI[dest].voci.unshift(item);
+    aggiornaBadge();
+    return;
   }
-  if (INBOX_ESEMPI[dest]) INBOX_ESEMPI[dest].voci.unshift(item);
-  aggiornaBadge();
+
+  // Stringa dal fallback keyword
+  const catStr = typeof risultato === 'string' ? risultato : 'nota';
+  const dest = (catStr === 'tutto' || !INBOX_ESEMPI[catStr]) ? 'nota' : catStr;
+  if (dest === 'nota') {
+    noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(testo), testo, fatta: false, data: null });
+    aggiornaBadgeNote();
+    avvisa('Nota salvata');
+  } else {
+    const item = { testa: testo, dati: giorno, campi: [['Trascritto', testo]] };
+    if (INBOX_ESEMPI[dest]) INBOX_ESEMPI[dest].voci.unshift(item);
+    aggiornaBadge();
+  }
 }
 
 let _micRiconosc = null;
@@ -4317,7 +4375,7 @@ $('ai-mic').onclick = () => {
       catEl.className = 'mic-box-cat';
       catEl.innerHTML = '<span class="mic-box-elabora"><span></span><span></span><span></span></span> Elaboro…';
       const mostraCat = (ris) => {
-        const cat = (ris && typeof ris === 'object') ? ris.categoria : ris;
+        const cat = (ris && typeof ris === 'object') ? (ris.tipo || ris.categoria || 'tutto') : (ris || 'tutto');
         const info = CAT_INFO[cat] || CAT_INFO['tutto'];
         catEl.className = 'mic-box-cat cat-' + cat;
         catEl.textContent = info.emoji + ' ' + info.nome;
