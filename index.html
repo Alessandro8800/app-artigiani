@@ -3344,12 +3344,23 @@ function apriModificaInboxCliente(card, item) {
   // Pre-compila i campi dall'item inbox
   const get = (l) => (item.campi.find(([k]) => k === l) || [])[1] || '';
   $('f-nome').value = get('Nome');
-  $('f-dove').value = get('Indirizzo');
-  const lavoro = get('Lavoro');
+  $('f-dove').value = get('Indirizzo') || get('Dove') || get('Via') || get('Indirizzo completo');
+  const lavoro = get('Lavoro') || get('Cosa') || get('Tipo di lavoro');
   if (lavoro) $('f-cosa').value = lavoro;
-  const prezzo = get('Prezzo');
-  if (prezzo) { $('f-prezzo').value = prezzo; scorriPrezzoDrum(); }
-  aggiornaCliente(); disegnaQuando();
+  const prezzoRaw = get('Prezzo') || get('Importo') || get('Costo');
+  if (prezzoRaw) { $('f-prezzo').value = prezzoRaw.replace(/[^\d,.]/, ''); scorriPrezzoDrum(); }
+  // Data e ora dalla frase vocale
+  const dataTestuale = get('Data') || get('Giorno') || get('Quando');
+  if (dataTestuale) {
+    const { data: d, ora: o } = parsaDataOra(dataTestuale);
+    if (d) { quandoFisso = true; quando = d; dateScelte = []; allineaDate(); }
+    if (o && !ora) { ora = o; }
+  }
+  const oraField = get('Ora');
+  if (oraField) { const { ora: o } = parsaDataOra('alle ' + oraField); if (o) ora = o; }
+  const oreStr = get('OreStimate') || get('Ore stimate') || get('Durata');
+  if (oreStr) { const n = parseFloat(oreStr.replace(',', '.')); if (n > 0) { durata = Math.round(n * 60); durataSolita = durata; } }
+  aggiornaCliente(); disegnaQuando(); disegnaDurata(); disegnaOra();
   // Evidenzia campi essenziali mancanti
   setTimeout(() => {
     if (!$('f-nome').value) $('f-nome').classList.add('campo-mancante');
@@ -4058,7 +4069,8 @@ function chiediChiaveAI() {
 
 async function categorizzaVoceAI(testo) {
   const oggi = new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  const clienti = CLIENTI_FAKE.join(', ');
+  const clientiReali = clientiConosciuti().map(c => c.nome);
+  const clienti = clientiReali.length ? clientiReali.join(', ') : '(nessuno ancora)';
 
   // Lavori non ancora fatti nei prossimi 30 giorni (max 25)
   const fine30 = tra(30);
@@ -4071,7 +4083,7 @@ async function categorizzaVoceAI(testo) {
     })
     .join('\n');
 
-  const system = `Sei l'assistente vocale di un giardiniere. Rispondi SOLO con JSON valido.
+  const system = `Sei l'assistente vocale di un giardiniere. Rispondi SOLO con JSON valido, nessun testo fuori dal JSON.
 
 CONTESTO
 Clienti in rubrica: ${clienti}
@@ -4079,17 +4091,32 @@ Lavori in agenda: ${lavoriFuturi || '(nessuno)'}
 Oggi: ${oggi}
 
 REGOLE (priorità decrescente)
-1. Cliente in rubrica + tipo di lavoro (con o senza data) → "cliente"
-2. Spostare/rimandare/anticipare un lavoro in agenda → "riprogramma" [campo A: data naturale]
-3. Pagamento ricevuto dal cliente → "paga"
-4. Spesa sostenuta → "costo"
-5. Cliente in rubrica + informazione/nota su di lui → "nota-cliente"
-6. Data o ora senza lavoro specifico → "calendario"
+1. Descrizione di un lavoro da fare (persona + tipo di lavoro, con o senza data/prezzo) → "cliente". Vale anche se la persona NON è in rubrica: qualsiasi frase che descrive un incarico di giardinaggio per qualcuno è "cliente".
+2. Spostare/rimandare/anticipare/riprogrammare un lavoro già in agenda → "riprogramma"
+3. Pagamento ricevuto → "paga"
+4. Spesa sostenuta (acquisti, carburante, materiali) → "costo"
+5. Nota su un cliente già in rubrica (codice cancello, istruzioni, preferenze) → "nota-cliente"
+6. Data/ora senza lavoro specifico → "calendario"
 7. Tutto il resto → "nota-rapida"
+
+Per categoria "cliente" usa SEMPRE questi nomi di campo (inserisci solo quelli presenti nel testo):
+- ["Nome", "nome del cliente o dell'azienda"]
+- ["Indirizzo", "indirizzo completo con via e città"]
+- ["Lavoro", "tipo di lavoro da fare"]
+- ["Data", "giorno in parole: domani, giovedì, lunedì prossimo…"]
+- ["Ora", "ora se specificata nel formato HH:MM, es: 09:00"]
+- ["Prezzo", "solo il numero in euro, senza simbolo, es: 70"]
+- ["OreStimate", "ore di lavoro previste, solo il numero, es: 3"]
 
 ESEMPI
 FRASE: "domani Villa Verdi, potatura alberi"
-JSON: {"categoria":"cliente","titolo":"Potatura Villa Verdi","dati":"domani","campi":[["Nome","Villa Verdi"],["Lavoro","potatura alberi"],["Data","domani"]]}
+JSON: {"categoria":"cliente","titolo":"Potatura Villa Verdi","dati":"domani · Villa Verdi","campi":[["Nome","Villa Verdi"],["Lavoro","Potatura alberi"],["Data","domani"]]}
+
+FRASE: "Taglio prato per Giovanni Rossi, via Mazzini 7 Conegliano, domani mattina alle 9, 70 euro"
+JSON: {"categoria":"cliente","titolo":"Taglio prato Giovanni Rossi","dati":"domani · €70","campi":[["Nome","Giovanni Rossi"],["Indirizzo","via Mazzini 7 Conegliano"],["Lavoro","Taglio prato"],["Data","domani"],["Ora","09:00"],["Prezzo","70"]]}
+
+FRASE: "Potatura alberi Condominio Aurora, via Cavour 3 Vittorio Veneto, giovedì, 300 euro, ci vogliono tre ore"
+JSON: {"categoria":"cliente","titolo":"Potatura Condominio Aurora","dati":"giovedì · €300","campi":[["Nome","Condominio Aurora"],["Indirizzo","via Cavour 3 Vittorio Veneto"],["Lavoro","Potatura alberi"],["Data","giovedì"],["Prezzo","300"],["OreStimate","3"]]}
 
 FRASE: "sposta Sig. Rossi a giovedì"
 JSON: {"categoria":"riprogramma","titolo":"Sposta Sig. Rossi","dati":"giovedì","campi":[["Cliente","Sig. Rossi"],["Da","data attuale"],["A","giovedì"]]}
@@ -4156,6 +4183,10 @@ const CATEGORIE_VOCALI = {
     'nuovo contatto','nuova azienda','preventivo per','vuole un preventivo',
     'mi ha chiamato','ha chiamato','si chiama','aggiungere cliente',
     'nuovo lavoro','nuova richiesta',
+    'taglio prato','taglio erba','taglio siepe','potatura','pulizia giardino',
+    'manutenzione verde','manutenzione giardino','semina','concimazione',
+    'raccolta foglie','irrigazione','vigneto','sfalcio','fresatura',
+    'per signor','per la signora','per il signor','per il condominio','per villa',
   ],
 };
 
@@ -4200,6 +4231,11 @@ function aggiungiVoceInbox(testo, risultato) {
       campi: (risultato.campi && risultato.campi.length) ? risultato.campi : [['Trascritto', testo]],
       cal: risultato.categoria === 'calendario',
     };
+    // Fast path: "nuovo lavoro" → apri il form pre-compilato senza passare dall'inbox
+    if (risultato.categoria === 'cliente') {
+      setTimeout(() => apriModificaInboxCliente(null, item), 100);
+      return;
+    }
   } else {
     const catStr = typeof risultato === 'string' ? risultato : 'nota';
     dest = (catStr === 'tutto' || !INBOX_ESEMPI[catStr]) ? 'nota' : catStr;
@@ -5856,6 +5892,45 @@ function _doveAvviaAutocomplete() {
 
   input.addEventListener('blur', () => setTimeout(nascondi, 150));
   document.addEventListener('click', e => { if (!wrap.contains(e.target)) nascondi(); });
+}
+
+// Converte data/ora in linguaggio naturale italiano in {data: 'AAAA-MM-GG', ora: 'HH:MM'}
+function parsaDataOra(testo) {
+  if (!testo) return { data: null, ora: null };
+  const basso = testo.toLowerCase();
+  const adesso = new Date();
+  let data = null, ora = null;
+  // Ora
+  const mOra = basso.match(/alle?\s+(\d{1,2})(?::(\d{2}))?/);
+  if (mOra) {
+    ora = mOra[1].padStart(2, '0') + ':' + (mOra[2] || '00').padStart(2, '0');
+  } else if (basso.includes('mattina') && !basso.includes('pomeriggio')) {
+    ora = '09:00';
+  } else if (basso.includes('pomeriggio')) {
+    ora = '14:00';
+  }
+  // Formato HH:MM diretto
+  if (!ora) { const mHM = basso.match(/\b(\d{1,2}):(\d{2})\b/); if (mHM) ora = mHM[1].padStart(2,'0') + ':' + mHM[2]; }
+  // Data
+  if (basso.includes('oggi')) {
+    data = iso(adesso);
+  } else if (basso.includes('dopodomani')) {
+    const d = new Date(adesso); d.setDate(d.getDate() + 2); data = iso(d);
+  } else if (basso.includes('domani')) {
+    const d = new Date(adesso); d.setDate(d.getDate() + 1); data = iso(d);
+  } else {
+    const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+    for (let i = 0; i < GIORNI.length; i++) {
+      if (basso.includes(GIORNI[i])) {
+        const d = new Date(adesso);
+        const diff = (i - d.getDay() + 7) % 7 || 7;
+        d.setDate(d.getDate() + diff);
+        data = iso(d);
+        break;
+      }
+    }
+  }
+  return { data, ora };
 }
 
 // Estrae un indirizzo da testo libero (note vocali) — usata dall'AI quando elabora nuovi clienti
