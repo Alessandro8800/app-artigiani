@@ -3265,11 +3265,13 @@ function inbox_cardHtml(item, cat) {
     const campi = item.campi || [];
     const getC = k => (campi.find(([c]) => c === k) || [])[1] || '';
     if (!parseDataRelativa(getC('A'))) {
-      return `<div class="inbox-card" data-cat="${cat}">
+      const mancaR = (Array.isArray(item.mancanti) && item.mancanti.length) ? item.mancanti : [];
+      return `<div class="inbox-card${mancaR.length ? ' inbox-card-sospeso' : ''}" data-cat="${cat}">
         <div class="inbox-card-top">
           <div class="inbox-card-info">
             <div class="inbox-card-testa">${sicuro(item.testa)}</div>
             <div class="inbox-card-dati">${sicuro(item.dati)}</div>
+            ${mancaR.length ? `<div class="inbox-card-suggerimenti">Manca: ${sicuro(mancaR.join(', '))}</div>` : ''}
           </div>
         </div>
         <div class="inbox-card-azioni">
@@ -3306,16 +3308,24 @@ function inbox_cardHtml(item, cat) {
     }
   }
 
-  return `<div class="inbox-card" data-cat="${cat}">
+  // Voci dall'AI con campi mancanti → bordo arancione + "Manca: …"
+  const mancantiAI = Array.isArray(item.mancanti) ? item.mancanti : [];
+  const classeSosp = mancantiAI.length ? ' inbox-card-sospeso' : '';
+  const rigaManca = mancantiAI.length ? `<div class="inbox-card-suggerimenti">Manca: ${sicuro(mancantiAI.join(', '))}</div>` : '';
+  // Pagamenti dalla voce: si chiede sempre se sono stati davvero ricevuti
+  const etichettaOk = (cat === 'paga' && item.stato === 'da_verificare') ? '✓ Ricevuto' : '✓ Conferma';
+
+  return `<div class="inbox-card${classeSosp}" data-cat="${cat}">
     <div class="inbox-card-top">
       <div class="inbox-card-info">
         <div class="inbox-card-testa">${sicuro(item.testa)}</div>
         <div class="inbox-card-dati">${sicuro(item.dati)}</div>
+        ${rigaManca}
       </div>
       ${editBtn}
     </div>
     <div class="inbox-card-azioni">
-      <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'),${ic},'${cat}')">✓ Conferma</button>
+      <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'),${ic},'${cat}')">${etichettaOk}</button>
       <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
     </div>
     ${campiHtml}
@@ -3351,6 +3361,8 @@ function apriModificaInboxCliente(card, item) {
   $('f-dove').value = get('Indirizzo') || get('Dove') || get('Via') || get('Indirizzo completo');
   const lavoro = get('Lavoro') || get('Cosa') || get('Tipo di lavoro');
   if (lavoro) $('f-cosa').value = lavoro;
+  const noteVoce = get('Note'); // dettagli in più detti a voce (indirizzo, orario…)
+  if (noteVoce) $('f-note').value = noteVoce;
   const prezzoRaw = get('Prezzo') || get('Importo') || get('Costo');
   if (prezzoRaw) { $('f-prezzo').value = prezzoRaw.replace(/[^\d,.]/, ''); scorriPrezzoDrum(); }
   // Data e ora dalla frase vocale
@@ -3561,6 +3573,15 @@ function confermaCarta(card, item, cat) {
     const inputs = panel ? panel.querySelectorAll('input') : [];
     const nome = (inputs[0]?.value || getCampo('Cliente')).trim();
     let importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    // Pagamento dalla voce senza cliente o senza cifra: niente registrazione automatica.
+    // Apro il pannello (con il dovuto già scritto) e chiedo di controllare.
+    if (item.stato === 'da_verificare' && panel && panel.hidden && (!nome || importo <= 0)) {
+      if (nome && inputs[1]) inputs[1].value = conto(nome).dovuto || 0;
+      panel.hidden = false;
+      avvisa(nome ? 'Controlla l\'importo e premi di nuovo Ricevuto' : 'Scrivi il cliente e l\'importo');
+      return;
+    }
+    if (!nome && item.stato === 'da_verificare') { avvisa('Scrivi il nome del cliente'); return; }
     if (nome && importo <= 0) importo = conto(nome).dovuto; // usa il dovuto reale se non specificato
     if (nome && importo > 0) {
       registraPagamento(nome, importo);
@@ -4110,41 +4131,65 @@ function chiediChiaveAI() {
   return false;
 }
 
+// Schema: {"operations":[{tipo, nome, lavoro, data, importo, testo, missing_fields}]}
+// Una frase può contenere più operazioni → una card per ognuna (Step 2 in HANDOFF.md).
 async function categorizzaVoceAI(testo) {
   const system = `Sei l'assistente vocale di un giardiniere italiano.
-Estrai le informazioni dal suo messaggio e rispondi SOLO con JSON valido, niente altro.
+Trasformi il suo messaggio in dati. Rispondi SOLO con JSON valido, niente altro.
 
-{
-  "tipo": "lavoro" se parla di un lavoro da fare o nuovo cliente, "nota" per promemoria o appunti, "costo" per spese sostenute, "sposta" per spostare un lavoro già in agenda, "pagamento" se un cliente ha pagato,
-  "nome": "nome del cliente, o null",
-  "indirizzo": "via e città, o null",
-  "lavoro": "tipo di lavoro da fare, o null",
-  "testo": "testo completo della nota (solo per tipo=nota), o null",
-  "data": "giorno in parole: domani, giovedì, lunedì prossimo, 25 novembre… o null",
-  "ora": "orario come HH:MM, o null",
-  "prezzo": numero in euro o null,
-  "ore": ore di lavoro stimate come numero o null,
-  "importo": importo pagato o speso come numero o null
-}
+Una frase può contenere PIÙ operazioni: creane una per ognuna, nell'ordine in cui sono dette.
 
-ESEMPI:
-"Taglio prato Giovanni Rossi via Mazzini 7 Conegliano domani alle 9 70 euro"
-→ {"tipo":"lavoro","nome":"Giovanni Rossi","indirizzo":"via Mazzini 7 Conegliano","lavoro":"Taglio prato","data":"domani","ora":"09:00","prezzo":70,"ore":null,"testo":null,"importo":null}
+FORMATO
+{"operations":[{"tipo":"...","nome":null,"lavoro":null,"data":null,"importo":null,"testo":null,"missing_fields":[]}]}
 
-"Potatura alberi Condominio Aurora via Cavour 3 Vittorio Veneto giovedì 300 euro ci vogliono tre ore"
-→ {"tipo":"lavoro","nome":"Condominio Aurora","indirizzo":"via Cavour 3 Vittorio Veneto","lavoro":"Potatura alberi","data":"giovedì","ora":null,"prezzo":300,"ore":3,"testo":null,"importo":null}
+TIPI
+- "cliente": un lavoro da fare per qualcuno (cliente nuovo o già noto). Obbligatori: nome, lavoro.
+- "riprogramma": spostare, rimandare, anticipare o annullare un lavoro già in agenda. Obbligatorio: nome. "data" = la NUOVA data.
+- "pagamento": QUALSIASI cosa che riguarda soldi dati o dovuti da un cliente (pagato, mi ha dato, mi deve, acconto, saldo, bonifico). Obbligatorio: nome.
+- "costo": una spesa fatta DAL giardiniere (materiali, benzina, attrezzi, noleggio). Obbligatorio: importo oppure testo. "nome" = cliente per cui ha speso, se detto.
+- "nota": promemoria, appunti, cose da fare, informazioni su un cliente. Obbligatorio: testo.
 
-"Sposta il lavoro di Verdi a giovedì"
-→ {"tipo":"sposta","nome":"Verdi","data":"giovedì","indirizzo":null,"lavoro":null,"ora":null,"prezzo":null,"ore":null,"testo":null,"importo":null}
+CAMPI
+- nome: nome del cliente come detto ("Villa Verdi", "Rossi"), o null.
+- lavoro: cosa fare ("taglio prato", "potatura"), o null.
+- data: il giorno in parole come detto ("domani", "giovedì", "25 novembre"), o null. Non calcolare date.
+- importo: numero in euro senza simbolo (150), o null. Per "cliente" è il prezzo del lavoro.
+- testo: per "nota" il testo della nota; per "costo" cosa è stato comprato; per gli altri tipi eventuali dettagli in più detti (indirizzo, orario, telefono), altrimenti null.
+- missing_fields: elenco dei campi OBBLIGATORI che mancano, es. ["nome"]. Vuoto [] se c'è tutto.
 
-"Villa Verdi ha pagato 150 euro"
-→ {"tipo":"pagamento","nome":"Villa Verdi","importo":150,"indirizzo":null,"lavoro":null,"data":null,"ora":null,"prezzo":null,"ore":null,"testo":null}
+REGOLE
+1. Non inventare MAI nomi, date o importi. Se un dato non è detto chiaramente → null e mettilo in missing_fields se obbligatorio.
+2. Nel dubbio sul tipo → "nota" con il testo della frase. Meglio una nota che un dato sbagliato.
+3. "Rossi ha pagato" = pagamento (soldi che ricevo). "50 euro di terra per Rossi" = costo (soldi che spendo io).
+4. Se non capisci niente → {"operations":[{"tipo":"nota","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"<frase originale>","missing_fields":[]}]}
 
-"Ho comprato un tagliaerba nuovo 350 euro"
-→ {"tipo":"costo","lavoro":"tagliaerba nuovo","importo":350,"nome":null,"indirizzo":null,"data":null,"ora":null,"prezzo":null,"ore":null,"testo":null}
+ESEMPI
+"domani da Mario taglio siepe, Rossi mi ha pagato 200, venerdì devo comprare i guanti"
+→ {"operations":[{"tipo":"cliente","nome":"Mario","lavoro":"taglio siepe","data":"domani","importo":null,"testo":null,"missing_fields":[]},{"tipo":"pagamento","nome":"Rossi","lavoro":null,"data":null,"importo":200,"testo":null,"missing_fields":[]},{"tipo":"nota","nome":null,"lavoro":null,"data":"venerdì","importo":null,"testo":"comprare i guanti","missing_fields":[]}]}
 
-"Ricordami di comprare fertilizzante per martedì"
-→ {"tipo":"nota","testo":"comprare fertilizzante per martedì","data":"martedì","nome":null,"indirizzo":null,"lavoro":null,"ora":null,"prezzo":null,"ore":null,"importo":null}`;
+"Taglio prato Giovanni Rossi via Mazzini 7 Conegliano giovedì alle 9, 70 euro"
+→ {"operations":[{"tipo":"cliente","nome":"Giovanni Rossi","lavoro":"taglio prato","data":"giovedì","importo":70,"testo":"via Mazzini 7 Conegliano, alle 9","missing_fields":[]}]}
+
+"sposta Verdi a giovedì e ho fatto 40 euro di benzina"
+→ {"operations":[{"tipo":"riprogramma","nome":"Verdi","lavoro":null,"data":"giovedì","importo":null,"testo":null,"missing_fields":[]},{"tipo":"costo","nome":null,"lavoro":null,"data":null,"importo":40,"testo":"benzina","missing_fields":[]}]}
+
+"Villa Verdi mi deve ancora 150 euro"
+→ {"operations":[{"tipo":"pagamento","nome":"Villa Verdi","lavoro":null,"data":null,"importo":150,"testo":"ancora da ricevere","missing_fields":[]}]}
+
+"ha pagato in contanti"
+→ {"operations":[{"tipo":"pagamento","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"in contanti","missing_fields":["nome"]}]}
+
+"mi ha chiamato un nuovo cliente, vuole un preventivo"
+→ {"operations":[{"tipo":"cliente","nome":null,"lavoro":"preventivo","data":null,"importo":null,"testo":null,"missing_fields":["nome"]}]}
+
+"Villa Verdi: cancello verde, codice 1847"
+→ {"operations":[{"tipo":"nota","nome":"Villa Verdi","lavoro":null,"data":null,"importo":null,"testo":"cancello verde, codice 1847","missing_fields":[]}]}
+
+"quella cosa lì poi vediamo"
+→ {"operations":[{"tipo":"nota","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"quella cosa lì poi vediamo","missing_fields":[]}]}`;
+
+  // Se la risposta non è leggibile, la frase diventa una nota: non si perde mai.
+  const notaGrezza = { operations: [{ tipo: 'nota', nome: null, lavoro: null, data: null, importo: null, testo, missing_fields: [] }], _fallback: true };
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -4156,16 +4201,26 @@ ESEMPI:
     },
     body: JSON.stringify({
       model: 'claude-haiku-5-5',
-      max_tokens: 400,
+      max_tokens: 600,
       system,
       messages: [{ role: 'user', content: testo }]
     })
   });
   if (!resp.ok) throw new Error('API ' + resp.status);
   const json = await resp.json();
-  const raw = (json.content[0].text || '').trim();
-  const match = raw.match(/\{[\s\S]*\}/);
-  return JSON.parse(match ? match[0] : raw);
+  try {
+    // La risposta può avere più blocchi (es. un blocco "thinking" prima del testo): prendo solo il testo.
+    const raw = (Array.isArray(json.content) ? json.content : [])
+      .filter(b => b && b.type === 'text').map(b => b.text || '').join('').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    const dati = JSON.parse(match ? match[0] : raw);
+    const ops = Array.isArray(dati && dati.operations) ? dati.operations.filter(o => o && typeof o === 'object' && o.tipo) : [];
+    if (!ops.length) return notaGrezza;
+    ops.forEach(o => { if (!Array.isArray(o.missing_fields)) o.missing_fields = []; });
+    return { operations: ops };
+  } catch (e) {
+    return notaGrezza;
+  }
 }
 
 // ---- Microfono globale AI: riconoscimento vocale con categorizzazione ----
@@ -4239,10 +4294,118 @@ function categorizzaVoce(testo) {
 
 const _CAT_TO_INBOX = { 'calendario':'nota', 'nota-cliente':'nota', 'nota-rapida':'nota', 'paga':'paga', 'costo':'costo', 'riprogramma':'riprogramma', 'cliente':'cliente' };
 
+// ---- Livello 3: VALIDAZIONE di una operazione arrivata dall'AI ----
+// Il codice (non l'AI) decide cosa manca e forza le regole di sicurezza.
+const _TIPO_ALIAS = { lavoro: 'cliente', sposta: 'riprogramma', paga: 'pagamento', spesa: 'costo' };
+const _OBBLIGATORI = { cliente: ['nome', 'lavoro'], riprogramma: ['nome'], pagamento: ['nome'], costo: [], nota: ['testo'] };
+const _NOMI_CAMPI = { nome: 'nome', lavoro: 'lavoro', data: 'giorno', importo: 'importo', testo: 'testo' };
+
+function validaOperazione(op, testo) {
+  const pulisci = v => (typeof v === 'string' && v.trim()) ? v.trim() : null;
+  let tipo = String(op.tipo || '').toLowerCase().trim();
+  tipo = _TIPO_ALIAS[tipo] || tipo;
+  if (!_OBBLIGATORI[tipo]) tipo = 'nota';
+  const imp = typeof op.importo === 'number' ? op.importo : parseFloat(String(op.importo ?? '').replace(',', '.'));
+  const o = {
+    tipo,
+    nome: pulisci(op.nome),
+    lavoro: pulisci(op.lavoro),
+    data: pulisci(op.data),
+    importo: Number.isFinite(imp) && imp > 0 ? imp : null,
+    testo: pulisci(op.testo),
+  };
+  if (tipo === 'nota' && !o.testo) o.testo = testo; // una nota senza testo usa la frase intera
+  const mancanti = new Set((Array.isArray(op.missing_fields) ? op.missing_fields : []).map(String));
+  for (const c of _OBBLIGATORI[tipo]) if (!o[c]) mancanti.add(c);
+  if (tipo === 'costo' && !o.importo && !o.testo) mancanti.add('importo');
+  // Tengo solo i campi mancanti che sono ancora davvero vuoti
+  o.missing_fields = [...mancanti].filter(c => _NOMI_CAMPI[c] && !o[c]);
+  if (tipo === 'pagamento') o.stato = 'da_verificare'; // pagamenti: mai automatici
+  return o;
+}
+
+// ---- Livello 4: trasforma una operazione valida in una voce dell'inbox ----
+function _operazioneInItem(o, giorno) {
+  const mancanti = o.missing_fields.map(c => _NOMI_CAMPI[c]);
+  if (o.tipo === 'cliente') {
+    const campi = [];
+    if (o.nome) campi.push(['Nome', o.nome]);
+    if (o.lavoro) campi.push(['Lavoro', o.lavoro]);
+    if (o.data) campi.push(['Data', o.data]);
+    if (o.importo != null) campi.push(['Prezzo', String(o.importo)]);
+    if (o.testo) campi.push(['Note', o.testo]);
+    return { cat: 'cliente', item: { testa: o.nome || o.lavoro || 'Nuovo lavoro', dati: [o.lavoro, o.data].filter(Boolean).join(' · ') || giorno, campi } };
+  }
+  if (o.tipo === 'riprogramma') {
+    const prossimo = o.nome ? lavori.filter(l => !l.fatto && !l.memo && l.nome === o.nome).sort((a, b) => a.data.localeCompare(b.data))[0] : null;
+    const da = prossimo ? nomeGiorno(prossimo.data) : '';
+    return { cat: 'riprogramma', item: { testa: o.nome || 'Lavoro da spostare', dati: o.data ? `→ ${o.data}` : 'Nuovo giorno da scegliere', campi: [['Cliente', o.nome || ''], ['Da', da], ['A', o.data || '']], cal: true, mancanti } };
+  }
+  if (o.tipo === 'pagamento') {
+    const imp = o.importo != null ? euro(o.importo) : 'importo da controllare';
+    const campi = [['Cliente', o.nome || ''], ['Importo', o.importo != null ? String(o.importo) : '']];
+    if (o.testo) campi.push(['Dettagli', o.testo]);
+    return { cat: 'paga', item: { testa: o.nome || 'Pagamento', dati: `${imp} · da verificare${o.testo ? ' · ' + o.testo : ''}`, campi, stato: 'da_verificare', mancanti } };
+  }
+  if (o.tipo === 'costo') {
+    const desc = o.testo || o.lavoro || 'Spesa';
+    const campi = [['Descrizione', desc], ['Importo', o.importo != null ? String(o.importo) : '']];
+    if (o.nome) campi.push(['Cliente', o.nome]);
+    return { cat: 'costo', item: { testa: desc, dati: [o.importo != null ? euro(o.importo) : '', o.nome ? 'per ' + o.nome : ''].filter(Boolean).join(' · ') || giorno, campi, mancanti } };
+  }
+  // nota
+  const campi = [['Cliente', o.nome || ''], ['Nota', o.testo]];
+  if (o.data) campi.push(['Giorno', o.data]);
+  return { cat: 'nota', item: { testa: o.nome ? `Nota ${o.nome}` : generaTitoloAuto(o.testo), dati: o.data || giorno, campi } };
+}
+
+function _aggiungiOperazioni(testo, risultato, giorno) {
+  const ops = risultato.operations.filter(op => op && typeof op === 'object').map(op => validaOperazione(op, testo));
+  if (!ops.length) ops.push(validaOperazione({ tipo: 'nota', testo }, testo));
+  const solaUna = ops.length === 1;
+  let note = 0, inbox = 0;
+
+  for (const o of ops) {
+    // Nota senza cliente → direttamente nelle note rapide (come prima)
+    if (o.tipo === 'nota' && !o.nome) {
+      let dataNota = null;
+      if (o.data) { const { data: d } = parsaDataOra(o.data); dataNota = d; }
+      noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(o.testo), testo: o.testo, fatta: false, data: dataNota });
+      note++;
+      continue;
+    }
+    const { cat, item } = _operazioneInItem(o, giorno);
+    // Una sola operazione cliente/riprogramma → si apre subito la schermata da completare (come prima)
+    if (solaUna && cat === 'cliente') { setTimeout(() => apriModificaInboxCliente(null, item), 100); return; }
+    if (solaUna && cat === 'riprogramma') { setTimeout(() => apriRiprogrammaInbox(null, item), 100); return; }
+    INBOX_ESEMPI[cat].voci.unshift(item);
+    inbox++;
+  }
+
+  // Badge aggiornati una volta sola, alla fine
+  if (note) { aggiornaBadgeNote(); if (typeof disegnaNoteRapide === 'function') disegnaNoteRapide(); }
+  if (inbox) aggiornaBadge();
+
+  if (risultato._fallback) { avvisa('Salvato come nota, controlla'); return; }
+  const pezzi = [];
+  if (inbox) pezzi.push(inbox === 1 ? '1 voce da confermare' : `${inbox} voci da confermare`);
+  if (note) pezzi.push(note === 1 ? '1 nota salvata' : `${note} note salvate`);
+  avvisa(pezzi.join(', '));
+}
+
 function aggiungiVoceInbox(testo, risultato) {
   const giorno = new Date().toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
 
-  // Nuovo formato AI (campo "tipo")
+  // Fallback degradato: nessun risultato → la trascrizione diventa una nota, mai persa
+  if (!risultato) risultato = { operations: [{ tipo: 'nota', testo }], _fallback: true };
+
+  // Formato multi-operazione: {operations: [...]}
+  if (typeof risultato === 'object' && Array.isArray(risultato.operations)) {
+    _aggiungiOperazioni(testo, risultato, giorno);
+    return;
+  }
+
+  // Vecchio formato AI (campo "tipo") — compatibilità
   if (risultato && typeof risultato === 'object' && risultato.tipo) {
     const r = risultato;
 
