@@ -2035,8 +2035,7 @@ function disegnaAgenda() {
     const totale = daFare.reduce((t, v) => t + (v.parte === 1 ? v.l.prezzo || 0 : 0), 0);
     const meteoGiorno = testoPioggia(s) ? `<div class="meteo-giorno livello-${livelloPioggia(s)}">${GOCCIA}${testoPioggia(s)}</div>` : '';
     const conteggio = daFare.length ? `<span class="conteggio">${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}</span>` : '';
-    const vuoto = !daFare.length && !tutti.length;
-    const btnPiu = vuoto ? `<button type="button" class="giorno-aggiungi" data-s="${s}" aria-label="Aggiungi">+</button>` : '';
+    const btnPiu = `<button type="button" class="giorno-aggiungi" data-s="${s}" aria-label="Aggiungi">+</button>`;
     const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2>${btnPiu}</div>${meteoGiorno || conteggio ? `<div class="giorno-sotto">${conteggio}${meteoGiorno}</div>` : ''}`;
     const corpo = daFare.length
       ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di)).join('')}</div>`
