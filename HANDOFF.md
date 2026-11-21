@@ -64,7 +64,7 @@ Le 5 icone categoria (`ai-cat-cliente`, `ai-cat-nota`, `ai-cat-sposta`, `ai-cat-
 - Visibile solo per schede `cliente`, `nota`, `costo` (nascosta per `riprogramma`, `paga`, `tutto`)
 - `cliente` → `apriFoglio()` con `_ritornaInboxKey = 'cliente'` (X sul foglio torna all'inbox)
 - `nota` → `aggiungiItemSimulato()`
-- `costo` → placeholder (da implementare)
+- `costo` → aggiunge item vuoto all'inbox costo e riapre la tab
 
 **Edit mode:** `#ai-inbox-lista.classList.toggle('edit-mode')` → mostra il bottone "Modifica ›" su ogni card.
 
@@ -140,7 +140,7 @@ Ogni card è generata da `inbox_cardHtml(item, cat)` + `inboxCampiHtml(item, cat
 
 **Attenzione:** in `modoFoglio === 'conferma-inbox'`, `f-salva` e `f-micro` **non esistono nel DOM** (il footer è stato sostituito con bottoni custom). `chiudiFoglio()` li ripristina automaticamente.
 
-**_ritornaInboxKey** — variabile globale. Se impostata quando `chiudiFoglio()` viene chiamato (senza salvataggio), riapre l'inbox con quella key. Viene azzerata da `salva()` e `salvaModifica()`.
+**_ritornaInboxKey** — variabile globale. Se impostata quando `chiudiFoglio()` viene chiamato, riapre l'inbox con quella key. Viene azzerata da `salvaModifica()` e da `chiudiFoglio()` stesso dopo averla usata. `salva()` non la azzera più — così il ritorno all'inbox funziona anche dopo un salvataggio riuscito.
 
 ---
 
@@ -308,7 +308,7 @@ CSS: `.prev-dot { width:10px; height:10px; border-radius:50%; display:inline-blo
 | `apriFoglio(giorno?, perCliente?)` | Apre form nuovo cliente, resetta tutto inclusi i drum |
 | `apriModifica(nome)` | Apre form modifica cliente esistente |
 | `chiudiFoglio()` | Chiude foglio, ripristina footer se era in `conferma-inbox`, riapre inbox se `_ritornaInboxKey` è impostata |
-| `salva()` | Salva nuovo cliente (azzera `_ritornaInboxKey` prima di chiudere) |
+| `salva()` | Salva nuovo cliente; NON azzera `_ritornaInboxKey` — chiudiFoglio() la gestisce |
 | `salvaModifica()` | Salva modifiche cliente (azzera `_ritornaInboxKey` prima di chiudere) |
 | `preparaFoglio(modo)` | Reset base (titolo, visibilità f-lavoro/f-micro/f-salva). NON disegna i drum |
 | `mostraFoglio()` | Rende visibile `#foglio` |
