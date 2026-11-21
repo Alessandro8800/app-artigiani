@@ -500,6 +500,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-cerca-risultati { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 10px; overflow: hidden; z-index: 10; }
 .inbox-cerca-risultati button { width: 100%; padding: 10px 12px; border: none; background: none; color: var(--testo); font-size: 14px; text-align: left; cursor: pointer; border-bottom: 1px solid var(--linea); }
 .inbox-cerca-risultati button:last-child { border-bottom: none; }
+.inbox-cerca-risultati button { display: flex; justify-content: space-between; gap: 8px; }
+.inbox-cerca-risultati button b { color: var(--ambra); font-variant-numeric: tabular-nums; }
+.inbox-cerca-titolo { margin: 0; padding: 8px 12px 4px; font-size: 12px; font-weight: 800; color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
 .inbox-cerca-risultati button:active { background: var(--foglia-chiara); }
 .ripr-info { font-size: 15px; font-weight: 800; color: #fff; padding: 10px 0 14px; text-align: center; }
 .ripr-info-row { display: flex; align-items: center; padding: 10px 0 14px; gap: 10px; }
@@ -2302,6 +2305,13 @@ let salvando = false;
 // Tipi di cliente: il primo è quello già scelto. Si cambiano dalle Impostazioni.
 const TIPI = ['Privato', 'Condominio', 'Fabbrica'];
 let tipo = TIPI[0];
+// Tipo di cliente capito dal nome: "Condominio Girasoli" → Condominio, "Ditta Rossi srl" → Fabbrica
+function tipoDaNome(nome) {
+  const n = ' ' + normalizza(nome || '') + ' ';
+  if (/\bcondomin/.test(n) && TIPI.includes('Condominio')) return 'Condominio';
+  if (/\b(fabbric|aziend|ditta|srl|s\.r\.l|spa|s\.p\.a|capannon|stabiliment|industri|magazzin)/.test(n) && TIPI.includes('Fabbrica')) return 'Fabbrica';
+  return null;
+}
 
 function disegnaTipo() {
   $('f-tipo').innerHTML = TIPI.map(t => `<button class="chip${t === tipo ? ' attivo' : ''}" role="radio" aria-checked="${t === tipo}" data-t="${t}">${t}</button>`).join('');
@@ -3183,7 +3193,7 @@ $('f-nome').addEventListener('input', aggiornaCliente);
 const INBOX_ESEMPI = {
   cliente:     { titolo: 'Nuovi lavori',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [] },
   nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [] },
-  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [] },
+  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-riprogramma', voci: [] },
   costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [] },
   paga:        { titolo: 'Pagamenti',    cat: 'paga',        badge: 'ai-b-paga',    voci: [] },
   extra: { titolo: 'Extra', cat: 'extra', badge: null, voci: [] },
@@ -3204,6 +3214,7 @@ function inboxCampiHtml(item, cat) {
   if (cat === 'costo') {
     const desc = (item.campi.find(([l]) => l === 'Descrizione') || [])[1] || '';
     const imp = (item.campi.find(([l]) => l === 'Importo') || [])[1] || '0';
+    const cliCosto = (item.campi.find(([l]) => l === 'Cliente') || [])[1] || ''; // spesa detta "per Luca Bianchi"
     return `<div class="inbox-edit-panel" hidden>
       <label>Descrizione<input type="text" value="${sicuro(desc)}"></label>
       <label>Importo (€)
@@ -3215,13 +3226,13 @@ function inboxCampiHtml(item, cat) {
       </label>
       <label>Tipo
         <div class="inbox-tipo-row">
-          <button type="button" class="inbox-tipo-btn attivo" onclick="tipoCostoScegli(this,'personale')">Personale</button>
-          <button type="button" class="inbox-tipo-btn" onclick="tipoCostoScegli(this,'cliente')">Di un cliente</button>
+          <button type="button" class="inbox-tipo-btn${cliCosto ? '' : ' attivo'}" onclick="tipoCostoScegli(this,'personale')">Personale</button>
+          <button type="button" class="inbox-tipo-btn${cliCosto ? ' attivo' : ''}" data-cliente="1" onclick="tipoCostoScegli(this,'cliente')">Di un cliente</button>
         </div>
       </label>
-      <div class="inbox-cerca-cliente" id="costo-cerca-wrap-${item.testa.replace(/\s/g,'')}" hidden>
+      <div class="inbox-cerca-cliente" id="costo-cerca-wrap-${item.testa.replace(/\s/g,'')}"${cliCosto ? '' : ' hidden'}>
         <label>Cliente<div class="inbox-cerca-cliente">
-          <input type="text" placeholder="Cerca cliente..." oninput="cercaClienteInbox(this)">
+          <input type="text" class="costo-cliente" value="${sicuro(cliCosto)}" placeholder="Cerca cliente..." oninput="cercaClienteInbox(this)" onfocus="cercaClienteInbox(this)">
           <div class="inbox-cerca-risultati" hidden></div>
         </div></label>
       </div>
@@ -3233,7 +3244,7 @@ function inboxCampiHtml(item, cat) {
     return `<div class="inbox-edit-panel" hidden>
       <label>Cliente
         <div class="inbox-cerca-cliente">
-          <input type="text" value="${sicuro(cliente)}" placeholder="Cerca cliente..." oninput="cercaClienteInbox(this)">
+          <input type="text" value="${sicuro(cliente)}" placeholder="Chi ha pagato? Tocca per l'elenco" oninput="cercaClienteInbox(this)" onfocus="cercaClienteInbox(this)">
           <div class="inbox-cerca-risultati" hidden></div>
         </div>
       </label>
@@ -3285,6 +3296,27 @@ function inbox_cardHtml(item, cat) {
         </div>
       </div>`;
     }
+  }
+
+  // Lavoro in più per un cliente che ha già un lavoro in agenda: aggiungerlo a quello o farne uno nuovo
+  if (cat === 'cliente' && item.aggiungiA != null) {
+    const lavoroDetto = (item.campi.find(([c]) => c === 'Lavoro') || [])[1] || '';
+    return `<div class="inbox-card" data-cat="${cat}">
+      <div class="inbox-card-top">
+        <div class="inbox-card-info">
+          <div class="inbox-card-testa">${sicuro(item.testa)}</div>
+          <div class="inbox-card-dati">${sicuro(lavoroDetto)}</div>
+          <div class="inbox-card-suggerimenti">Ha già un lavoro ${sicuro(item.aggiungiGiorno || '')}${item.aggiungiCosa ? ': ' + sicuro(item.aggiungiCosa) : ''}</div>
+        </div>
+      </div>
+      <div class="inbox-card-azioni">
+        <button class="inbox-btn-ok" onclick="aggiungiALavoroInbox(this.closest('.inbox-card'),${ic})">➕ Aggiungi a ${sicuro(item.aggiungiGiorno || 'quel lavoro')}</button>
+      </div>
+      <div class="inbox-card-azioni">
+        <button class="inbox-btn-sospeso" onclick="apriModificaInboxCliente(this.closest('.inbox-card'),${ic})">Nuovo lavoro</button>
+        <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
+      </div>
+    </div>`;
   }
 
   // Lavori sospesi: nuovi clienti senza dati essenziali (nome, via, giorno)
@@ -3363,6 +3395,8 @@ function apriModificaInboxCliente(card, item) {
   // Pre-compila i campi dall'item inbox
   const get = (l) => (item.campi.find(([k]) => k === l) || [])[1] || '';
   $('f-nome').value = get('Nome');
+  const tipoNome = tipoDaNome(get('Nome'));
+  if (tipoNome) { tipo = tipoNome; disegnaTipo(); } // "Condominio …" → già scelto Condominio
   $('f-dove').value = get('Indirizzo') || get('Dove') || get('Via') || get('Indirizzo completo');
   const lavoro = get('Lavoro') || get('Cosa') || get('Tipo di lavoro');
   if (lavoro) $('f-cosa').value = lavoro;
@@ -3406,6 +3440,25 @@ function indietroInboxCliente() {
   _inboxCard = null;
   chiudiFoglio();
   apriInbox('cliente');
+}
+
+// "Aggiungi a giovedì": il lavoro detto si somma a quello già in agenda (cosa da fare, prezzo, durata)
+function aggiungiALavoroInbox(card, item) {
+  const get = k => (item.campi.find(([c]) => c === k) || [])[1] || '';
+  const l = lavori.find(x => x.id === item.aggiungiA && normalizza(x.nome) === normalizza(item.testa) && !x.fatto);
+  if (!l) { avvisa('Quel lavoro non c\'è più: fanne uno nuovo'); apriModificaInboxCliente(card, item); return; }
+  const cosa = get('Lavoro');
+  if (cosa && !normalizza(l.cosa || '').includes(normalizza(cosa))) l.cosa = l.cosa ? `${l.cosa} + ${cosa}` : cosa;
+  const prezzo = parseFloat(get('Prezzo'));
+  if (prezzo > 0) l.prezzo = arrotonda((l.prezzo || 0) + prezzo);
+  const ore = parseFloat(String(get('OreStimate')).replace(',', '.'));
+  if (ore > 0) l.durata = Math.round(((l.durata || 0) + ore) * 2) / 2;
+  const note = get('Note');
+  if (note) { const e = prendiExtra(l.nome); e.note = e.note ? e.note + '\n' + note : note; }
+  tutto();
+  rimuoviVoceInbox('cliente', item, 'ok');
+  if (card && card.isConnected) animaCard(card, 'ok');
+  avvisa(`Aggiunto al lavoro di ${l.nome}, ${nomeGiorno(l.data).toLowerCase()}`);
 }
 
 function confermaInboxCliente() {
@@ -3508,14 +3561,28 @@ function tipoCostoScegli(btn, tipo) {
 // --- Cerca cliente (simulazione) ---
 // Nomi dei clienti veri (per la ricerca nelle card e il riconoscimento senza AI)
 const nomiClienti = () => clientiConosciuti().map(c => c.nome).filter(Boolean);
+// Ricerca cliente nelle card. Casella vuota: prima chi ti deve soldi adesso (con quanto), poi gli altri.
 function cercaClienteInbox(input) {
-  const q = input.value.toLowerCase().trim();
+  const q = normalizza(input.value);
   const risultati = input.nextElementSibling;
   if (!risultati) return;
-  if (!q) { risultati.hidden = true; return; }
-  const trovati = nomiClienti().filter(c => c.toLowerCase().includes(q));
+  const conDebito = nome => { try { return conto(nome).dovuto || 0; } catch (e) { return 0; } };
+  let trovati = nomiClienti().filter(c => !q || normalizza(c).includes(q)).map(c => ({ nome: c, deve: conDebito(c) }));
+  trovati.sort((a, b) => b.deve - a.deve);
+  trovati = trovati.slice(0, 8);
   if (!trovati.length) { risultati.hidden = true; return; }
-  risultati.innerHTML = trovati.map(c => `<button type="button" data-nome="${sicuro(c)}" onclick="const inp=this.closest('.inbox-cerca-cliente').querySelector('input');inp.value=this.dataset.nome;this.closest('.inbox-cerca-risultati').hidden=true">${sicuro(c)}</button>`).join('');
+  risultati.innerHTML = (!q && trovati[0].deve > 0 ? '<p class="inbox-cerca-titolo">Ti devono soldi:</p>' : '')
+    + trovati.map(c => `<button type="button" data-nome="${sicuro(c.nome)}" data-deve="${c.deve}">${sicuro(c.nome)}${c.deve > 0 ? ` <b>${euro(c.deve)}</b>` : ''}</button>`).join('');
+  risultati.querySelectorAll('button').forEach(b => {
+    b.onmousedown = e => e.preventDefault(); // il tocco non chiude l'elenco prima di scegliere
+    b.onclick = () => {
+      input.value = b.dataset.nome;
+      risultati.hidden = true;
+      // Pagamento: se la cifra è vuota, metto quanto deve (si può cambiare, es. acconto)
+      const num = input.closest('.inbox-edit-panel')?.querySelector('input[type="number"]');
+      if (num && !(parseFloat(num.value) > 0) && +b.dataset.deve > 0) num.value = b.dataset.deve;
+    };
+  });
   risultati.hidden = false;
 }
 
@@ -3606,9 +3673,21 @@ function confermaCarta(card, item, cat) {
     const inputs = panel ? panel.querySelectorAll('input') : [];
     const desc = (inputs[0]?.value || getCampo('Descrizione')).trim() || 'Costo';
     const importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
-    if (importo > 0) {
-      spese.push({ id: Math.max(0, ...spese.map(x => x.id)) + 1, tipo: desc, nota: '', importo, data: tra(0), modo: 'una' });
-      avvisa(`Costo registrato: ${desc} ${euro(importo)}`);
+    // Di chi è la spesa: dal pannello se è stato aperto, altrimenti da quello che è stato detto
+    const perCliente = panel && !panel.hidden ? !!panel.querySelector('.inbox-tipo-btn.attivo[data-cliente]') : !!getCampo('Cliente');
+    const cliente = perCliente ? ((panel && !panel.hidden && panel.querySelector('.costo-cliente')?.value.trim()) || getCampo('Cliente')).trim() : '';
+    // Spesa di un cliente → va nei costi del suo lavoro più vicino a oggi (prezzo, costi e utile si aggiornano)
+    const oggiMs = daIso(tra(0)).getTime();
+    const lavoroCliente = cliente ? lavori.filter(l => !l.memo && normalizza(l.nome) === normalizza(cliente))
+      .sort((a, b) => Math.abs(daIso(a.data) - oggiMs) - Math.abs(daIso(b.data) - oggiMs))[0] : null;
+    if (importo > 0 && lavoroCliente) {
+      if (!lavoroCliente.costi) lavoroCliente.costi = { generale: null, voci: [] };
+      lavoroCliente.costi.voci.push({ tipo: maiuscola(desc), importo });
+      avvisa(`${maiuscola(desc)} ${euro(importo)} nei costi di ${lavoroCliente.nome} (${nomeGiorno(lavoroCliente.data).toLowerCase()})`);
+      tutto();
+    } else if (importo > 0) {
+      spese.push({ id: Math.max(0, ...spese.map(x => x.id)) + 1, tipo: desc, nota: cliente ? 'per ' + cliente : '', importo, data: tra(0), modo: 'una' });
+      avvisa(`Costo registrato: ${desc} ${euro(importo)}${cliente ? ` (${cliente} non ha lavori: messo nelle spese)` : ''}`);
       tutto();
     }
     rimuoviVoceInbox(cat, item, 'ok');
@@ -3639,7 +3718,7 @@ function confermaCarta(card, item, cat) {
     // Il giorno detto a voce; solo se manca, il primo giorno libero
     const data = parseDataRelativa(getCampo('Giorno') || getCampo('Data')) || giorniMigliori()[0] || tra(1);
     const ore = parseFloat(String(getCampo('OreStimate')).replace(',', '.'));
-    const nuovo = { id: lavori.length, nome, data, fatto: false, prezzo, dove, tipo: TIPI[0], durata: ore > 0 ? Math.round(ore * 2) / 2 : durataSolita, ora: fasciaOra(getCampo('Ora')), cosa };
+    const nuovo = { id: lavori.length, nome, data, fatto: false, prezzo, dove, tipo: tipoDaNome(nome) || TIPI[0], durata: ore > 0 ? Math.round(ore * 2) / 2 : durataSolita, ora: fasciaOra(getCampo('Ora')), cosa };
     lavori.push(nuovo);
     const noteVoce = getCampo('Note');
     if (noteVoce) { const e = prendiExtra(nome); e.note = e.note ? e.note + '\n' + noteVoce : noteVoce; }
@@ -4186,11 +4265,11 @@ ESEMPI
 → {"operations":[{"tipo":"nota","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"quella cosa lì poi vediamo","missing_fields":[]}]}`;
 
   // Se la risposta non è leggibile, la frase diventa una nota: non si perde mai.
-  const notaGrezza = { operations: [{ tipo: 'nota', nome: null, lavoro: null, data: null, importo: null, testo, missing_fields: [] }], _fallback: true };
+  const notaGrezza = { operations: [{ tipo: 'nota', nome: null, lavoro: null, data: null, importo: null, testo, missing_fields: [] }], _fallback: true, _motivo: 'risposta AI incompleta' };
 
-  // Tempo massimo 15 secondi: oltre, la chiamata si interrompe e scatta il fallback "nota"
+  // Tempo massimo 30 secondi (rete del telefono lenta): oltre, la chiamata si interrompe e scatta il fallback "nota"
   const ctrl = new AbortController();
-  const scadenza = setTimeout(() => ctrl.abort(), 15000);
+  const scadenza = setTimeout(() => ctrl.abort(), 30000);
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     signal: ctrl.signal,
     method: 'POST',
@@ -4202,7 +4281,7 @@ ESEMPI
     },
     body: JSON.stringify({
       model: 'claude-haiku-5-5',
-      max_tokens: 600,
+      max_tokens: 2000, // spazio anche per il "ragionamento" che il modello a volte fa prima di rispondere
       system,
       messages: [{ role: 'user', content: testo }]
     })
@@ -4218,9 +4297,15 @@ ESEMPI
     // La risposta può avere più blocchi (es. un blocco "thinking" prima del testo): prendo solo il testo.
     const raw = (Array.isArray(json.content) ? json.content : [])
       .filter(b => b && b.type === 'text').map(b => b.text || '').join('').trim();
-    const match = raw.match(/\{[\s\S]*\}/);
-    const dati = JSON.parse(match ? match[0] : raw);
-    const ops = Array.isArray(dati && dati.operations) ? dati.operations.filter(o => o && typeof o === 'object' && o.tipo) : [];
+    let ops = [];
+    try {
+      const match = raw.match(/\{[\s\S]*\}/);
+      const dati = JSON.parse(match ? match[0] : raw);
+      ops = Array.isArray(dati && dati.operations) ? dati.operations.filter(o => o && typeof o === 'object' && o.tipo) : [];
+    } catch (_) {
+      // Risposta tagliata a metà: recupero le operazioni complete ({"tipo":...}) invece di buttare tutto
+      for (const m of raw.match(/\{"tipo"[^{}]*\}/g) || []) { try { ops.push(JSON.parse(m)); } catch (_) {} }
+    }
     if (!ops.length) return notaGrezza;
     ops.forEach(o => { if (!Array.isArray(o.missing_fields)) o.missing_fields = []; });
     return { operations: ops };
@@ -4360,7 +4445,17 @@ function _operazioneInItem(o, giorno) {
     if (o.ore != null) campi.push(['OreStimate', String(o.ore)]);
     if (o.importo != null) campi.push(['Prezzo', String(o.importo)]);
     if (o.testo) campi.push(['Note', o.testo]);
-    return { cat: 'cliente', item: { testa: o.nome || o.lavoro || 'Nuovo lavoro', dati: [o.lavoro, o.data].filter(Boolean).join(' · ') || giorno, campi } };
+    // Cliente già conosciuto: la via la prendo dai suoi dati se non è stata detta
+    const giaCliente = o.nome ? clientiConosciuti().find(c => normalizza(c.nome) === normalizza(o.nome)) : null;
+    if (!o.indirizzo && giaCliente && giaCliente.dove) campi.splice(1, 0, ['Indirizzo', giaCliente.dove]);
+    const item = { testa: o.nome || o.lavoro || 'Nuovo lavoro', dati: [o.lavoro, o.data].filter(Boolean).join(' · ') || giorno, campi };
+    // "Luca Bianchi vuole anche…" senza giorno, e Luca ha già un lavoro in agenda → proporre di aggiungerlo a quello
+    if (!o.data && o.nome && o.lavoro) {
+      const prossimo = lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(o.nome) && l.data >= tra(0))
+        .sort((a, b) => a.data.localeCompare(b.data))[0];
+      if (prossimo) { item.aggiungiA = prossimo.id; item.aggiungiGiorno = nomeGiorno(prossimo.data).toLowerCase(); item.aggiungiCosa = prossimo.cosa || ''; }
+    }
+    return { cat: 'cliente', item };
   }
   if (o.tipo === 'riprogramma') {
     const prossimo = o.nome ? lavori.filter(l => !l.fatto && !l.memo && l.nome === o.nome).sort((a, b) => a.data.localeCompare(b.data))[0] : null;
@@ -4396,7 +4491,9 @@ function _aggiungiOperazioni(testo, risultato, giorno) {
     // Nota senza cliente e senza giorno → direttamente nelle note rapide.
     // Con un giorno → card da confermare, che diventa un promemoria nel calendario.
     if (o.tipo === 'nota' && !o.nome && !(o.data && parseDataRelativa(o.data))) {
-      noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(o.testo), testo: o.testo, fatta: false, data: null });
+      // Nota di emergenza (AI non ha risposto bene): il titolo dice il motivo, per capire cosa è successo
+      const titolo = risultato._fallback ? `Da controllare (${risultato._motivo || 'AI non raggiungibile'})` : generaTitoloAuto(o.testo);
+      noteRapide.unshift({ id: ++_nrId, titolo, testo: o.testo, fatta: false, data: null });
       note++;
       continue;
     }
@@ -4541,6 +4638,7 @@ function chiudiMicBox() {
   if (!box || box.hidden) return;
   if (_micRiconosc) { try { _micRiconosc.stop(); } catch(e){} _micRiconosc = null; }
   box.hidden = true;
+  box.querySelectorAll('.mic-box-auto-wrap').forEach(e => e.remove()); // la barra del conto alla rovescia non si accumula
   document.body.classList.remove('bloccato');
   if (_micSorgente === 'inbox') {
     const inboxMic = $('ai-inbox-mic');
@@ -4650,6 +4748,7 @@ function avviaMicrofono(sorgente) {
         // Countdown 4 secondi + Annulla
         const autoWrap = document.createElement('div');
         autoWrap.className = 'mic-box-auto-wrap';
+        catWrap.querySelectorAll('.mic-box-auto-wrap').forEach(e => e.remove()); // al massimo una barra
         autoWrap.innerHTML = '<div class="mic-box-auto-bar"><div class="mic-box-auto-progresso"></div></div><button class="mic-box-annulla-btn">Annulla</button>';
         catWrap.appendChild(autoWrap);
         void autoWrap.offsetWidth;

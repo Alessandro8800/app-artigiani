@@ -474,6 +474,13 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - **Salvati in Dexie anche:** voci dell'inbox (`inbox`), `storico`, `spese`, `daSistemare`. `aggiornaBadge()` chiama `dbSalva()`.
 - **Impostazioni → "Ricomincia da zero"** (`ricominciaDaZero()`): cancella il database Dexie, cache e service worker, localStorage (tranne `anthropic_key`) e ricarica.
 - Bug grafico corretto: l'etichetta Mattina/Pomeriggio nella lista lavori usava la classe `.ora-pill` del foglio (posizione assoluta, enorme). Ora è `.ora-etichetta`.
+- **(21/11 sera)** `max_tokens` 2000 e timeout 30 s (il blocco "thinking" consumava lo spazio → JSON tagliato → tutto in nota). Se la risposta è tagliata si recuperano le operazioni complete. La nota di emergenza ha titolo "Da controllare (motivo)".
+- `tipoDaNome(nome)`: "Condominio…" → Condominio, "fabbrica/azienda/ditta/srl/spa/capannone…" → Fabbrica (foglio e conferma diretta).
+- Spesa detta "per <cliente>" → alla conferma diventa una voce in `l.costi.voci` del lavoro di quel cliente più vicino a oggi (prezzo/costi/utile si aggiornano). Senza lavori → `spese` generali.
+- Pagamento: la casella Cliente, toccata, mostra chi ti deve soldi adesso (con la cifra); scegliendolo si scrive anche l'importo.
+- Badge Riprogramma: l'id giusto è `ai-b-riprogramma` (era `ai-b-sposta`, inesistente).
+- Lavoro senza giorno per un cliente con un lavoro futuro → card "➕ Aggiungi a <giorno>" (somma cosa/prezzo/durata a quel lavoro, `aggiungiALavoroInbox`) oppure "Nuovo lavoro". Cliente già noto: la via si prende dai suoi dati.
+- Riquadro microfono: al massimo una barra del conto alla rovescia (prima si accumulavano).
 - **Fallback:** AI in errore, risposta illeggibile o oltre 15 secondi → nota grezza + avviso "Salvato come nota, controlla". Senza chiave (e se l'utente non la inserisce) resta il riconoscimento a parole chiave; dal mic dell'inbox va nella scheda aperta.
 - I numeri di riga citati sopra negli step sono cambiati.
 
