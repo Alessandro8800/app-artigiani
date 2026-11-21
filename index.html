@@ -347,6 +347,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .banner strong { font-size: 15px; }
 .banner small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
 .banner .salva { width: auto; height: 42px; padding: 0 16px; font-size: 15px; border-radius: 12px; }
+/* Cronometro del lavoro in corso */
+.banner.crono { background: var(--foglia-chiara); border: 1.5px solid var(--foglia); }
+.banner.crono.in-pausa { background: var(--ambra-chiara); border-color: var(--ambra); }
+.banner.crono.crono-chiedi { background: var(--ambra-chiara); border-color: var(--ambra); }
+.banner.crono small b { font-variant-numeric: tabular-nums; color: var(--testo); }
+.crono-tasti { display: flex; gap: 6px; flex: 1 1 100%; }
+.crono-tasti button { flex: 1; height: 42px; min-height: 42px; padding: 0 8px; font-size: 14px; border-radius: 12px; }
+.banner.crono .crono-tasti .salva { width: auto; height: 42px; font-size: 14px; }
+#crono-ora { height: 42px; border-radius: 12px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); padding: 0 10px; font-size: 17px; font-weight: 700; }
 .banner-x { width: 42px; height: 42px; border: 0; border-radius: 12px; background: none; color: var(--testo-2); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .nota-riga { display: flex; gap: 6px; align-items: stretch; background: var(--carta); border: 1.5px dashed var(--foglia); border-radius: 14px; padding: 4px; margin-bottom: 6px; }
 .nota-testo { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
@@ -3978,6 +3987,8 @@ let _nrId = 10;
 let _dbPronto = false;
 let _dexie = null;
 let inizioChiuso = false; // l'utente ha chiuso con la X il banner "Inizia da qui" (resta in Impostazioni → Per iniziare)
+// Cronometro del lavoro in corso (uno alla volta): { lavoroId, nome, cosa, inizio, pause:[{da,a}], ultimoAccesso, chiedi }
+let cronometro = null;
 
 async function dbInizia() {
   if (_dexie) return;
@@ -3992,7 +4003,8 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro']);
+    if (r[12] && r[12].valore) cronometro = JSON.parse(r[12].valore);
     if (r[6]) inizioChiuso = !!r[6].valore;
     if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' }; zonaScelta = true; }
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
@@ -4041,6 +4053,7 @@ function dbSalva() {
       { chiave: 'spese',      valore: JSON.stringify(spese) },
       { chiave: 'daSistemare', valore: JSON.stringify(daSistemare) },
       { chiave: 'zona',       valore: zonaScelta ? JSON.stringify(zonaMeteo) : '' },
+      { chiave: 'cronometro', valore: cronometro ? JSON.stringify(cronometro) : '' },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -4281,6 +4294,7 @@ TIPI
 - "pagamento": QUALSIASI cosa che riguarda soldi dati o dovuti da un cliente (pagato, mi ha dato, mi deve, acconto, saldo, bonifico). Obbligatorio: nome.
 - "costo": una spesa fatta DAL giardiniere (materiali, benzina, attrezzi, noleggio). Obbligatorio: importo oppure testo. "nome" = cliente per cui ha speso, se detto.
 - "nota": promemoria, appunti, cose da fare, informazioni su un cliente. Obbligatorio: testo.
+- "tempo": sta iniziando, mettendo in pausa, riprendendo, staccando o finendo un lavoro ADESSO ("inizio da Rossi", "comincio la siepe dai Verdi", "pausa pranzo", "riprendo", "stacco per oggi", "ho finito da Rossi"). Campo in più "azione": "inizio" | "pausa" | "riprendo" | "stacco" (smette per oggi ma il lavoro continua un altro giorno) | "fine" (lavoro finito). "nome" se detto, "lavoro" se detto. Se parla di un giorno futuro ("domani inizio da Rossi") NON è tempo: è "cliente".
 
 CAMPI
 - nome: nome del cliente come detto ("Villa Verdi", "Rossi"), o null.
@@ -4326,6 +4340,15 @@ ESEMPI
 
 "Villa Verdi: cancello verde, codice 1847"
 → {"operations":[{"tipo":"nota","nome":"Villa Verdi","lavoro":null,"data":null,"importo":null,"testo":"cancello verde, codice 1847","missing_fields":[]}]}
+
+"inizio adesso il taglio prato da Rossi"
+→ {"operations":[{"tipo":"tempo","azione":"inizio","nome":"Rossi","lavoro":"taglio prato","data":null,"importo":null,"testo":null,"missing_fields":[]}]}
+
+"pausa pranzo"
+→ {"operations":[{"tipo":"tempo","azione":"pausa","nome":null,"lavoro":null,"data":null,"importo":null,"testo":null,"missing_fields":[]}]}
+
+"ho finito da Rossi, mi ha pagato 80 euro"
+→ {"operations":[{"tipo":"tempo","azione":"fine","nome":"Rossi","lavoro":null,"data":null,"importo":null,"testo":null,"missing_fields":[]},{"tipo":"pagamento","nome":"Rossi","lavoro":null,"data":null,"importo":80,"testo":null,"parte":null,"missing_fields":[]}]}
 
 "quella cosa lì poi vediamo"
 → {"operations":[{"tipo":"nota","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"quella cosa lì poi vediamo","missing_fields":[]}]}` + (typeof contestoAI === 'function' ? contestoAI() : '');
@@ -4431,6 +4454,7 @@ const CAT_INFO = {
   calendario:     { nome: 'Calendario',     emoji: '📅' },
   'nota-cliente': { nome: 'Nota cliente',   emoji: '👤' },
   'nota-rapida':  { nome: 'Nota rapida',    emoji: '📝' },
+  tempo:          { nome: 'Cronometro',     emoji: '⏱' },
 };
 
 function categorizzaVoce(testo) {
@@ -4453,8 +4477,9 @@ const _CAT_TO_INBOX = { 'calendario':'nota', 'nota-cliente':'nota', 'nota-rapida
 
 // ---- Livello 3: VALIDAZIONE di una operazione arrivata dall'AI ----
 // Il codice (non l'AI) decide cosa manca e forza le regole di sicurezza.
-const _TIPO_ALIAS = { lavoro: 'cliente', sposta: 'riprogramma', paga: 'pagamento', spesa: 'costo' };
-const _OBBLIGATORI = { cliente: ['nome', 'lavoro'], riprogramma: ['nome'], pagamento: ['nome'], costo: [], nota: ['testo'] };
+const _TIPO_ALIAS = { lavoro: 'cliente', sposta: 'riprogramma', paga: 'pagamento', spesa: 'costo', cronometro: 'tempo' };
+const _OBBLIGATORI = { cliente: ['nome', 'lavoro'], riprogramma: ['nome'], pagamento: ['nome'], costo: [], nota: ['testo'], tempo: [] };
+const _AZIONI_TEMPO = ['inizio', 'pausa', 'riprendo', 'stacco', 'fine'];
 const _NOMI_CAMPI = { nome: 'nome', lavoro: 'lavoro', data: 'giorno', importo: 'importo', testo: 'testo' };
 
 // Il foglio conosce solo "mattina", "pomeriggio" o niente: un'ora precisa diventa una delle due
@@ -4494,6 +4519,16 @@ function validaOperazione(op, testo) {
   if (tipo === 'costo' && !o.importo && !o.testo) mancanti.add('importo');
   // Tengo solo i campi mancanti che sono ancora davvero vuoti
   o.missing_fields = [...mancanti].filter(c => _NOMI_CAMPI[c] && !o[c]);
+  if (tipo === 'tempo') {
+    // Azione del cronometro: dall'AI, oppure capita dalle parole se manca
+    let a = String(op.azione || '').toLowerCase().trim();
+    if (!_AZIONI_TEMPO.includes(a)) {
+      const s = normalizza(testo);
+      a = /finit|termin/.test(s) ? 'fine' : /stacc/.test(s) ? 'stacco' : /pausa/.test(s) ? 'pausa' : /ripren|riparto/.test(s) ? 'riprendo' : 'inizio';
+    }
+    o.azione = a;
+    o.missing_fields = [];
+  }
   if (tipo === 'pagamento') {
     o.stato = 'da_verificare'; // pagamenti: mai automatici
     // "ha pagato metà / un terzo / il 30%": una parte di quanto deve (solo se la cifra non è stata detta)
@@ -4604,12 +4639,43 @@ function _operazioneInItem(o, giorno) {
   return { cat: 'nota', item: { testa: o.nome ? `Nota ${o.nome}` : maiuscola(titolo), dati: o.data || giorno, campi } };
 }
 
+// Cronometro a voce: "inizio da…", "pausa", "riprendo", "stacco", "ho finito"
+function eseguiTempo(o, silenzioso) {
+  const nomeVero = o.nome ? (trovaCliente(o.nome)?.nome || o.nome) : null;
+  const altroNome = cronometro && nomeVero && normalizza(nomeVero) !== normalizza(cronometro.nome);
+  switch (o.azione) {
+    case 'inizio': return avviaCronometro(o.nome, o.lavoro, silenzioso);
+    case 'pausa': return pausaCronometro(silenzioso);
+    case 'riprendo': return (!cronometro && o.nome) ? avviaCronometro(o.nome, o.lavoro, silenzioso) : riprendiCronometro(silenzioso);
+    case 'stacco':
+    case 'fine': {
+      if (cronometro && !altroNome) return fermaCronometro(o.azione, Date.now(), silenzioso);
+      if (altroNome) { const t = `Il cronometro è acceso su ${cronometro.nome}, non su ${nomeVero}`; if (!silenzioso) avvisa(t); return t; }
+      // Nessun cronometro acceso: "ho finito da Rossi" segna comunque Fatto il suo lavoro di oggi (senza ore)
+      if (o.azione === 'fine' && nomeVero) {
+        const l = lavori.find(x => !x.fatto && !x.memo && x.data === tra(0) && normalizza(x.nome) === normalizza(nomeVero));
+        if (l) {
+          l.fatto = true; tutto();
+          const t = `${l.nome}: fatto (cronometro non acceso, ore non segnate)`;
+          if (!silenzioso) avvisa(t, { etichetta: 'Annulla', fai: () => { l.fatto = false; tutto(); } });
+          return t;
+        }
+      }
+      const t = 'Nessun cronometro acceso'; if (!silenzioso) avvisa(t); return t;
+    }
+  }
+  return '';
+}
+
 function _aggiungiOperazioni(testo, risultato, giorno) {
   const ops = risultato.operations.filter(op => op && typeof op === 'object').map(op => validaOperazione(op, testo));
   if (!ops.length) ops.push(validaOperazione({ tipo: 'nota', testo }, testo));
   let note = 0, inbox = 0;
+  const tempi = [];                                  // cronometro: avviene subito, non va in inbox
+  const soloTempo = ops.every(o => o.tipo === 'tempo');
 
   for (const o of ops) {
+    if (o.tipo === 'tempo') { tempi.push(eseguiTempo(o, !soloTempo)); continue; }
     // Nota senza cliente e senza giorno → direttamente nelle note rapide.
     // Con un giorno → card da confermare, che diventa un promemoria nel calendario.
     if (o.tipo === 'nota' && !o.nome && !(o.data && parseDataRelativa(o.data))) {
@@ -4633,7 +4699,8 @@ function _aggiungiOperazioni(testo, risultato, giorno) {
   if (inbox && !$('ai-inbox').hidden && _inboxCatCorrente) apriInbox(_inboxCatCorrente);
 
   if (risultato._fallback) { avvisa(`Salvato come nota${risultato._motivo ? ' (' + risultato._motivo + ')' : ''}, controlla`); return; }
-  const pezzi = [];
+  if (soloTempo) return;                             // il cronometro ha già dato il suo avviso (con Annulla)
+  const pezzi = tempi.filter(Boolean);
   if (inbox) pezzi.push(inbox === 1 ? '1 voce da confermare' : `${inbox} voci da confermare`);
   if (note) pezzi.push(note === 1 ? '1 nota salvata' : `${note} note salvate`);
   avvisa(pezzi.join(', '));
@@ -5894,6 +5961,173 @@ function sistemaNota(n) {
   compila(n.testo);            // le parole chiave si leggono; altrimenti tutto va in "Cosa c'è da fare"
 }
 
+// ======== CRONOMETRO DEI LAVORI ========
+// "inizio da Rossi" → parte; "pausa"/"riprendo"; "stacco" (fine per oggi, il lavoro continua);
+// "ho finito" → ore vere nel lavoro + Fatto. Uno alla volta. Le ore vanno in l.oreVere (le usa la pagina Conti).
+// Avviene SUBITO (non passa dall'inbox): l'orario è quello del momento in cui lo dici.
+const MS_ORA = 3600000;
+const inPausa = c => c.pause.length && c.pause[c.pause.length - 1].a == null;
+function oreCronometro(c, fino = Date.now()) {
+  let ms = fino - c.inizio;
+  for (const p of c.pause) ms -= Math.max(0, Math.min(p.a ?? fino, fino) - p.da);
+  return Math.max(0, ms) / MS_ORA;
+}
+function fmtDurata(ore) {
+  const m = Math.round(ore * 60), h = Math.floor(m / 60), mm = m % 60;
+  return h ? `${h} h${mm ? ' ' + mm + ' min' : ''}` : `${mm} min`;
+}
+const lavoroDelCronometro = () => cronometro ? lavori.find(l => l.id === cronometro.lavoroId && l.nome === cronometro.nome) : null;
+const oraDi = ts => new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+// Quale lavoro: quello di oggi del cliente; se è in un altro giorno lo porto a oggi; se non c'è, ne creo uno per oggi
+function lavoroPerCronometro(nomeDetto, cosaDetta) {
+  const oggi = tra(0);
+  const cli = nomeDetto ? trovaCliente(nomeDetto) : null;
+  const nome = cli ? cli.nome : nomeDetto;
+  const aperti = lavori.filter(l => !l.fatto && !l.memo && (!nome || normalizza(l.nome) === normalizza(nome)));
+  if (!nome) {
+    const diOggi = aperti.filter(l => l.data === oggi);
+    if (diOggi.length === 1) return { lavoro: diOggi[0], nota: '' };
+    return { errore: diOggi.length ? 'Oggi hai più lavori: di\' "inizio da" e il nome' : 'Di chi? Di\' "inizio da" e il nome del cliente' };
+  }
+  const oggiMs = daIso(oggi).getTime();
+  let l = aperti.find(x => x.data === oggi) || aperti.sort((a, b) => Math.abs(daIso(a.data) - oggiMs) - Math.abs(daIso(b.data) - oggiMs))[0];
+  let nota = '';
+  if (l && l.data !== oggi) {
+    const vecchia = l.data, d = Math.round((oggiMs - daIso(vecchia)) / 86400000);
+    l.data = oggi;
+    if (l.date) l.date = l.date.map(g => { const x = daIso(g); x.setDate(x.getDate() + d); return iso(x); });
+    nota = `portato a oggi (era ${nomeGiorno(vecchia).toLowerCase()})`;
+  }
+  if (!l) {
+    l = { id: lavori.length, nome, data: oggi, fatto: false, prezzo: null, dove: (cli && cli.dove) || '', tipo: tipoDaNome(nome) || TIPI[0], durata: durataSolita, cosa: cosaDetta || '' };
+    lavori.push(l);
+    nota = 'nuovo lavoro di oggi';
+  }
+  return { lavoro: l, nota };
+}
+
+function avviaCronometro(nome, cosa, silenzioso) {
+  if (cronometro) {
+    const stesso = !nome || normalizza(trovaCliente(nome)?.nome || nome) === normalizza(cronometro.nome);
+    if (stesso) return riprendiCronometro(silenzioso);
+    fermaCronometro('stacco', Date.now(), true);   // un lavoro alla volta: chiudo quello di prima
+  }
+  const r = lavoroPerCronometro(nome, cosa);
+  if (r.errore) { if (!silenzioso) avvisa(r.errore); return r.errore; }
+  const l = r.lavoro;
+  cronometro = { lavoroId: l.id, nome: l.nome, cosa: l.cosa || '', inizio: Date.now(), pause: [], ultimoAccesso: Date.now() };
+  dbSalva(); tutto();
+  const t = `⏱ Iniziato: ${l.nome}${r.nota ? ' · ' + r.nota : ''}`;
+  if (!silenzioso) avvisa(t);
+  return t;
+}
+function pausaCronometro(silenzioso) {
+  if (!cronometro) { if (!silenzioso) avvisa('Nessun lavoro in corso'); return 'Nessun lavoro in corso'; }
+  if (inPausa(cronometro)) { if (!silenzioso) avvisa('Sei già in pausa'); return 'Già in pausa'; }
+  cronometro.pause.push({ da: Date.now(), a: null });
+  dbSalva(); disegnaAvvisiHome();
+  const t = `⏸ Pausa: ${cronometro.nome}`;
+  if (!silenzioso) avvisa(t);
+  return t;
+}
+function riprendiCronometro(silenzioso) {
+  if (!cronometro) { if (!silenzioso) avvisa('Nessun lavoro in corso'); return 'Nessun lavoro in corso'; }
+  if (!inPausa(cronometro)) { if (!silenzioso) avvisa(`Il cronometro di ${cronometro.nome} è già acceso`); return 'Già acceso'; }
+  cronometro.pause[cronometro.pause.length - 1].a = Date.now();
+  dbSalva(); disegnaAvvisiHome();
+  const t = `▶ Ripreso: ${cronometro.nome}`;
+  if (!silenzioso) avvisa(t);
+  return t;
+}
+// modo 'fine' = ho finito (ore + Fatto); 'stacco' = fine per oggi (solo ore, il lavoro resta da fare)
+function fermaCronometro(modo, fino = Date.now(), silenzioso) {
+  if (!cronometro) { if (!silenzioso) avvisa('Nessun lavoro in corso'); return 'Nessun lavoro in corso'; }
+  const copia = JSON.parse(JSON.stringify(cronometro));
+  const ore = Math.max(0.25, Math.round(oreCronometro(cronometro, fino) * 4) / 4);   // al quarto d'ora
+  const l = lavoroDelCronometro();
+  cronometro = null;
+  if (!l) { dbSalva(); tutto(); if (!silenzioso) avvisa('Il lavoro non c\'è più: cronometro fermato'); return 'Cronometro fermato'; }
+  const prima = { oreVere: l.oreVere, cronoOre: l.cronoOre, fatto: l.fatto };
+  l.cronoOre = arrotonda((l.cronoOre || 0) + ore);   // più giorni ("stacco" e poi di nuovo "inizio") si sommano
+  l.oreVere = l.cronoOre;
+  if (modo === 'fine') l.fatto = true;
+  dbSalva(); tutto();
+  const t = `${l.nome}: ${modo === 'fine' ? 'fatto' : 'stacco per oggi'} · ${fmtDurata(ore)}${l.cronoOre !== ore ? ` (in tutto ${fmtDurata(l.cronoOre)})` : ''}`;
+  if (!silenzioso) avvisa(t, { etichetta: 'Annulla', fai: () => { Object.assign(l, prima); cronometro = copia; dbSalva(); tutto(); } });
+  return t;
+}
+
+// Dimenticato acceso: più di 10 ore dall'ultima volta che hai usato l'app, o app aperta un altro giorno → chiedo a che ora hai finito
+function controllaCronometro() {
+  if (!cronometro || cronometro.chiedi) return;
+  const rif = Math.max(cronometro.inizio, cronometro.ultimoAccesso || 0);
+  if (Date.now() - rif > 10 * MS_ORA || iso(new Date(cronometro.inizio)) !== tra(0)) { cronometro.chiedi = true; dbSalva(); disegnaAvvisiHome(); }
+}
+function segnaAccesso() {   // l'app è in uso: sposto avanti "ultimo accesso"
+  if (cronometro && !cronometro.chiedi) { cronometro.ultimoAccesso = Date.now(); dbSalva(); }
+}
+
+function htmlCronometro() {
+  if (!cronometro) return '';
+  const c = cronometro;
+  if (c.chiedi) {
+    // Proposta: l'ora dell'ultimo uso dell'app (se quel giorno), altrimenti inizio + durata prevista, al massimo le 19
+    const l = lavoroDelCronometro(), inizio = new Date(c.inizio);
+    const sera = new Date(inizio); sera.setHours(19, 0, 0, 0);
+    let prop = (c.ultimoAccesso && iso(new Date(c.ultimoAccesso)) === iso(inizio) && c.ultimoAccesso > c.inizio) ? c.ultimoAccesso
+      : Math.min(c.inizio + ((l && l.durata) || 2) * MS_ORA, sera.getTime());
+    if (prop <= c.inizio) prop = c.inizio + MS_ORA;
+    return `<div class="banner crono crono-chiedi"><span><strong>⏱ ${sicuro(c.nome)}: il cronometro è ancora acceso</strong>
+        <small>Acceso ${nomeGiorno(iso(inizio)).toLowerCase()} alle ${oraDi(c.inizio)}. A che ora hai finito?</small></span>
+      <input type="time" id="crono-ora" value="${oraDi(prop)}" aria-label="Ora di fine">
+      <div class="crono-tasti">
+        <button type="button" class="salva" id="crono-fine-ora">✓ Finito</button>
+        <button type="button" class="secondario" id="crono-stacco-ora">Stacco</button>
+        <button type="button" class="secondario" id="crono-ancora">Sto ancora lavorando</button>
+      </div></div>`;
+  }
+  const pausa = inPausa(c);
+  return `<div class="banner crono${pausa ? ' in-pausa' : ''}"><span><strong>⏱ ${sicuro(c.nome)}</strong>
+      <small>${c.cosa ? sicuro(c.cosa) + ' · ' : ''}${pausa ? 'in pausa · ' : ''}<b id="crono-tempo">${fmtDurata(oreCronometro(c))}</b></small></span>
+    <div class="crono-tasti">
+      <button type="button" class="secondario" id="crono-pausa">${pausa ? '▶ Riprendi' : '⏸ Pausa'}</button>
+      <button type="button" class="secondario" id="crono-stacco">Stacco</button>
+      <button type="button" class="salva" id="crono-fine">✓ Finito</button>
+    </div></div>`;
+}
+function collegaCronometro() {
+  if (!cronometro) return;
+  const c = cronometro;
+  if (c.chiedi) {
+    const fino = () => {   // l'ora scelta, nel giorno in cui era partito
+      const [h, m] = ($('crono-ora').value || '').split(':').map(Number);
+      const d = new Date(c.inizio); d.setHours(h || 0, m || 0, 0, 0);
+      return d.getTime();
+    };
+    const chiudi = modo => { const f = fino(); if (!(f > c.inizio)) return avvisa(`Scegli un'ora dopo le ${oraDi(c.inizio)}`); fermaCronometro(modo, f); };
+    $('crono-fine-ora').onclick = () => chiudi('fine');
+    $('crono-stacco-ora').onclick = () => chiudi('stacco');
+    $('crono-ancora').onclick = () => { c.chiedi = false; c.ultimoAccesso = Date.now(); dbSalva(); disegnaAvvisiHome(); };
+    return;
+  }
+  $('crono-pausa').onclick = () => inPausa(c) ? riprendiCronometro() : pausaCronometro();
+  $('crono-stacco').onclick = () => fermaCronometro('stacco');
+  $('crono-fine').onclick = () => fermaCronometro('fine');
+}
+// Il tempo nella barretta si aggiorna da solo; "ultimo accesso" va avanti mentre usi l'app
+setInterval(() => {
+  if (!cronometro || document.hidden) return;
+  const t = $('crono-tempo');
+  if (t) t.textContent = fmtDurata(oreCronometro(cronometro));
+  controllaCronometro();
+}, 30000);
+setInterval(() => { if (!document.hidden) segnaAccesso(); }, 5 * 60000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) segnaAccesso();          // esci dall'app: ricordo quando
+  else { controllaCronometro(); disegnaAvvisiHome(); segnaAccesso(); }   // rientri: prima controllo, poi aggiorno
+});
+
 // Avvisi in cima alla prima pagina: copia dei dati e note da sistemare
 function disegnaAvvisiHome() {
   disegnaAzioni();
@@ -5901,7 +6135,8 @@ function disegnaAvvisiHome() {
   const vuota = (!clientiConosciuti().length && !inizioChiuso)
     ? `<div class="banner"><span><strong>Inizia da qui</strong><small>Segna chi ti deve già soldi e prendi i clienti dalla rubrica.</small></span><button type="button" class="salva" id="b-inizio">Inizia</button><button type="button" class="banner-x" id="b-inizio-x" aria-label="Chiudi, lo ritrovi in Impostazioni"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button></div>` : '';
   // (L'avviso della copia dei dati è tolto per ora: con il server dopo la beta la copia sarà automatica)
-  $('avvisi-home').innerHTML = vuota;
+  $('avvisi-home').innerHTML = htmlCronometro() + vuota;
+  collegaCronometro();
   if ($('b-inizio')) $('b-inizio').onclick = apriInizio;
   if ($('b-inizio-x')) $('b-inizio-x').onclick = () => {
     inizioChiuso = true; dbSalva(); disegnaAvvisiHome();
@@ -6963,6 +7198,7 @@ function disegnaPreventivi() {
   tutto();
   aggiornaBadge(); aggiornaBadgeNote(); // numeri dell'inbox e delle note ricaricati dal telefono
   if (zonaScelta) caricaMeteo();        // previsioni della tua zona (all'avvio erano partite con quella di prova)
+  controllaCronometro(); disegnaAvvisiHome(); segnaAccesso();   // cronometro dimenticato acceso? prima controllo, poi segno l'accesso
 })();
 
 // PROVA "Salva sopra la tastiera" (solo foglio Nuovo cliente).
