@@ -484,6 +484,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-ic svg { width: 20px; height: 20px; }
 .inbox-sezione { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-2); margin: 20px 0 8px; flex-shrink: 0; }
 .inbox-sezione:first-child { margin-top: 0; }
+.inbox-vuota-add { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 84px; border-radius: 14px; border: 2px dashed var(--linea); background: var(--carta); color: var(--testo-2); font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.inbox-vuota-add .piu { font-size: 34px; line-height: 1; color: var(--foglia); font-weight: 400; }
+.inbox-vuota-add:active { background: var(--foglia-chiara); border-color: var(--foglia); }
 .inbox-card { background: var(--carta); border-radius: 14px; padding: 14px 14px 10px; border-left: 4px solid var(--foglia); display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; overflow: hidden; flex-shrink: 0; }
 .inbox-card[data-cat="nota"] { border-left-color: var(--ambra); }
 .inbox-card[data-cat="riprogramma"] { border-left-color: #3b82c4; }
@@ -962,6 +965,8 @@ button.s-riga:first-child { border-top: 0; }
 .scegli-lista { display: flex; flex-direction: column; gap: 8px; }
 .scegli-voce { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--sfondo); color: var(--testo); text-align: left; }
 .scegli-voce:active { background: var(--foglia-chiara); border-color: var(--foglia); }
+.scegli-voce:disabled { opacity: .4; filter: grayscale(1); pointer-events: none; }
+.scegli-lista { max-height: 62vh; overflow-y: auto; }
 .scegli-emoji { font-size: 24px; width: 32px; text-align: center; }
 .scegli-voce span:last-child { display: flex; flex-direction: column; gap: 2px; }
 .scegli-voce strong { font-size: 16px; }
@@ -982,6 +987,15 @@ button.s-riga:first-child { border-top: 0; }
 .chiave-motivo { margin: 0; font-size: 14px; font-weight: 700; color: var(--rosso); background: var(--rosso-chiaro); border-radius: 12px; padding: 8px 10px; }
 #chiave-input { width: 100%; height: 52px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--sfondo); color: var(--testo); padding: 0 12px; font-size: 16px; }
 #chiave-input:focus { outline: none; border-color: var(--foglia); }
+.nn-box { max-height: 88vh; overflow-y: auto; }
+.nn-box .inbox-tipo-btn { height: 44px; font-size: 14px; }
+.nn-giorni { display: flex; flex-wrap: wrap; gap: 6px; }
+.nn-giorni button { flex: 1 1 auto; height: 40px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--linea); background: none; color: var(--testo); font-size: 14px; font-weight: 700; }
+.nn-giorni button.attivo { background: var(--foglia); color: var(--sul-foglia); border-color: var(--foglia); }
+#nn-salva:disabled { opacity: .45; }
+#nn-pop .inbox-cerca-risultati button.nn-cli { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+#nn-pop .nn-cli small { color: var(--testo-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+#nn-pop .nn-tutti { color: var(--foglia) !important; font-weight: 700; text-align: center !important; justify-content: center; }
 /* Testata dei calendari: frecce, mese e anno su un'unica barra scura, ma restano tasti separati */
 .cal-testa { background: var(--sfondo); border-radius: 14px; padding: 3px; margin-bottom: 6px; }
 .cal-testa .freccia { background: none; height: 38px; }
@@ -1575,6 +1589,34 @@ button.s-riga:first-child { border-top: 0; }
 </div>
 
 <!-- Chiave AI: si chiede qui (mai con prompt), poi il microfono parte subito -->
+<!-- Nuova nota: a un cliente (in fondo alla sua scheda) e/o a un giorno (promemoria nel calendario) -->
+<div class="q-pop" id="nn-pop" hidden onclick="if (event.target === this) chiudiNuovaNota()">
+  <div class="q-pop-box chiave-box nn-box inbox-edit-panel" role="dialog" aria-modal="true" aria-labelledby="nn-titolo-pop">
+    <div class="chiave-testa">
+      <strong id="nn-titolo-pop">Nuova nota</strong>
+      <button class="chiudi" onclick="chiudiNuovaNota()" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="inbox-tipo-row">
+      <button type="button" class="inbox-tipo-btn nn-scelta" id="nn-btn-cliente" onclick="nnScegli('cliente')">👤 A un cliente</button>
+      <button type="button" class="inbox-tipo-btn nn-scelta" id="nn-btn-giorno" onclick="nnScegli('giorno')">📅 A un giorno</button>
+    </div>
+    <div id="nn-cliente-wrap" hidden>
+      <div class="inbox-cerca-cliente">
+        <input type="text" id="nn-cliente" placeholder="Cerca cliente…" autocomplete="off" oninput="_nnTutti = false; cercaClienteNota(this); aggiornaNuovaNota()" onfocus="cercaClienteNota(this)">
+        <div class="inbox-cerca-risultati" hidden></div>
+      </div>
+    </div>
+    <div id="nn-giorno-wrap" hidden>
+      <div class="nn-giorni" id="nn-giorni"></div>
+      <input type="date" id="nn-data" hidden onchange="nnScegliData(this.value)">
+    </div>
+    <label id="nn-titolo-riga">Titolo<input type="text" id="nn-titolo" placeholder="Es. Portare la scala" oninput="aggiornaNuovaNota()"></label>
+    <label>Testo<textarea id="nn-testo" rows="3" placeholder="Scrivi qui la nota" oninput="aggiornaNuovaNota()"></textarea></label>
+    <p class="errore" id="nn-errore" hidden></p>
+    <button class="salva" id="nn-salva" type="button" onclick="salvaNuovaNota()" disabled>Salva</button>
+  </div>
+</div>
+
 <div class="q-pop" id="chiave-pop" hidden>
   <div class="q-pop-box chiave-box" role="dialog" aria-modal="true" aria-labelledby="chiave-titolo">
     <div class="chiave-testa">
@@ -2302,15 +2344,10 @@ function _gpVistaMain() {
 
 function gpNuovoLavoro() { chiudiGiornoPanel(); apriFoglio(_gpGiorno); }
 function gpNuovaNota() {
+  // Dal giorno: la nota nasce già legata a quel giorno
+  const g = _gpGiorno;
   chiudiGiornoPanel();
-  chiudiFormNota();
-  $('nr-lista').hidden = true;
-  $('nr-open-btn').hidden = true;
-  document.querySelector('#note-rapide h2').textContent = 'Nuova nota';
-  $('note-rapide').dataset.modoNuova = '1';
-  $('note-rapide').hidden = false;
-  document.body.classList.add('bloccato');
-  apriFormNota();
+  apriNuovaNota(g);
 }
 
 function _gpVistaRiprogramma() {
@@ -3086,10 +3123,9 @@ function salva() {
   let ripetuti = 0;
   if (ripeti !== 'no') { e.ripeti = ripeti; togliRipetuti(nome); ripetuti = generaSerie(nuovo, ripeti); }
   setTimeout(() => {
+    // Dopo il salvataggio non si apre il giorno: si torna a dove eri (home, o le notifiche se venivi da lì)
     chiudiFoglio();
-    scegli(quando);
-    const carta = document.querySelector(`.lavoro[data-id="${nuovo.id}"]`);
-    if (carta) carta.classList.add('appena-salvato');
+    tutto();
     avvisa(`Salvato: ${nome}, ${nomeGiorno(quando).toLowerCase()}${ripetuti ? ` (+${ripetuti} ripetuti)` : ''}`);
     if (!$('scheda').hidden) disegnaScheda();
   }, 350);
@@ -3631,7 +3667,9 @@ function confRiprCalendario() {
     // Il cliente è sempre quello della card (il nome nel popup non si può più cambiare)
     const cliente = ((_riprogrammaItem?.campi || []).find(([k]) => k === 'Cliente') || [])[1] || '';
     if (!cliente) { avvisa('Questa voce non dice di quale cliente: scartala e ridilla con il nome'); return; }
-    const lavoroTarget = lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(cliente)).sort((a, b) => a.data.localeCompare(b.data))[0];
+    // Lavoro scelto dal "+" → proprio quello; detto a voce → il primo di quel cliente
+    const lavoroTarget = (_riprogrammaItem?.lavoroId != null && lavori.find(l => l.id === _riprogrammaItem.lavoroId && !l.fatto))
+      || lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(cliente)).sort((a, b) => a.data.localeCompare(b.data))[0];
     // Anche dal calendario: niente spostamenti allo stesso giorno o nel passato
     if (lavoroTarget && _riprogrammaDataScelta === lavoroTarget.data) { avvisa(`È già fissato per ${nomeGiorno(lavoroTarget.data).toLowerCase()}: scegli un altro giorno`); return; }
     if (_riprogrammaDataScelta < tra(0)) { avvisa('Quel giorno è già passato: scegli un altro giorno'); return; }
@@ -3716,8 +3754,19 @@ function animaCard(card, tipo) {
   card.addEventListener('animationend', () => {
     card.style.cssText = `height:${h}px;overflow:hidden;transition:height .22s ease,margin .22s ease,padding .22s ease;`;
     requestAnimationFrame(() => { card.style.height = '0'; card.style.marginBottom = '0'; card.style.paddingTop = '0'; card.style.paddingBottom = '0'; });
-    card.addEventListener('transitionend', () => card.remove(), { once: true });
+    card.addEventListener('transitionend', () => { card.remove(); pulisciSezioniInbox(); }, { once: true });
   }, { once: true });
+}
+// Quando l'ultima card di una sezione se ne va, sparisce anche il titolo ("NOTE", "COSTI"…).
+// Se non resta niente, torna la card con il "+".
+function pulisciSezioniInbox() {
+  const lista = $('ai-inbox-lista');
+  lista.querySelectorAll('.inbox-sezione').forEach(t => {
+    let s = t.nextElementSibling, piene = false;
+    while (s && !s.classList.contains('inbox-sezione')) { if (s.classList.contains('inbox-card')) piene = true; s = s.nextElementSibling; }
+    if (!piene) t.remove();
+  });
+  if (_inboxCatCorrente === 'tutto' && !$('ai-inbox').hidden && !lista.querySelector('.inbox-card')) apriInbox('tutto');
 }
 
 function rimuoviVoceInbox(cat, item, esito) {
@@ -3925,6 +3974,8 @@ function apriInbox(key) {
       html += `<div class="inbox-sezione">${cfg.titolo}</div>`;
       html += cfg.voci.map(v => inbox_cardHtml(v, cfg.cat)).join('');
     });
+    // Nessuna card: in cima una card con il "+", fa la stessa cosa del "+" in alto a destra
+    if (!html) html = '<button type="button" class="inbox-vuota-add" onclick="apriSceltaAggiungi()"><span class="piu">+</span>Aggiungi</button>';
     $('ai-inbox-titolo').textContent = 'Tutte le notifiche';
     $('ai-inbox-footer').hidden = true;
   } else {
@@ -3960,14 +4011,151 @@ function aggiungiVoceVuota(cat, item) {
   if (pannello) { pannello.hidden = false; setTimeout(() => (pannello.querySelector('textarea') || pannello.querySelector('input'))?.focus(), 100); } // nota: dritto sul testo
 }
 const INBOX_AGGIUNGI = {
-  cliente: { nome: 'Nuovo lavoro', emoji: '👤', spiega: 'Apre il foglio nuovo cliente', fai: () => { _ritornaInboxKey = 'cliente'; chiudiInbox(); apriFoglio(); } },
-  nota:    { nome: 'Nota',         emoji: '📝', spiega: 'Una nota da scrivere',         fai: () => aggiungiVoceVuota('nota', { testa: 'Nuova nota', dati: 'da scrivere', campi: [['Cliente', ''], ['Nota', '']] }) },
+  cliente: { nome: 'Nuovo lavoro', emoji: '👤', spiega: 'Apre il foglio nuovo cliente', fai: () => { _ritornaInboxKey = _inboxCatCorrente || 'cliente'; chiudiInbox(); apriFoglio(); } }, // chiudendo si torna dove eri ("tutte" o "Nuovi lavori")
+  nota:    { nome: 'Nota',         emoji: '📝', spiega: 'Per un cliente o per un giorno', fai: () => apriNuovaNota() },
   costo:   { nome: 'Spesa',        emoji: '🧾', spiega: 'Una spesa con importo',        fai: () => aggiungiVoceVuota('costo', { testa: 'Nuova spesa', dati: '', campi: [['Descrizione', ''], ['Importo', '0']] }) },
 };
+// Pagamento e Sposta lavoro: agiscono su cose che esistono già, quindi solo da "tutte" e solo se c'è qualcosa da fare
+const chiDeveSoldi = () => nomiClienti().filter(n => { try { return conto(n).dovuto > 0; } catch (e) { return false; } });
+const lavoriDaSpostare = () => lavori.filter(l => !l.fatto && !l.memo).sort((a, b) => a.data.localeCompare(b.data));
+const SCELTA_EXTRA = {
+  paga:        { nome: 'Pagamento',    emoji: '💶', spiega: 'Chi ti ha pagato',        vuoto: 'Nessuno ti deve soldi',    attivo: () => chiDeveSoldi().length > 0,
+                 fai: () => aggiungiVoceVuota('paga', { testa: 'Nuovo pagamento', dati: '', stato: 'da_verificare', campi: [['Cliente', ''], ['Importo', '0']] }) },
+  riprogramma: { nome: 'Sposta lavoro', emoji: '📅', spiega: 'Cambia il giorno di un lavoro', vuoto: 'Nessun lavoro da spostare', attivo: () => lavoriDaSpostare().length > 0,
+                 fai: () => apriSceltaLavoro() },
+};
 function apriSceltaAggiungi() {
-  $('scegli-lista').innerHTML = Object.entries(INBOX_AGGIUNGI).map(([k, a]) =>
-    `<button type="button" class="scegli-voce" data-k="${k}"><span class="scegli-emoji">${a.emoji}</span><span><strong>${a.nome}</strong><small>${a.spiega}</small></span></button>`).join('');
-  $('scegli-lista').querySelectorAll('.scegli-voce').forEach(b => { b.onclick = () => { $('scegli-pop').hidden = true; INBOX_AGGIUNGI[b.dataset.k].fai(); }; });
+  $('scegli-titolo').textContent = 'Cosa vuoi aggiungere?';
+  const voci = [...Object.entries(INBOX_AGGIUNGI), ...Object.entries(SCELTA_EXTRA)];
+  $('scegli-lista').innerHTML = voci.map(([k, a]) => {
+    const spento = a.attivo && !a.attivo(); // grigio: non c'è niente da fare
+    return `<button type="button" class="scegli-voce" data-k="${k}"${spento ? ' disabled' : ''}><span class="scegli-emoji">${a.emoji}</span><span><strong>${a.nome}</strong><small>${spento ? a.vuoto : a.spiega}</small></span></button>`;
+  }).join('');
+  $('scegli-lista').querySelectorAll('.scegli-voce').forEach(b => { b.onclick = () => { $('scegli-pop').hidden = true; (INBOX_AGGIUNGI[b.dataset.k] || SCELTA_EXTRA[b.dataset.k]).fai(); }; });
+  $('scegli-pop').hidden = false;
+}
+// --- Nuova nota: a un cliente e/o a un giorno ---
+// Una delle due è sempre scelta (di partenza "A un cliente"; dalla scheda di un giorno "A un giorno").
+// Cliente → in fondo alla sua scheda (senza titolo). Giorno → promemoria nel calendario (titolo + testo).
+let _nn = { modo: 'cliente', data: null };
+function apriNuovaNota(giorno) {
+  _nn = { modo: giorno ? 'giorno' : 'cliente', data: giorno || tra(0) };
+  _nnTutti = false;
+  $('nn-titolo').value = ''; $('nn-testo').value = ''; $('nn-cliente').value = '';
+  $('nn-errore').hidden = true;
+  $('nn-pop').querySelector('.inbox-cerca-risultati').hidden = true;
+  disegnaNuovaNota();
+  $('nn-pop').hidden = false;
+}
+function chiudiNuovaNota() { $('nn-pop').hidden = true; }
+// Lista clienti della nota: i 3 più probabili (lavoro in arrivo, poi visti da poco), "Mostra tutti" per gli altri.
+// Accanto al nome un solo segno grigio: lavoro in arrivo, oppure quanto deve, oppure l'ultimo lavoro.
+let _nnTutti = false;
+function cercaClienteNota(input) {
+  const q = normalizza(input.value);
+  const risultati = input.nextElementSibling;
+  const oggi = tra(0);
+  const fmtCorto = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' });
+  const fmtSettCorto = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }); // "mar 24 nov"
+  const info = nomiClienti().filter(n => !q || normalizza(n).includes(q)).map(nome => {
+    const suoi = lavori.filter(l => !l.memo && normalizza(l.nome) === normalizza(nome));
+    const prossimo = suoi.filter(l => !l.fatto && l.data >= oggi).map(l => l.data).sort()[0] || null;
+    const ultimo = suoi.filter(l => l.data <= oggi).map(l => l.data).sort().pop() || null;
+    let deve = 0; try { deve = conto(nome).dovuto || 0; } catch (e) {}
+    const segno = prossimo ? `lavoro ${prossimo === oggi ? 'oggi' : prossimo === tra(1) ? 'domani' : fmtSettCorto.format(daIso(prossimo))}`
+      : deve > 0 ? `deve ${euro(deve)}`
+      : ultimo ? `ultimo lavoro ${fmtCorto.format(daIso(ultimo))}` : '';
+    return { nome, prossimo, ultimo, segno };
+  });
+  // Prima chi ha un lavoro in arrivo (il più vicino in cima), poi chi hai visto da poco
+  info.sort((a, b) => (a.prossimo && b.prossimo) ? a.prossimo.localeCompare(b.prossimo)
+    : a.prossimo ? -1 : b.prossimo ? 1 : (b.ultimo || '').localeCompare(a.ultimo || ''));
+  if (!info.length) { risultati.innerHTML = q ? '<p class="inbox-cerca-titolo">Nessun cliente con questo nome</p>' : ''; risultati.hidden = !q; return; }
+  const mostra = _nnTutti ? info : info.slice(0, 3);
+  risultati.innerHTML = mostra.map(c => `<button type="button" class="nn-cli" data-nome="${sicuro(c.nome)}"><span>${sicuro(c.nome)}</span>${c.segno ? `<small>${sicuro(c.segno)}</small>` : ''}</button>`).join('')
+    + (!_nnTutti && info.length > 3 ? `<button type="button" class="nn-tutti">Mostra tutti (${info.length})</button>` : '');
+  risultati.querySelectorAll('button').forEach(b => {
+    b.onmousedown = e => e.preventDefault(); // il tocco non chiude l'elenco prima di scegliere
+    b.onclick = () => {
+      if (b.classList.contains('nn-tutti')) { _nnTutti = true; cercaClienteNota(input); return; }
+      input.value = b.dataset.nome; risultati.hidden = true; aggiornaNuovaNota();
+      $('nn-testo').focus();
+    };
+  });
+  risultati.hidden = false;
+}
+function nnScegli(modo) {
+  _nn.modo = modo;
+  $('nn-errore').hidden = true;
+  disegnaNuovaNota();
+}
+function nnScegliData(iso) { if (iso) { _nn.data = iso; disegnaNuovaNota(); } }
+function disegnaNuovaNota() {
+  const cli = _nn.modo === 'cliente';
+  $('nn-btn-cliente').classList.toggle('attivo', cli);
+  $('nn-btn-giorno').classList.toggle('attivo', !cli);
+  $('nn-cliente-wrap').hidden = !cli;
+  $('nn-giorno-wrap').hidden = cli;
+  $('nn-titolo-riga').hidden = cli; // la nota del cliente non ha titolo
+  const veloci = [[tra(0), 'Oggi'], [tra(1), 'Domani'], [tra(2), 'Dopodomani']];
+  const altro = _nn.data && !veloci.some(([d]) => d === _nn.data);
+  $('nn-giorni').innerHTML = veloci.map(([d, n]) => `<button type="button" data-d="${d}" class="${_nn.data === d ? 'attivo' : ''}">${n}</button>`).join('')
+    + `<button type="button" data-d="altro" class="${altro ? 'attivo' : ''}">📅 ${altro ? sicuro(nomeGiorno(_nn.data)) : 'Altro giorno'}</button>`;
+  $('nn-giorni').querySelectorAll('button').forEach(b => { b.onclick = () => {
+    if (b.dataset.d !== 'altro') { _nn.data = b.dataset.d; disegnaNuovaNota(); return; }
+    const inp = $('nn-data'); inp.min = tra(0); inp.value = _nn.data || tra(0);
+    try { inp.showPicker(); } catch (e) { inp.hidden = false; inp.focus(); } // telefoni senza showPicker: si vede la casella
+  }; });
+  aggiornaNuovaNota();
+}
+function aggiornaNuovaNota() {
+  const titoloVisibile = !$('nn-titolo-riga').hidden;
+  const scritta = $('nn-testo').value.trim() || (titoloVisibile && $('nn-titolo').value.trim());
+  $('nn-salva').disabled = !scritta;
+}
+function salvaNuovaNota() {
+  const err = t => { $('nn-errore').textContent = t; $('nn-errore').hidden = false; };
+  const testo = $('nn-testo').value.trim();
+  if (_nn.modo === 'cliente') {
+    if (!testo) return err('Scrivi la nota');
+    const scritto = $('nn-cliente').value.trim();
+    const cliente = nomiClienti().find(n => normalizza(n) === normalizza(scritto));
+    if (!cliente) return err(scritto ? `Non trovo "${scritto}" tra i clienti: sceglilo dall'elenco` : 'Scegli il cliente');
+    const e = prendiExtra(cliente);
+    const quando = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' }).format(new Date());
+    const riga = `${quando}: ${testo}`;
+    e.note = e.note ? e.note + '\n' + riga : riga;
+    chiudiNuovaNota(); tutto();
+    avvisa(`Nota salvata nella scheda di ${cliente}`);
+    return;
+  }
+  const titolo = $('nn-titolo').value.trim() || generaTitoloAuto(testo);
+  if (!titolo) return err('Scrivi la nota');
+  if (!_nn.data) return err('Scegli il giorno');
+  const id = Math.max(-1, ...lavori.map(l => +l.id || 0)) + 1;
+  lavori.push({ id, nome: titolo, data: _nn.data, fatto: false, prezzo: null, dove: '', tipo: TIPI[0], durata: 0.5, cosa: testo, memo: true });
+  chiudiNuovaNota(); tutto();
+  avvisa(`Nota salvata nel calendario ${nomeGiorno(_nn.data).toLowerCase()}`);
+}
+
+// Sposta lavoro: prima si sceglie il lavoro, poi il giorno nel calendario
+function apriSceltaLavoro() {
+  $('scegli-titolo').textContent = 'Quale lavoro sposti?';
+  const ls = lavoriDaSpostare();
+  $('scegli-lista').innerHTML = ls.map(l =>
+    `<button type="button" class="scegli-voce" data-id="${l.id}"><span class="scegli-emoji">📅</span><span><strong>${sicuro(l.nome)}</strong><small>${sicuro(nomeGiorno(l.data))}${l.cosa ? ' · ' + sicuro(l.cosa) : ''}</small></span></button>`).join('');
+  $('scegli-lista').querySelectorAll('.scegli-voce').forEach(b => { b.onclick = () => {
+    $('scegli-pop').hidden = true;
+    const l = lavori.find(x => String(x.id) === b.dataset.id);
+    if (!l) return;
+    const da = nomeGiorno(l.data).toLowerCase();
+    const item = { testa: l.nome, dati: 'da ' + da, lavoroId: l.id, campi: [['Cliente', l.nome], ['Da', da]] };
+    INBOX_ESEMPI.riprogramma.voci.unshift(item);
+    aggiornaBadge();
+    apriInbox('riprogramma');
+    const card = $('ai-inbox-lista').querySelector('.inbox-card');
+    if (card) apriRiprogrammaInbox(card, item);
+  }; });
   $('scegli-pop').hidden = false;
 }
 
