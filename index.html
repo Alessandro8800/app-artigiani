@@ -6443,15 +6443,43 @@ async function _nomFetch(q, bounded, signal) {
   return r.json();
 }
 
+// Vie mentre scrivi: Photon (OpenStreetMap, gratis) capisce le parole a metà ("via garib") e mette
+// per prime quelle vicine alla tua zona. Restituisce testi pronti: "Via Garibaldi 5, Conegliano".
+async function _photonVie(q, signal) {
+  const { lat, lon } = zonaMeteo;
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&location_bias_scale=0.5&bbox=6.6,35.4,18.6,47.1`;
+  const r = await fetch(url, { signal });
+  if (!r.ok) throw new Error(r.status);
+  const testi = [];
+  for (const f of (await r.json()).features) {
+    const p = f.properties;
+    if (p.countrycode !== 'IT') continue;
+    // Solo strade vere (niente fermate dell'autobus, che OpenStreetMap mette tra le "highway")
+    const STRADE = ['residential', 'primary', 'secondary', 'tertiary', 'unclassified', 'living_street', 'pedestrian', 'service', 'track', 'trunk', 'road', 'primary_link', 'secondary_link', 'tertiary_link'];
+    if (p.osm_key === 'highway' && !STRADE.includes(p.osm_value)) continue;
+    const via = p.osm_key === 'highway' ? p.name : p.street;    // una strada, oppure un indirizzo con la sua via
+    const paese = p.city || p.town || p.village || p.district || p.county || '';
+    if (!via) continue;
+    const t = [via + (p.housenumber ? ' ' + p.housenumber : ''), paese].filter(Boolean).join(', ');
+    if (!testi.includes(t)) testi.push(t);
+  }
+  return testi.slice(0, 5);
+}
+
 async function _nomCerca(q) {
   if (_doveAbort) _doveAbort.abort();
   _doveAbort = new AbortController();
   const signal = _doveAbort.signal;  // cattura prima che arrivi una nuova chiamata
-  const key = q.toLowerCase();
+  const key = normalizza(q) + '|' + zonaMeteo.nome;
   if (_doveCache.has(key)) return _doveCache.get(key);
-  // Prima prova locale (bounded=1, più veloce): se non trova niente, cerca in tutta Italia
-  let ris = await _nomFetch(q, 1, signal);
-  if (!ris.length) ris = await _nomFetch(q, 0, signal);
+  let ris = [];
+  try { ris = await _photonVie(q, signal); } catch (e) { if (e.name === 'AbortError') throw e; }
+  // Riserva: il servizio di prima (vuole il nome quasi intero). Prima qui intorno, poi tutta Italia.
+  if (!ris.length) {
+    let nom = await _nomFetch(q, 1, signal);
+    if (!nom.length) nom = await _nomFetch(q, 0, signal);
+    ris = [...new Set(nom.map(_doveFormatta))];
+  }
   if (_doveCache.size > 60) _doveCache.delete(_doveCache.keys().next().value);
   _doveCache.set(key, ris);
   return ris;
@@ -6487,14 +6515,14 @@ function _doveAvviaAutocomplete() {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'dove-suggerimento';
-          btn.textContent = _doveFormatta(r);
+          btn.textContent = r; // già pronto, con il paese: così anche Maps la trova giusta
           btn.onmousedown = e => e.preventDefault();
           btn.onclick = () => { input.value = btn.textContent; nascondi(); };
           sg.appendChild(btn);
         });
         wrap.appendChild(sg);
       } catch { /* abort o rete assente */ }
-    }, 450);
+    }, 300);
   });
 
   input.addEventListener('blur', () => setTimeout(nascondi, 150));
