@@ -470,6 +470,10 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - Nota con un giorno (anche senza cliente) → card nell'inbox Note → alla conferma diventa promemoria (`memo: true`) nel calendario, col titolo = la frase. Nota senza giorno e senza cliente → direttamente in `noteRapide`.
 - **Chiave AI:** mai più `prompt()`. Popup `#chiave-pop` (`apriChiaveAI(sorgente, motivo)`): si apre quando si preme un microfono senza chiave, e dopo "Salva e parla" il microfono parte subito. Se l'AI risponde 401/403 la chiave viene tolta e il popup si riapre. In Impostazioni → I tuoi dati → "Chiave assistente vocale" si mette, cambia o toglie. Gli errori dicono il motivo (`motivoErroreAI`).
 - Banner "Inizia da qui": X per chiuderlo (`inizioChiuso`, salvato in Dexie); resta in Impostazioni → Per iniziare.
+- **(21/11) App senza esempi:** `INBOX_ESEMPI`, `STORICO_ESEMPI`, `spese`, `daSistemare` partono vuoti; `CLIENTI_FAKE` tolto → `nomiClienti()` (clienti veri). I promemoria (`memo`) non contano come clienti.
+- **Salvati in Dexie anche:** voci dell'inbox (`inbox`), `storico`, `spese`, `daSistemare`. `aggiornaBadge()` chiama `dbSalva()`.
+- **Impostazioni → "Ricomincia da zero"** (`ricominciaDaZero()`): cancella il database Dexie, cache e service worker, localStorage (tranne `anthropic_key`) e ricarica.
+- Bug grafico corretto: l'etichetta Mattina/Pomeriggio nella lista lavori usava la classe `.ora-pill` del foglio (posizione assoluta, enorme). Ora è `.ora-etichetta`.
 - **Fallback:** AI in errore, risposta illeggibile o oltre 15 secondi → nota grezza + avviso "Salvato come nota, controlla". Senza chiave (e se l'utente non la inserisce) resta il riconoscimento a parole chiave; dal mic dell'inbox va nella scheda aperta.
 - I numeri di riga citati sopra negli step sono cambiati.
 

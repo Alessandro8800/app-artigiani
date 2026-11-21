@@ -372,7 +372,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .sollecito a.sol-tel.forte, .s-sollecito a.sol-tel.forte { background: var(--rosso-chiaro); color: var(--rosso); }
 .s-sollecito { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; font-size: 14px; font-weight: 700; color: var(--testo-2); }
 .s-sollecito span { flex: 1 1 100%; }
-.ora-pill { display: inline-block; font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: var(--sfondo); color: var(--testo); margin-right: 2px; }
+.ora-etichetta { display: inline-block; font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: var(--sfondo); color: var(--testo); margin-right: 2px; }
 .l-sposta { padding: 0; margin-top: -6px; }
 .k-tasse { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--linea); font-size: 14px; font-weight: 700; color: var(--testo-2); }
 .k-tasse b { color: var(--testo); font-variant-numeric: tabular-nums; }
@@ -1845,7 +1845,7 @@ function datiCliente(nome) {
 // I clienti già conosciuti (nella prova li ricaviamo dai lavori)
 function clientiConosciuti() {
   const m = new Map();
-  for (const l of lavori) if (!m.has(l.nome)) m.set(l.nome, datiCliente(l.nome));
+  for (const l of lavori) if (!l.memo && !m.has(l.nome)) m.set(l.nome, datiCliente(l.nome)); // i promemoria non sono clienti
   for (const n of Object.keys(extra)) if (extra[n].registrato && !m.has(n)) m.set(n, datiCliente(n));   // presi dalla rubrica, ancora senza lavori
   return [...m.values()];
 }
@@ -2032,7 +2032,7 @@ function cartaLavoro(l, parte = 1, di = 1) {
     <button class="testo" aria-label="Apri il lavoro di ${sicuro(l.nome)}">
       <span class="nome">${sicuro(l.nome)}${l.memo ? '<span class="etichetta">Promemoria</span>' : l.tipo && l.tipo !== TIPI[0] ? `<span class="etichetta">${l.tipo}</span>` : ''}${giorni}</span>
       ${l.dove ? `<span class="dove"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>${sicuro(l.dove)}</span>` : ''}
-      <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
+      <span class="cosa">${l.ora ? `<b class="ora-etichetta">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
     </button>
     <div class="card-azioni">
       <button class="ca-fatto spunta" aria-label="Segna come fatto">✓</button>
@@ -3179,31 +3179,13 @@ $('f-nome').addEventListener('input', aggiornaCliente);
 
 // ---- Barra AI: icone categoria ----
 // ---- Inbox AI ----
+// Inbox: parte vuota, la riempie solo l'assistente vocale (e si salva sul telefono)
 const INBOX_ESEMPI = {
-  cliente:     { titolo: 'Nuovi lavori',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [
-    { testa: 'Fam. Bianchi', dati: 'Via Leopardi 8 · taglio prato · €70', campi: [['Nome','Fam. Bianchi'],['Indirizzo','Via Leopardi 8'],['Lavoro','Taglio prato e bordi'],['Prezzo','70']] },
-    { testa: 'Condominio Le Rose', dati: 'Via Garibaldi 15 · potatura · €280', campi: [['Nome','Condominio Le Rose'],['Indirizzo','Via Garibaldi 15'],['Lavoro','Potatura tigli e siepi'],['Prezzo','280']] },
-  ] },
-  nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [
-    { testa: 'Comprare concime', dati: 'memo · nessuna data', campi: [['Nota','Comprare concime granulare sacchi 25 kg']] },
-    { testa: 'Nota Villa Verdi', dati: 'codice cancello', campi: [['Cliente','Villa Verdi'],['Nota','Cancello automatico: codice 2024, telecomando di riserva in cassetta']] },
-    { testa: 'Comprare guanti', dati: 'domani · con data', campi: [['Nota','Comprare guanti antitaglio taglia L'],['Giorno','2026-11-20']] },
-    { testa: 'Chiamare Vanzina', dati: 'mer 25 nov · con data', campi: [['Nota','Chiamare Vanzina per preventivo materiali'],['Giorno','2026-11-25']] },
-    { testa: 'Chiamare Vanzina', dati: 'memo · nessuna data', campi: [['Nota','Chiamare Vanzina per preventivo materiali']] },
-    { testa: 'Nota vuota', dati: 'nessun testo', campi: [['Nota','']] },
-  ] },
-  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [
-    { testa: 'Marta Ferri', dati: 'Taglio prato · ven 20 nov → gio 26 nov', campi: [['Cliente','Marta Ferri'],['Da','ven 20 nov'],['A','giovedì']] },
-    { testa: 'Villa Verdi', dati: 'Potatura alberi · ven 20 nov (scegli data)', campi: [['Cliente','Villa Verdi'],['Da','ven 20 nov'],['A','']] },
-  ] },
-  costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [
-    { testa: 'Carburante', dati: 'Diesel · €52', campi: [['Descrizione','Carburante'],['Importo','52']] },
-    { testa: 'Sacchi ramaglie', dati: '10 sacchi · €18', campi: [['Descrizione','Sacchi ramaglie'],['Importo','18']] },
-  ] },
-  paga:        { titolo: 'Pagamenti',    cat: 'paga',        badge: 'ai-b-paga',    voci: [
-    { testa: 'Villa Verdi', dati: 'Taglio prato e bordi · €90', campi: [['Cliente','Villa Verdi'],['Importo','90']] },
-    { testa: 'Sig. Rossi', dati: 'Potatura siepe · €150', campi: [['Cliente','Sig. Rossi'],['Importo','150']] },
-  ] },
+  cliente:     { titolo: 'Nuovi lavori',  cat: 'cliente',     badge: 'ai-b-cliente', voci: [] },
+  nota:        { titolo: 'Note',          cat: 'nota',        badge: 'ai-b-nota',    voci: [] },
+  riprogramma: { titolo: 'Riprogramma',  cat: 'riprogramma', badge: 'ai-b-sposta',  voci: [] },
+  costo:       { titolo: 'Costi',        cat: 'costo',       badge: 'ai-b-costo',   voci: [] },
+  paga:        { titolo: 'Pagamenti',    cat: 'paga',        badge: 'ai-b-paga',    voci: [] },
   extra: { titolo: 'Extra', cat: 'extra', badge: null, voci: [] },
 };
 
@@ -3524,13 +3506,14 @@ function tipoCostoScegli(btn, tipo) {
 }
 
 // --- Cerca cliente (simulazione) ---
-const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condominio Le Palme', 'Marta Ferri', 'Condominio Aurora'];
+// Nomi dei clienti veri (per la ricerca nelle card e il riconoscimento senza AI)
+const nomiClienti = () => clientiConosciuti().map(c => c.nome).filter(Boolean);
 function cercaClienteInbox(input) {
   const q = input.value.toLowerCase().trim();
   const risultati = input.nextElementSibling;
   if (!risultati) return;
   if (!q) { risultati.hidden = true; return; }
-  const trovati = CLIENTI_FAKE.filter(c => c.toLowerCase().includes(q));
+  const trovati = nomiClienti().filter(c => c.toLowerCase().includes(q));
   if (!trovati.length) { risultati.hidden = true; return; }
   risultati.innerHTML = trovati.map(c => `<button type="button" data-nome="${sicuro(c)}" onclick="const inp=this.closest('.inbox-cerca-cliente').querySelector('input');inp.value=this.dataset.nome;this.closest('.inbox-cerca-risultati').hidden=true">${sicuro(c)}</button>`).join('');
   risultati.hidden = false;
@@ -3719,6 +3702,7 @@ function aggiornaBadge() {
   const pagaN = INBOX_ESEMPI.paga?.voci.length || 0;
   const cbp = $('c-b-paga');
   if (cbp) { cbp.textContent = pagaN; cbp.hidden = pagaN === 0; }
+  dbSalva(); // ogni cambio dell'inbox resta salvato sul telefono
 }
 
 function apriInbox(key) {
@@ -3744,7 +3728,7 @@ function apriInbox(key) {
   } else {
     addBtn.hidden = true;
   }
-  let html = '<p class="inbox-nota-sim">Simulazione — questi arriverebbero dall\'assistente vocale</p>';
+  let html = '';
   if (key === 'tutto') {
     Object.values(INBOX_ESEMPI).forEach(cfg => {
       if (cfg.voci.length === 0) return;
@@ -3779,39 +3763,7 @@ let _storicoKey = null;
 let _storicoRiprIdx = null; // idx in STORICO_ESEMPI quando si riprogramma dallo storico
 
 // Storico: ultimi 10 già decisi per ogni categoria
-const STORICO_ESEMPI = {
-  riprogramma: [
-    { testa: 'Fam. Colombo', dati: 'Taglio prato', extra: '→ 22 nov', stato: 'ok' },
-    { testa: 'Villa Sangalli', dati: 'Potatura tigli', extra: 'annullato', stato: 'no' },
-    { testa: 'Giorgio Pozzi', dati: 'Taglio prato e bordi', extra: '→ 18 nov', stato: 'ok' },
-    { testa: 'Marta Ferri', dati: 'Messa a dimora', extra: 'annullato', stato: 'no' },
-    { testa: 'Condominio Aurora', dati: 'Pulizia aiuole', extra: '→ 5 dic', stato: 'ok' },
-  ],
-  costo: [
-    { testa: 'Carburante', dati: '€ 45 · Personale', extra: '14 nov', stato: 'ok' },
-    { testa: 'Diserbante Pro', dati: '€ 28 · Fam. Colombo', extra: '8 nov', stato: 'ok' },
-    { testa: 'Smaltimento potature', dati: '€ 60 · Villa Sangalli', extra: '3 nov', stato: 'no' },
-    { testa: 'Guanti da lavoro', dati: '€ 12 · Personale', extra: '1 nov', stato: 'ok' },
-    { testa: 'Concime granulare', dati: '€ 35 · Condominio Aurora', extra: '28 ott', stato: 'ok' },
-  ],
-  nota: [
-    { testa: 'Chiamare Sig. Rossi', dati: 'giovedì 27 — tel: 335 1234567', stato: 'ok' },
-    { testa: 'Comprare guanti antitaglio', dati: 'memo · nessuna data', stato: 'ok' },
-    { testa: 'Preventivo siepe', dati: 'Villa Sangalli · scaduto', stato: 'no' },
-    { testa: 'Portare la scala alta', dati: 'mercoledì 20 — Condominio Aurora', stato: 'ok' },
-  ],
-  cliente: [
-    { testa: 'Fam. Brunetti', dati: 'Via Roma 14 · taglio prato · €80', extra: 'confermato', stato: 'ok' },
-    { testa: 'Sig. Moretti', dati: 'Via Verdi 3 · manutenzione · €120', extra: 'scartato', stato: 'no' },
-    { testa: 'Condominio Le Palme', dati: 'Viale Europa 22 · potatura · €300', extra: 'confermato', stato: 'ok' },
-  ],
-  paga: [
-    { testa: 'Villa Verdi', dati: 'Taglio prato nov · €80', extra: 'incassato 10 nov', stato: 'ok' },
-    { testa: 'Fam. Colombo', dati: 'Potatura siepe · €140', extra: 'scartato', stato: 'no' },
-    { testa: 'Giorgio Pozzi', dati: 'Taglio e bordi · €50', extra: 'incassato 5 nov', stato: 'ok' },
-    { testa: 'Marta Ferri', dati: 'Messa a dimora · €200', extra: 'incassato 1 nov', stato: 'ok' },
-  ],
-};
+const STORICO_ESEMPI = { riprogramma: [], costo: [], nota: [], cliente: [], paga: [] };
 const STORICO_TITOLI = { riprogramma: 'Storico riprogrammi', costo: 'Storico costi', nota: 'Storico note', cliente: 'Storico nuovi lavori', paga: 'Storico pagamenti' };
 
 function apriStorico(key) {
@@ -3931,8 +3883,13 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare']);
     if (r[6]) inizioChiuso = !!r[6].valore;
+    // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
+    if (r[7]) { const ib = JSON.parse(r[7].valore); for (const k of Object.keys(INBOX_ESEMPI)) INBOX_ESEMPI[k].voci.splice(0, Infinity, ...(ib[k] || [])); }
+    if (r[8]) { const st = JSON.parse(r[8].valore); for (const k of Object.keys(STORICO_ESEMPI)) STORICO_ESEMPI[k].splice(0, Infinity, ...(st[k] || [])); }
+    if (r[9]) spese.splice(0, Infinity, ...JSON.parse(r[9].valore));
+    if (r[10]) daSistemare.splice(0, Infinity, ...JSON.parse(r[10].valore));
     if (!r[0]) return; // prima volta: array già vuoti, niente da caricare
     if (r[0]) lavori.splice(0, Infinity, ...JSON.parse(r[0].valore));
     if (r[1]) pagamenti.splice(0, Infinity, ...JSON.parse(r[1].valore));
@@ -3941,6 +3898,21 @@ async function dbCarica() {
     if (r[4]) _nrId = r[4].valore;
     if (r[5] && r[5].valore != null) prevDati = r[5].valore;
   } catch (e) { console.warn('DB carica:', e); }
+}
+
+// "Ricomincia da zero": cancella il database del telefono, la memoria dell'app (cache e service worker)
+// e i dati del browser, poi ricarica. Resta solo la chiave dell'assistente vocale.
+async function ricominciaDaZero() {
+  _dbPronto = false; // da qui niente più salvataggi
+  try { if (_dexie) { _dexie.close(); await Dexie.delete('artigiani-app'); } } catch (e) { console.warn('DB cancella:', e); }
+  try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
+  try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) {}
+  try {
+    const chiave = localStorage.getItem('anthropic_key');
+    localStorage.clear(); sessionStorage.clear();
+    if (chiave) localStorage.setItem('anthropic_key', chiave);
+  } catch (e) {}
+  location.reload();
 }
 
 function dbSalva() {
@@ -3954,6 +3926,10 @@ function dbSalva() {
       { chiave: '_nrId',      valore: _nrId },
       { chiave: 'prevDati',   valore: prevDati },
       { chiave: 'inizioChiuso', valore: inizioChiuso },
+      { chiave: 'inbox',      valore: JSON.stringify(Object.fromEntries(Object.entries(INBOX_ESEMPI).map(([k, c]) => [k, c.voci]))) },
+      { chiave: 'storico',    valore: JSON.stringify(STORICO_ESEMPI) },
+      { chiave: 'spese',      valore: JSON.stringify(spese) },
+      { chiave: 'daSistemare', valore: JSON.stringify(daSistemare) },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -4314,8 +4290,8 @@ function categorizzaVoce(testo) {
     }
   }
   // Nessuna parola chiave ma è presente un nome cliente → trattalo come 'cliente'
-  if (typeof CLIENTI_FAKE !== 'undefined') {
-    for (const c of CLIENTI_FAKE) {
+  {
+    for (const c of nomiClienti()) {
       if (basso.includes(c.toLowerCase())) return 'cliente';
     }
   }
@@ -4847,7 +4823,9 @@ function disegnaClienti() {
       ${perTipo(d, rigaDeve, x => `<div class="lista">${x}</div>`)}` : '')
     + (r.length ? `<div class="c-titolo"><h2>Tutto pagato</h2><span>${r.length}</span></div>
       ${perTipo(r, rigaSaldato, x => `<div class="in-regola">${x}</div>`)}` : '')
-    + (!d.length && !r.length ? `<div class="vuoto" style="margin-top:16px">Nessun cliente trovato con «${sicuro($('c-cerca').value)}»</div>` : '');
+    + (!d.length && !r.length ? `<div class="vuoto" style="margin-top:16px">${$('c-cerca').value.trim()
+        ? `Nessun cliente trovato con «${sicuro($('c-cerca').value)}»`
+        : 'Ancora nessun cliente. Aggiungilo con "Nuovo", a voce o dalla rubrica.'}</div>` : '');
 
   $('c-elenco').querySelectorAll('.apri').forEach(b => {
     b.onclick = () => apriScheda(b.dataset.nome);
@@ -5292,12 +5270,7 @@ const PLURALI_TIPO = { Privato: 'Privati', Condominio: 'Condomini', Fabbrica: 'F
 // Una spesa si conta una volta, ogni mese, ogni anno, oppure divisa in più mesi (ammortamento: es. un tosaerba da 1.200 € in 24 mesi).
 const TIPI_SPESA = ['Carburante', 'Attrezzi nuovi', 'Manutenzione mezzi', 'Assicurazione', 'Telefono', 'Commercialista', 'Altro'];
 const MODI_SPESA = { una: 'Una volta', mese: 'Ogni mese', anno: 'Ogni anno', divisa: 'Divisa in mesi' };
-const spese = [
-  { id: 1, tipo: 'Carburante', nota: 'Furgone', importo: 120, data: tra(-240), modo: 'mese' },
-  { id: 2, tipo: 'Assicurazione', nota: 'Furgone', importo: 900, data: tra(-150), modo: 'anno' },
-  { id: 3, tipo: 'Attrezzi nuovi', nota: 'Tosaerba nuovo', importo: 1200, data: tra(-100), modo: 'divisa', mesi: 24 },
-  { id: 4, tipo: 'Manutenzione mezzi', nota: 'Riparazione decespugliatore', importo: 80, data: tra(-20), modo: 'una' },
-];
+const spese = [];
 // Quanto pesa una spesa tra due date
 function spesaNel(sp, da, a) {
   const d0 = daIso(sp.data), fine = daIso(a), inizio = daIso(da), oggi = OGGI;
@@ -5579,7 +5552,7 @@ let datiProtetti = null;
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().then(v => { datiProtetti = v; }).catch(() => {});
 
 // ======== 3. Nota veloce: si scrive o si detta in un tocco, si sistema dopo ========
-const daSistemare = [{ id: 1, testo: 'Bianchi via Leopardi 4, potare ulivo, la prossima settimana', data: tra(0) }];
+const daSistemare = [];
 let notaInCorso = null;
 function apriNota() { $('nv-testo').value = ''; disegnaNote(); $('nota-pop').hidden = false; }
 function disegnaNote() {
@@ -6084,16 +6057,16 @@ const GRUPPI_IMP = [
       $('i-esporta').onclick = esportaCopia;
       $('i-carica').onclick = () => $('i-ripristina').click();
     } },
-    { id: 'cancella', nome: 'Cancella tutti i dati', valore: () => 'Clienti, lavori e pagamenti', corpo: el => {
-      el.innerHTML = `<p class="imp-testo">Toglie tutto da questo telefono e non si può annullare. Prima salva una copia.</p>
-        <button class="pericolo" id="i-cancella">Cancella tutto</button>`;
+    { id: 'cancella', nome: 'Ricomincia da zero', valore: () => 'Cancella tutto quello che hai inserito', corpo: el => {
+      el.innerHTML = `<p class="imp-testo">Toglie da questo telefono <b>tutto</b>: clienti (anche quelli presi dalla rubrica), lavori, pagamenti, spese, note, promemoria, notifiche da confermare e preventivi. Poi l'app si riapre vuota, come la prima volta. Non si può annullare: se vuoi tenere qualcosa, prima salva una copia.</p>
+        <p class="imp-testo">La chiave dell'assistente vocale resta (si toglie da "Chiave assistente vocale").</p>
+        <button class="pericolo" id="i-cancella">Ricomincia da zero</button>`;
       let pronto = false, t;
-      $('i-cancella').onclick = () => {
-        if (!pronto) { pronto = true; $('i-cancella').classList.add('conferma'); $('i-cancella').textContent = 'Tocca di nuovo per cancellare'; t = setTimeout(() => { pronto = false; if ($('i-cancella')) disegnaImpostazioni(); }, 4000); return; }
+      $('i-cancella').onclick = async () => {
+        if (!pronto) { pronto = true; $('i-cancella').classList.add('conferma'); $('i-cancella').textContent = 'Tocca di nuovo per cancellare tutto'; t = setTimeout(() => { pronto = false; if ($('i-cancella')) disegnaImpostazioni(); }, 4000); return; }
         clearTimeout(t);
-        lavori.splice(0); pagamenti.splice(0); Object.keys(extra).forEach(k => delete extra[k]); noteRapide.splice(0); _nrId = 10;
-        inizioChiuso = false; // app di nuovo vuota → torna il banner "Inizia da qui"
-        tutto(); rigaAperta = null; disegnaImpostazioni(); avvisa('Tutti i dati sono stati cancellati');
+        $('i-cancella').disabled = true; $('i-cancella').textContent = 'Cancello…';
+        await ricominciaDaZero();
       };
     } },
   ]],
@@ -6613,6 +6586,7 @@ function disegnaPreventivi() {
   await dbCarica();
   _dbPronto = true;
   tutto();
+  aggiornaBadge(); aggiornaBadgeNote(); // numeri dell'inbox e delle note ricaricati dal telefono
 })();
 </script>
 </body>
