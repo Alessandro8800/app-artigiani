@@ -5377,7 +5377,7 @@ function disegnaLavoro() {
       lavori.splice(idx, 1);
       lavori.forEach((x, i) => (x.id = i));
       chiudiLavoro();
-      avvisa('Lavoro eliminato', { etichetta: 'Annulla', fai: () => { lavori.splice(idx, 0, l); lavori.forEach((x, i) => (x.id = i)); tutto(); } });
+      avvisa('Lavoro annullato'); // niente secondo "Annulla": i 5 secondi per ripensarci erano già nella scheda
     }, 5000);
   };
   $('l-annulla-no').onclick = () => {
