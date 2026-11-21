@@ -569,10 +569,20 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .card-azioni { display: flex; gap: 6px; padding-top: 10px; }
 .ca-fatto { flex: 2; min-height: 42px; width: auto; height: auto; border-radius: 11px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 15px; font-weight: 800; cursor: pointer; position: static; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .2s, color .2s; }
 .lavoro.fatto .ca-fatto { background: var(--foglia-chiara); color: var(--foglia); }
-.ca-sposta, .ca-annulla { flex: 1; min-height: 42px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--carta); font-size: 13px; font-weight: 700; cursor: pointer; }
-.ca-sposta { color: var(--testo); }
-.ca-annulla { color: #d44; }
 .ca-maps { flex-shrink: 0; min-width: 42px; min-height: 42px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.l-azioni-top { display: flex; gap: 8px; padding-top: 2px; }
+.l-btn-ripr { flex: 1; min-height: 44px; border-radius: 12px; background: var(--foglia-chiara); color: var(--foglia); border: none; font-size: 14px; font-weight: 800; cursor: pointer; }
+.l-btn-annulla { flex: 1; min-height: 44px; border-radius: 12px; background: none; color: #d44; border: 1.5px solid #d44; font-size: 14px; font-weight: 800; cursor: pointer; }
+.l-annulla-conto { padding: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+.l-annulla-bar-wrap { height: 4px; background: var(--linea); border-radius: 2px; overflow: hidden; }
+.l-annulla-bar-progr { height: 100%; background: #d44; border-radius: 2px; width: 100%; transition: width 5s linear; }
+.l-annulla-conto-btn { font-size: 13px; font-weight: 700; color: var(--testo-2); background: none; border: none; cursor: pointer; text-align: center; padding: 4px 0; text-decoration: underline; }
+.l-tendina { border-radius: 14px; border: 1.5px solid var(--linea); overflow: hidden; }
+.l-tendina > summary { padding: 14px 16px; font-weight: 800; font-size: 15px; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; color: var(--testo); background: none; }
+.l-tendina > summary::-webkit-details-marker { display: none; }
+.l-tendina > summary::after { content: '›'; font-size: 20px; color: var(--testo-2); transition: transform .2s; display: inline-block; }
+.l-tendina[open] > summary::after { transform: rotate(90deg); }
+.l-tendina .tendina-corpo { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--linea); }
 
 /* Conti */
 .k-periodo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
@@ -1988,8 +1998,6 @@ function cartaLavoro(l, parte = 1, di = 1) {
     </button>
     <div class="card-azioni">
       <button class="ca-fatto spunta" aria-label="Segna come fatto">✓ Fatto</button>
-      <button class="ca-sposta" data-id="${l.id}">↷ Sposta</button>
-      <button class="ca-annulla" data-id="${l.id}">✕ Annulla</button>
       ${mapsBtn}
     </div>
   </article>`;
@@ -2030,8 +2038,6 @@ function disegnaAgenda() {
     if (!agendaLunga) document.getElementById('g-' + tra(6)).scrollIntoView({ block: 'start' });
   };
   document.querySelectorAll('.lavoro .spunta').forEach(b => { b.onclick = () => segnaFatto(b.closest('.lavoro')); });
-  document.querySelectorAll('.lavoro .ca-sposta').forEach(b => { b.onclick = () => apriCalSposta(+b.dataset.id); });
-  document.querySelectorAll('.lavoro .ca-annulla').forEach(b => { b.onclick = () => annullaLavoro(+b.dataset.id); });
   // Tocco sul lavoro: si apre la scheda del cliente
   document.querySelectorAll('.lavoro .testo').forEach(b => { b.onclick = () => apriLavoro(+b.closest('.lavoro').dataset.id); });
   // Giorno vuoto: "Nuovo cliente" apre il foglio con quel giorno già scelto
@@ -4658,7 +4664,7 @@ function apriLavoro(id, vai) {
   disegnaLavoro();
   $('lavoro').hidden = false; document.body.classList.add('bloccato');
   $('l-corpo').scrollTop = 0;
-  if (vai === 'costi') setTimeout(() => { $('l-costi').scrollIntoView({ block: 'start' }); }, 80);
+  if (vai === 'costi') { const d = $('l-costi'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'start' }), 80); } }
 }
 function chiudiLavoro() {
   lavoroModo = 'modifica';
@@ -4671,7 +4677,9 @@ const virgola = n => n == null ? '' : String(n).replace('.', ',');
 // Numero con − e +; toccando il numero si scrive a mano
 const numero = (chiave, valore, unita) => `<div class="contatore-mini"><button type="button" data-n="${chiave}" data-d="-1" aria-label="Meno">−</button><button type="button" class="num" data-n="${chiave}" aria-label="Scrivi il valore">${virgola(valore)} ${unita}</button><button type="button" data-n="${chiave}" data-d="1" aria-label="Più">+</button></div>`;
 
+let _annullaTimer = null;
 function disegnaLavoro() {
+  clearTimeout(_annullaTimer);
   const l = lavoroAperto, c = datiCliente(l.nome);
   if (!l.costi) l.costi = { generale: null, voci: [] };
   const costi = costiDi(l), utile = utileDi(l);
@@ -4727,36 +4735,76 @@ function disegnaLavoro() {
   $('l-corpo').innerHTML = `
     <button type="button" class="l-cliente" id="l-cliente">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
 
+    <div class="l-azioni-top">
+      <button type="button" class="l-btn-ripr" id="l-btn-ripr">↷ Riprogramma</button>
+      <button type="button" class="l-btn-annulla" id="l-btn-annulla">✕ Annulla lavoro</button>
+    </div>
+    <div class="l-annulla-conto" id="l-annulla-conto" hidden>
+      <div class="l-annulla-bar-wrap"><div class="l-annulla-bar-progr" id="l-annulla-progr"></div></div>
+      <button type="button" class="l-annulla-conto-btn" id="l-annulla-no">↩ Non eliminare</button>
+    </div>
+
     <div class="riepilogo l-soldi">
       <div class="l-soldi-riga"><span>Prezzo</span><b>${l.prezzo != null ? euro(l.prezzo) : '—'}</b></div>
       <div class="l-soldi-riga"><span>Costi</span><b>${costi != null ? '− ' + euro(costi) : 'non segnati'}</b></div>
       <div class="l-soldi-riga utile-riga"><span>Utile</span><strong class="${utile != null && utile < 0 ? 'perdita' : 'utile'}">${utile != null ? euro(utile) : '—'}</strong></div>
     </div>
 
-    <div class="campo" id="l-costi">
-      <span class="l-titolo-sezione">Costi</span>
-      <label class="costo-generale"><span>Costi del lavoro</span><span class="con-euro"><input id="l-generale" inputmode="decimal" autocomplete="off" placeholder="Es. 300" value="${virgola(l.costi.generale)}"></span></label>
-      <small class="nota-campo">Aggiungi con un tocco:</small>
-      <div class="chips piccoli" id="l-rapidi">
-        <button type="button" class="chip rapido" data-t="Personale">+ Personale</button>
-        ${COSTI_RAPIDI.map(t => `<button type="button" class="chip rapido" data-t="${sicuro(t)}">+ ${sicuro(t)}</button>`).join('')}
+    <details class="l-tendina">
+      <summary>Cosa c'è da fare</summary>
+      <div class="tendina-corpo">
+        <label class="campo"><input id="l-cosa" value="${sicuro(l.cosa || '')}" autocapitalize="sentences"></label>
       </div>
-      ${voci.length ? `<div class="costi-voci">${voci.map(riga).join('')}</div>` : ''}
-      ${costi != null ? `<div class="l-totale-voci"><span>Totale costi</span><b>${euro(costi)}</b></div>` : ''}
-    </div>
+    </details>
 
-    <div class="l-dati">
-      <label class="campo"><span>Cosa c'è da fare</span><input id="l-cosa" value="${sicuro(l.cosa || '')}" autocapitalize="sentences"></label>
-      <label class="campo"><span>Prezzo</span><span class="con-euro"><input id="l-prezzo" inputmode="decimal" value="${virgola(l.prezzo)}" placeholder="Es. 80"></span></label>
-      <label class="campo"><span>Giorno</span><input id="l-data" type="date" value="${l.data}"></label>
-      ${!l.fatto ? `<div class="sposta l-sposta"><small>Sposta a</small><button type="button" class="chip" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-a="${tra(1)}">Domani</button><button type="button" class="chip" data-a="${prossimoLavorativo(l.data)}">Giorno di lavoro dopo</button></div>` : ''}
-      <div class="campo"><span>Ora</span><div class="chips piccoli" id="l-ora">${[['', 'Qualsiasi'], ['mattina', 'Mattina'], ['pomeriggio', 'Pomeriggio']].map(([k, n]) => `<button type="button" class="chip${(l.ora || '') === k ? ' attivo' : ''}" data-o="${k}">${n}</button>`).join('')}<label class="chip${l.ora && l.ora.includes(':') ? ' attivo' : ''}">${l.ora && l.ora.includes(':') ? l.ora : 'Alle…'}<input type="time" id="l-ora-precisa" value="${l.ora && l.ora.includes(':') ? l.ora : '08:00'}" aria-label="Ora precisa"></label></div></div>
-      ${l.fatto ? contatore('orevere', 'Ore vere <small>· quanto ci hai messo</small>', l.oreVere != null ? `${virgola(l.oreVere)} h` : 'come previsto') : ''}
-      <div class="campo"><span>Durata prevista</span><div class="chips piccoli" id="l-durata">${[...new Set([...DURATE, l.durata || 2])].sort((a, b) => a - b).map(o => `<button type="button" class="chip${o === (l.durata || 2) ? ' attivo' : ''}" data-o="${o}">${nomeDurata(o)}</button>`).join('')}</div></div>
-      <button type="button" class="secondario" id="l-stato">${l.fatto ? 'Rimetti da fare' : 'Segna come fatto'}</button>
-    </div>`;
+    <details class="l-tendina">
+      <summary>Prezzo e orario</summary>
+      <div class="tendina-corpo">
+        <label class="campo"><span>Prezzo</span><span class="con-euro"><input id="l-prezzo" inputmode="decimal" value="${virgola(l.prezzo)}" placeholder="Es. 80"></span></label>
+        <label class="campo"><span>Giorno</span><input id="l-data" type="date" value="${l.data}"></label>
+        ${!l.fatto ? `<div class="sposta l-sposta"><small>Sposta a</small><button type="button" class="chip" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-a="${tra(1)}">Domani</button><button type="button" class="chip" data-a="${prossimoLavorativo(l.data)}">Giorno di lavoro dopo</button></div>` : ''}
+        <div class="campo"><span>Ora</span><div class="chips piccoli" id="l-ora">${[['', 'Qualsiasi'], ['mattina', 'Mattina'], ['pomeriggio', 'Pomeriggio']].map(([k, n]) => `<button type="button" class="chip${(l.ora || '') === k ? ' attivo' : ''}" data-o="${k}">${n}</button>`).join('')}<label class="chip${l.ora && l.ora.includes(':') ? ' attivo' : ''}">${l.ora && l.ora.includes(':') ? l.ora : 'Alle…'}<input type="time" id="l-ora-precisa" value="${l.ora && l.ora.includes(':') ? l.ora : '08:00'}" aria-label="Ora precisa"></label></div></div>
+        ${l.fatto ? contatore('orevere', 'Ore vere <small>· quanto ci hai messo</small>', l.oreVere != null ? `${virgola(l.oreVere)} h` : 'come previsto') : ''}
+        <div class="campo"><span>Durata prevista</span><div class="chips piccoli" id="l-durata">${[...new Set([...DURATE, l.durata || 2])].sort((a, b) => a - b).map(o => `<button type="button" class="chip${o === (l.durata || 2) ? ' attivo' : ''}" data-o="${o}">${nomeDurata(o)}</button>`).join('')}</div></div>
+        <button type="button" class="secondario" id="l-stato">${l.fatto ? 'Rimetti da fare' : 'Segna come fatto'}</button>
+      </div>
+    </details>
+
+    <details class="l-tendina" id="l-costi">
+      <summary>Costi</summary>
+      <div class="tendina-corpo">
+        <label class="costo-generale"><span>Costi del lavoro</span><span class="con-euro"><input id="l-generale" inputmode="decimal" autocomplete="off" placeholder="Es. 300" value="${virgola(l.costi.generale)}"></span></label>
+        <small class="nota-campo">Aggiungi con un tocco:</small>
+        <div class="chips piccoli" id="l-rapidi">
+          <button type="button" class="chip rapido" data-t="Personale">+ Personale</button>
+          ${COSTI_RAPIDI.map(t => `<button type="button" class="chip rapido" data-t="${sicuro(t)}">+ ${sicuro(t)}</button>`).join('')}
+        </div>
+        ${voci.length ? `<div class="costi-voci">${voci.map(riga).join('')}</div>` : ''}
+        ${costi != null ? `<div class="l-totale-voci"><span>Totale costi</span><b>${euro(costi)}</b></div>` : ''}
+      </div>
+    </details>`;
 
   $('l-cliente').onclick = () => { const nome = l.nome; $('lavoro').hidden = true; tutto(); if ($('scheda').hidden || schedaNome !== nome) apriScheda(nome); else disegnaScheda(); };
+  $('l-btn-ripr').onclick = () => { const id = l.id; chiudiLavoro(); apriCalSposta(id); };
+  $('l-btn-annulla').onclick = () => {
+    $('l-annulla-conto').hidden = false;
+    setTimeout(() => { const p = $('l-annulla-progr'); if (p) p.style.width = '0%'; }, 50);
+    _annullaTimer = setTimeout(() => {
+      const idx = lavori.indexOf(l);
+      if (idx < 0) return;
+      lavori.splice(idx, 1);
+      lavori.forEach((x, i) => (x.id = i));
+      chiudiLavoro();
+      avvisa('Lavoro eliminato', { etichetta: 'Annulla', fai: () => { lavori.splice(idx, 0, l); lavori.forEach((x, i) => (x.id = i)); tutto(); } });
+    }, 5000);
+  };
+  $('l-annulla-no').onclick = () => {
+    clearTimeout(_annullaTimer);
+    $('l-annulla-conto').hidden = true;
+    const p = $('l-annulla-progr');
+    p.style.transition = 'none'; p.style.width = '100%';
+    setTimeout(() => { p.style.transition = ''; }, 50);
+  };
   // Costo generale
   $('l-generale').onchange = e => { l.costi.generale = leggiImporto(e.target.value); disegnaLavoro(); };
   // Costi rapidi: si aggiunge la voce; il personale parte dalle ore del lavoro e dal costo all'ora delle Impostazioni
