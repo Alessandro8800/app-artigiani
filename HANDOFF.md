@@ -633,7 +633,7 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 ## Prossimi passi (in ordine di priorità)
 
 1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. `confermaCarta` per cat=`nota` con `Cliente` presente salva già in `prendiExtra(cliente).note`, ma la scheda cliente non mostra ancora queste note extra in modo prominente.
-2. **Collegare pagamenti e costi ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. Per ora la ricerca usa `CLIENTI_FAKE`, da sostituire con i dati reali di Dexie.
+2. **Collegare pagamenti ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. (21/11: i **costi** detti a voce vanno già nel lavoro del cliente; `CLIENTI_FAKE` è stato tolto, si usano i clienti veri. Manca il legame pagamento → lavoro.)
 3. **Mic per scheda specifica** — se il mic dentro l'inbox "Note" registra, l'item va in Note; se è dentro "Costi", va in Costi. Ora va sempre nella categoria globale.
 4. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente.
 5. **Scheda conti — grafica** — migliorare aspetto grafico (non bug critici).
@@ -641,6 +641,10 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 7. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
 8. **Idea futura (21/11): cronometro lavori a voce** — "ok, inizio il taglio prato da Rossi" … "ok, ho finito da Rossi" → l'app conta le ore passate su quel lavoro. Serve per il report (ore lavorate) e per capire se il prezzo era giusto (€ all'ora reali). Da progettare insieme prima di scrivere codice.
 9. **Idea futura (21/11): clienti da WhatsApp** — WhatsApp non lascia leggere i suoi contatti alle altre app; la rubrica del telefono (già in "Per iniziare") copre quasi tutti. Per chi ti ha scritto su WhatsApp ma non è in rubrica: in WhatsApp apri il contatto → "Condividi" → scegli l'app → diventa un cliente (nome + numero). Si fa con il "share target" della PWA nel manifest (riceve il file contatto .vcf). Funziona solo con l'app installata, non dal browser. Da progettare insieme prima di scrivere codice.
+10. **"Salva" sopra la tastiera in tutte le schede** (21/11) — prova fatta solo sul foglio "Nuovo cliente" (`adattaFoglioTastiera`, classe `con-tastiera`, usa `visualViewport`): con la tastiera aperta il foglio si accorcia e il piede con Salva resta subito sopra i tasti, mentre i campi scorrono. Da provare sul telefono, poi estendere a modifica cliente, conferme, pagamenti, ecc. In più si possono aggiungere: tasto "Fatto/Avanti" della tastiera (`enterkeyhint`) e una ✓ piccola in alto a destra. Deciso: NON spostare tutti i bottoni in alto (pollice, abitudine, tocchi sbagliati).
+11. **Testo "Privacy" da correggere** (21/11) — in Impostazioni dice "L'app non manda i tuoi dati a nessuno: niente server", ma le frasi dette al microfono vanno all'AI di Anthropic (e i nomi dei paesi/vie cercati a OpenStreetMap). Da riscrivere insieme prima di dare l'app ad altri.
+12. **Raggio della zona** (21/11, da decidere) — scelta 10/30/50/80 km sotto "La tua zona" per i suggerimenti delle vie (ora fisso ~80 km). Più città: sconsigliato (non si sa a quale appartiene "via Roma 12").
+13. **Via detta a voce salvata già con il paese** (21/11, idea) — se un lavoro arriva senza paese, cercare la via nella zona e salvarla completa ("via Roma 12, Susegana"); se la via c'è in più paesi del raggio, chiederlo nella card.
 
 **Già fatto:**
 - ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)
