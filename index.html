@@ -402,7 +402,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .avanzate-sotto[open] > summary::after { transform: rotate(90deg); }
 .avanzate-sotto .campo { padding-bottom: 12px; }
 /* Barra AI e microfono */
-.ai-barra { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding: 8px 10px; background: var(--carta); border-radius: 16px; border: 1px solid var(--linea); }
+.ai-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 0; padding: 8px 10px; background: var(--carta); border-radius: 16px; border: 1px solid var(--linea); }
+/* Notifiche aperte: icone sopra, tasto Parla sotto a tutta larghezza (sempre visibile) */
+.ai-barra.espansa .ai-microfono { order: 10; flex-basis: 100%; }
 .ai-barra-cat { flex: 1; display: flex; gap: 2px; }
 .ai-ic { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50px; border-radius: 10px; background: none; border: none; cursor: pointer; color: var(--testo-2); padding: 4px 2px; transition: background .12s; }
 .ai-ic:active, .ai-ic.attivo { background: var(--foglia-chiara); color: var(--foglia); }
@@ -4151,8 +4153,8 @@ document.addEventListener('input', e => {
 
 $('ai-tutto').onclick = () => {
   if ($('ai-barra-cat').hidden) {
-    // collassato → espandi
-    $('ai-mic').hidden = true;
+    // collassato → espandi (il tasto Parla resta, va sotto le icone)
+    $('ai-mic').closest('.ai-barra').classList.add('espansa');
     $('ai-barra-cat').hidden = false;
     $('ai-chiudi').hidden = false;
     $('ai-tutto').classList.add('espanso');
@@ -4165,7 +4167,7 @@ $('ai-tutto').onclick = () => {
 $('ai-chiudi').onclick = () => {
   $('ai-barra-cat').hidden = true;
   $('ai-chiudi').hidden = true;
-  $('ai-mic').hidden = false;
+  $('ai-mic').closest('.ai-barra').classList.remove('espansa');
   $('ai-tutto').classList.remove('espanso');
   $('ai-tutto').setAttribute('aria-label', 'Espandi notifiche');
 };
