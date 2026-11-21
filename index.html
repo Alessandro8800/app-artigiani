@@ -2645,7 +2645,6 @@ function leggiPrezzo(t) {
 
 function salva() {
   if (salvando) return;                      // niente doppioni con tocchi ripetuti
-  _ritornaInboxKey = null;                   // salvataggio riuscito: non tornare all'inbox
   if (modoFoglio === 'modifica') return salvaModifica();
   const nome = clienteScelto ? clienteScelto.nome : $('f-nome').value.trim();
   const prezzo = leggiPrezzo($('f-prezzo').value);
@@ -2745,6 +2744,10 @@ function leggiGiorno(v) {
   if (/\bdopodomani\b/.test(t)) return sposta(2);
   if (/\bdomani\b/.test(t)) return sposta(1);
   if (/\boggi\b/.test(t)) return sposta(0);
+  { const m = t.match(/\btra\s+(\w+)\s+settiman/); if (m) { const n = {una:1,due:2,tre:3,quattro:4}[m[1]] || parseInt(m[1]) || 1; return sposta(n * 7); } }
+  if (/\bprossima\s+settiman/.test(t)) return sposta(7);
+  if (/\bprossimo\s+mese\b/.test(t)) { const d = new Date(OGGI); d.setMonth(d.getMonth() + 1); return iso(d); }
+  { const m = t.match(/\btra\s+(\w+)\s+giorn/); if (m) { const n = {uno:1,due:2,tre:3,quattro:4,cinque:5,sei:6,sette:7}[m[1]] || parseInt(m[1]) || 1; return sposta(n); } }
   const gs = GIORNI_SETT.findIndex(g => new RegExp('\\b' + g + '\\b').test(t));
   if (gs >= 0) return sposta(((gs - OGGI.getDay() + 7) % 7) || 7);   // il prossimo giorno con quel nome
   let m = t.match(/\b(\d{1,2})\s*(?:di\s+)?(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b/);
@@ -3400,7 +3403,10 @@ function apriInbox(key) {
     addBtn.onclick = () => aggiungiItemSimulato();
   } else if (key === 'costo') {
     addBtn.hidden = false;
-    addBtn.onclick = () => {};
+    addBtn.onclick = () => {
+      INBOX_ESEMPI.costo.voci.unshift({ testa: 'Nuova spesa', dati: '', campi: [['Descrizione',''],['Importo','0']] });
+      apriInbox('costo');
+    };
   } else {
     addBtn.hidden = true;
   }
@@ -5092,7 +5098,7 @@ const GRUPPI_IMP = [
     } },
     { id: 'testo', nome: 'Grandezza del testo', valore: () => TESTI[testo][0], corpo: el => {
       el.innerHTML = '<div class="segmenti"></div>';
-      segmenti(el.firstChild, TESTI, testo, k => { testo = k; document.documentElement.style.zoom = TESTI[k][1]; disegnaImpostazioni(); });
+      segmenti(el.firstChild, TESTI, testo, k => { testo = k; document.documentElement.style.fontSize = (TESTI[k][1] * 100) + '%'; disegnaImpostazioni(); });
     } },
     { id: 'etichette', nome: 'Colori preferiti delle etichette', valore: () => `${COLORI.length - 1 + coloriMiei.length} colori`, corpo: el => {
       const tutti = [...COLORI.slice(1).map(([c, n]) => ({ c, n, pronto: true })), ...coloriMiei.map(c => ({ c, n: 'Colore scelto' }))];
@@ -5366,7 +5372,7 @@ const GRUPPI_IMP = [
         <button class="pericolo" id="i-cancella">Cancella tutto</button>`;
       let pronto = false, t;
       $('i-cancella').onclick = () => {
-        if (!pronto) { pronto = true; $('i-cancella').classList.add('conferma'); $('i-cancella').textContent = 'Tocca di nuovo per cancellare'; t = setTimeout(() => { pronto = false; disegnaImpostazioni(); }, 4000); return; }
+        if (!pronto) { pronto = true; $('i-cancella').classList.add('conferma'); $('i-cancella').textContent = 'Tocca di nuovo per cancellare'; t = setTimeout(() => { pronto = false; if ($('i-cancella')) disegnaImpostazioni(); }, 4000); return; }
         clearTimeout(t);
         lavori.splice(0); pagamenti.splice(0); Object.keys(extra).forEach(k => delete extra[k]);
         tutto(); rigaAperta = null; disegnaImpostazioni(); avvisa('Tutti i dati sono stati cancellati');
