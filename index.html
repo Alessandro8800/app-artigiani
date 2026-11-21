@@ -3243,7 +3243,7 @@ function inboxCampiHtml(item, cat) {
   if (cat === 'paga') {
     const cliente = (item.campi.find(([l]) => l === 'Cliente') || [])[1] || '';
     const imp = (item.campi.find(([l]) => l === 'Importo') || [])[1] || '0';
-    return `<div class="inbox-edit-panel" hidden>
+    return `<div class="inbox-edit-panel" hidden data-parte="${item.parte || ''}">
       <label>Cliente
         <div class="inbox-cerca-cliente">
           <input type="text" value="${sicuro(cliente)}" placeholder="Chi ha pagato? Tocca per l'elenco" oninput="cercaClienteInbox(this)" onfocus="cercaClienteInbox(this)">
@@ -3585,9 +3585,11 @@ function cercaClienteInbox(input) {
     b.onclick = () => {
       input.value = b.dataset.nome;
       risultati.hidden = true;
-      // Pagamento: se la cifra è vuota, metto quanto deve (si può cambiare, es. acconto)
-      const num = input.closest('.inbox-edit-panel')?.querySelector('input[type="number"]');
-      if (num && !(parseFloat(num.value) > 0) && +b.dataset.deve > 0) num.value = b.dataset.deve;
+      // Pagamento: se la cifra è vuota, metto quanto deve, o la parte detta ("metà") — si può cambiare
+      const pannello = input.closest('.inbox-edit-panel');
+      const num = pannello?.querySelector('input[type="number"]');
+      const parte = parseFloat(pannello?.dataset.parte) || 1;
+      if (num && !(parseFloat(num.value) > 0) && +b.dataset.deve > 0) num.value = arrotonda(+b.dataset.deve * parte);
     };
   });
   const eraNascosto = risultati.hidden;
@@ -3661,7 +3663,7 @@ function confermaCarta(card, item, cat) {
     // Pagamento dalla voce senza cliente o senza cifra: niente registrazione automatica.
     // Apro il pannello (con il dovuto già scritto) e chiedo di controllare.
     if (item.stato === 'da_verificare' && panel && panel.hidden && (!nome || importo <= 0)) {
-      if (nome && inputs[1]) inputs[1].value = conto(nome).dovuto || 0;
+      if (nome && inputs[1]) inputs[1].value = arrotonda(dovutoDi(nome) * (item.parte || 1)); // "metà" → metà del dovuto
       panel.hidden = false;
       avvisa(nome ? 'Controlla l\'importo e premi di nuovo Ricevuto' : 'Scrivi il cliente e l\'importo');
       return;
@@ -4244,6 +4246,8 @@ Solo per "cliente", aggiungi anche questi campi se detti (altrimenti null):
 - indirizzo: via e paese ("via Mazzini 7 Conegliano").
 - ora: "mattina" se dice mattina o un'ora prima delle 13 ("alle 9"), "pomeriggio" se dice pomeriggio o un'ora dalle 13 in poi ("alle 15"), altrimenti null.
 - ore: quanto dura il lavoro, in ore come numero (3, 1.5), o null.
+Solo per "pagamento", aggiungi anche:
+- parte: se dice una PARTE di quanto deve senza la cifra ("metà", "un terzo", "un quarto", "il 30%"), la frazione come numero (0.5, 0.33, 0.25, 0.3); se dice la cifra o non dice niente, null. Non calcolare tu l'importo.
 - missing_fields: elenco dei campi OBBLIGATORI che mancano, es. ["nome"]. Vuoto [] se c'è tutto.
 
 REGOLE
@@ -4266,7 +4270,10 @@ ESEMPI
 → {"operations":[{"tipo":"pagamento","nome":"Villa Verdi","lavoro":null,"data":null,"importo":150,"testo":"ancora da ricevere","missing_fields":[]}]}
 
 "ha pagato in contanti"
-→ {"operations":[{"tipo":"pagamento","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"in contanti","missing_fields":["nome"]}]}
+→ {"operations":[{"tipo":"pagamento","nome":null,"lavoro":null,"data":null,"importo":null,"testo":"in contanti","parte":null,"missing_fields":["nome"]}]}
+
+"Mario ha pagato metà in contanti"
+→ {"operations":[{"tipo":"pagamento","nome":"Mario","lavoro":null,"data":null,"importo":null,"testo":"metà, in contanti","parte":0.5,"missing_fields":[]}]}
 
 "mi ha chiamato un nuovo cliente, vuole un preventivo"
 → {"operations":[{"tipo":"cliente","nome":null,"lavoro":"preventivo","data":null,"importo":null,"testo":null,"missing_fields":["nome"]}]}
@@ -4441,9 +4448,44 @@ function validaOperazione(op, testo) {
   if (tipo === 'costo' && !o.importo && !o.testo) mancanti.add('importo');
   // Tengo solo i campi mancanti che sono ancora davvero vuoti
   o.missing_fields = [...mancanti].filter(c => _NOMI_CAMPI[c] && !o[c]);
-  if (tipo === 'pagamento') o.stato = 'da_verificare'; // pagamenti: mai automatici
+  if (tipo === 'pagamento') {
+    o.stato = 'da_verificare'; // pagamenti: mai automatici
+    // "ha pagato metà / un terzo / il 30%": una parte di quanto deve (solo se la cifra non è stata detta)
+    let p = typeof op.parte === 'number' ? op.parte : parseFloat(op.parte);
+    if (!(p > 0 && p < 1)) p = parteDaTesto(o.testo);
+    if (Math.abs(p - 1 / 3) < 0.01) p = 1 / 3;
+    if (Math.abs(p - 2 / 3) < 0.01) p = 2 / 3;
+    o.parte = !o.importo && p > 0 && p < 1 ? p : null;
+  }
   return o;
 }
+
+// Parte del dovuto detta a parole (se l'AI non l'ha già data come numero)
+function parteDaTesto(t) {
+  const s = normalizza(t || '');
+  if (/\bmeta\b|\bmezzo\b/.test(s)) return 0.5;
+  if (/\bdue terzi\b/.test(s)) return 2 / 3;
+  if (/\bun terzo\b/.test(s)) return 1 / 3;
+  if (/\btre quarti\b/.test(s)) return 0.75;
+  if (/\bun quarto\b/.test(s)) return 0.25;
+  const m = s.match(/(\d{1,2})\s*(%|per ?cento)/);
+  return m ? +m[1] / 100 : null;
+}
+const nomeParte = p => Math.abs(p - 0.5) < 0.001 ? 'metà' : Math.abs(p - 1 / 3) < 0.001 ? 'un terzo' : Math.abs(p - 2 / 3) < 0.001 ? 'due terzi'
+  : Math.abs(p - 0.25) < 0.001 ? 'un quarto' : Math.abs(p - 0.75) < 0.001 ? 'tre quarti' : `${Math.round(p * 100)}%`;
+
+// Il cliente vero a partire dal nome detto: "Mario" → "Mario Rossi" se è l'unico Mario
+function trovaCliente(nome) {
+  const n = normalizza(nome || '');
+  if (!n) return null;
+  const tutti = clientiConosciuti();
+  const esatto = tutti.find(c => normalizza(c.nome) === n);
+  if (esatto) return esatto;
+  const parole = n.split(/\s+/);
+  const simili = tutti.filter(c => { const cn = normalizza(c.nome).split(/\s+/); return parole.every(p => cn.includes(p)); });
+  return simili.length === 1 ? simili[0] : null;
+}
+function dovutoDi(nome) { try { return conto(nome).dovuto || 0; } catch (e) { return 0; } }
 
 // Spostamento: il nuovo giorno ha senso? Errori palesi → testo dell'avviso (altrimenti '')
 function avvisoNuovaData(testoData, lavoro) {
@@ -4489,10 +4531,18 @@ function _operazioneInItem(o, giorno) {
     return { cat: 'riprogramma', item: { testa: o.nome || 'Lavoro da spostare', dati: o.data ? `→ ${o.data}` : 'Nuovo giorno da scegliere', campi: [['Cliente', prossimo ? prossimo.nome : (o.nome || '')], ['Da', da], ['A', o.data || '']], cal: true, mancanti, ...(avviso ? { avviso } : {}) } };
   }
   if (o.tipo === 'pagamento') {
-    const imp = o.importo != null ? euro(o.importo) : 'importo da controllare';
-    const campi = [['Cliente', o.nome || ''], ['Importo', o.importo != null ? String(o.importo) : '']];
+    const cli = o.nome ? trovaCliente(o.nome) : null;
+    const nome = cli ? cli.nome : o.nome;            // "Mario" → "Mario Rossi"
+    let importo = o.importo, spiega = '';
+    if (o.parte && nome) {                            // "metà": calcolo su quanto deve adesso
+      const dov = dovutoDi(nome);
+      if (dov > 0) { importo = arrotonda(dov * o.parte); spiega = `${nomeParte(o.parte)} di ${euro(dov)}`; }
+      else spiega = `${nomeParte(o.parte)} di quanto deve`;
+    }
+    const imp = importo != null ? euro(importo) : 'importo da controllare';
+    const campi = [['Cliente', nome || ''], ['Importo', importo != null ? String(importo) : '']];
     if (o.testo) campi.push(['Dettagli', o.testo]);
-    return { cat: 'paga', item: { testa: o.nome || 'Pagamento', dati: `${imp} · da verificare${o.testo ? ' · ' + o.testo : ''}`, campi, stato: 'da_verificare', mancanti } };
+    return { cat: 'paga', item: { testa: nome || 'Pagamento', dati: `${imp}${spiega ? ` (${spiega})` : ''} · da verificare${o.testo ? ' · ' + o.testo : ''}`, campi, stato: 'da_verificare', mancanti, ...(o.parte ? { parte: o.parte } : {}) } };
   }
   if (o.tipo === 'costo') {
     const desc = o.testo || o.lavoro || 'Spesa';
