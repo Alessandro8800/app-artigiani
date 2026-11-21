@@ -536,6 +536,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-cerca-risultati button b { color: var(--ambra); font-variant-numeric: tabular-nums; }
 .inbox-cerca-titolo { margin: 0; padding: 8px 12px 4px; font-size: 12px; font-weight: 800; color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
 .inbox-cerca-risultati button:active { background: var(--foglia-chiara); }
+/* Ogni finestra che si apre: quello che c'è dietro si sfoca, così si legge solo la finestra */
+.q-pop, .foglio-sfondo, .ascolto, #mic-box, .prev-info-pop { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .ripr-info { font-size: 15px; font-weight: 800; color: #fff; padding: 10px 0 14px; text-align: center; }
 .ripr-info-row { display: flex; align-items: center; padding: 10px 0 14px; gap: 10px; }
 /* Nome del cliente nel calendario "sposta": solo da leggere (cambiarlo faceva perdere il lavoro da spostare) */
@@ -957,7 +959,7 @@ button.s-riga:first-child { border-top: 0; }
 .q-giorno small { font-size: 14px; font-weight: 600; color: var(--testo-2); }
 .q-giorno.attivo { border-color: var(--foglia); background: var(--foglia-chiara); color: var(--foglia); }
 .q-giorno.attivo small { color: var(--foglia); }
-.q-pop { position: fixed; inset: 0; z-index: 25; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.q-pop { position: fixed; inset: 0; z-index: 25; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .q-pop-box { width: 100%; max-width: 420px; animation: sali .2s ease-out; }
 .q-pop-testa { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .q-pop-testa strong { font-family: var(--font-titoli); font-size: 20px; color: #fff; }
@@ -992,10 +994,16 @@ button.s-riga:first-child { border-top: 0; }
 .nn-giorni { display: flex; flex-wrap: wrap; gap: 6px; }
 .nn-giorni button { flex: 1 1 auto; height: 40px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--linea); background: none; color: var(--testo); font-size: 14px; font-weight: 700; }
 .nn-giorni button.attivo { background: var(--foglia); color: var(--sul-foglia); border-color: var(--foglia); }
-#nn-salva:disabled { opacity: .45; }
-#nn-pop .inbox-cerca-risultati button.nn-cli { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-#nn-pop .nn-cli small { color: var(--testo-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
-#nn-pop .nn-tutti { color: var(--foglia) !important; font-weight: 700; text-align: center !important; justify-content: center; }
+#nn-salva:disabled, #ns-salva:disabled { opacity: .45; }
+.nn-etichetta { font-size: 12px; font-weight: 700; color: var(--testo-2); margin-bottom: 4px; }
+.nn-etichetta small { font-weight: 600; }
+#ns-chips:empty { display: none; }
+.ns-lav-riga { display: flex; gap: 8px; }
+.ns-lav-riga label { flex: 1; }
+.ns-totale { margin-top: 6px; font-size: 15px; font-weight: 800; text-align: center; color: var(--testo); }
+.inbox-cerca-risultati button.nn-cli { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.inbox-cerca-risultati .nn-cli small { color: var(--testo-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.inbox-cerca-risultati .nn-tutti { color: var(--foglia) !important; font-weight: 700; text-align: center !important; justify-content: center; }
 /* Testata dei calendari: frecce, mese e anno su un'unica barra scura, ma restano tasti separati */
 .cal-testa { background: var(--sfondo); border-radius: 14px; padding: 3px; margin-bottom: 6px; }
 .cal-testa .freccia { background: none; height: 38px; }
@@ -1602,7 +1610,7 @@ button.s-riga:first-child { border-top: 0; }
     </div>
     <div id="nn-cliente-wrap" hidden>
       <div class="inbox-cerca-cliente">
-        <input type="text" id="nn-cliente" placeholder="Cerca cliente…" autocomplete="off" oninput="_nnTutti = false; cercaClienteNota(this); aggiornaNuovaNota()" onfocus="cercaClienteNota(this)">
+        <input type="text" id="nn-cliente" placeholder="Cerca cliente…" autocomplete="off" oninput="this.dataset.tutti = ''; cercaClienteNota(this); aggiornaNuovaNota()" onfocus="cercaClienteNota(this)" onchange="aggiornaNuovaNota(); $('nn-testo').focus()">
         <div class="inbox-cerca-risultati" hidden></div>
       </div>
     </div>
@@ -1614,6 +1622,71 @@ button.s-riga:first-child { border-top: 0; }
     <label>Testo<textarea id="nn-testo" rows="3" placeholder="Scrivi qui la nota" oninput="aggiornaNuovaNota()"></textarea></label>
     <p class="errore" id="nn-errore" hidden></p>
     <button class="salva" id="nn-salva" type="button" onclick="salvaNuovaNota()" disabled>Salva</button>
+  </div>
+</div>
+
+<!-- Nuovo pagamento: solo tra chi ti deve soldi -->
+<div class="q-pop" id="np-pop" hidden onclick="if (event.target === this) chiudiNuovoPagamento()">
+  <div class="q-pop-box chiave-box nn-box inbox-edit-panel" role="dialog" aria-modal="true" aria-labelledby="np-titolo-pop">
+    <div class="chiave-testa">
+      <strong id="np-titolo-pop">Nuovo pagamento</strong>
+      <button class="chiudi" onclick="chiudiNuovoPagamento()" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <label>Chi ti ha pagato
+      <div class="inbox-cerca-cliente">
+        <input type="text" id="np-cliente" placeholder="Cerca tra chi ti deve soldi…" autocomplete="off" data-solo="debitori" oninput="this.dataset.tutti = ''; cercaClienteNota(this); aggiornaNuovoPagamento()" onfocus="cercaClienteNota(this)" onchange="pagaClienteScelto(this)">
+        <div class="inbox-cerca-risultati" hidden></div>
+      </div>
+    </label>
+    <label>Importo (€)
+      <div class="inbox-stepper">
+        <button type="button" onclick="stepperCambia(this,-1); aggiornaNuovoPagamento()">−</button>
+        <input type="number" id="np-importo" inputmode="decimal" min="0" oninput="aggiornaNuovoPagamento()">
+        <button type="button" onclick="stepperCambia(this,1); aggiornaNuovoPagamento()">+</button>
+      </div>
+    </label>
+    <p class="errore" id="np-errore" hidden></p>
+    <button class="salva" id="np-salva" type="button" onclick="salvaNuovoPagamento()" disabled>Salva</button>
+  </div>
+</div>
+
+<!-- Nuova spesa: dell'attività (pagina Conti) o di un cliente (costi del suo lavoro più vicino) -->
+<div class="q-pop" id="ns-pop" hidden onclick="if (event.target === this) chiudiNuovaSpesa()">
+  <div class="q-pop-box chiave-box nn-box inbox-edit-panel" role="dialog" aria-modal="true" aria-labelledby="ns-titolo-pop">
+    <div class="chiave-testa">
+      <strong id="ns-titolo-pop">Nuova spesa</strong>
+      <button class="chiudi" onclick="chiudiNuovaSpesa()" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="inbox-tipo-row">
+      <button type="button" class="inbox-tipo-btn" id="ns-btn-attivita" onclick="nsScegli('attivita')">🏠 Dell'attività</button>
+      <button type="button" class="inbox-tipo-btn" id="ns-btn-cliente" onclick="nsScegli('cliente')">👤 Di un cliente</button>
+    </div>
+    <div id="ns-cliente-wrap" hidden>
+      <div class="inbox-cerca-cliente">
+        <input type="text" id="ns-cliente" placeholder="Cerca cliente…" autocomplete="off" oninput="this.dataset.tutti = ''; cercaClienteNota(this); aggiornaNuovaSpesa()" onfocus="cercaClienteNota(this)" onchange="nsClienteScelto()">
+        <div class="inbox-cerca-risultati" hidden></div>
+      </div>
+    </div>
+    <label>Testo<input type="text" id="ns-testo" oninput="nsTestoScritto()"></label>
+    <div class="chips piccoli" id="ns-chips"></div>
+    <div id="ns-importo-wrap">
+      <div class="nn-etichetta">Importo <small>· tieni premuto per il dettaglio</small></div>
+      <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="ns-drum" aria-label="Importo della spesa"></div></div>
+      <div class="prezzo-edit-panel" id="ns-edit-panel" hidden>
+        <input type="number" id="ns-edit-input" inputmode="decimal" min="0" step="0.1" placeholder="Es. 35">
+        <span>€</span>
+      </div>
+      <input type="hidden" id="ns-importo">
+    </div>
+    <div id="ns-lavoratore" hidden>
+      <div class="ns-lav-riga">
+        <label>Ore<div class="inbox-stepper"><button type="button" onclick="nsLav('ore',-0.5)">−</button><input type="number" id="ns-ore" inputmode="decimal" min="0" step="0.5" oninput="aggiornaNuovaSpesa()"><button type="button" onclick="nsLav('ore',0.5)">+</button></div></label>
+        <label>€ all'ora<div class="inbox-stepper"><button type="button" onclick="nsLav('tariffa',-1)">−</button><input type="number" id="ns-tariffa" inputmode="decimal" min="0" step="1" oninput="aggiornaNuovaSpesa()"><button type="button" onclick="nsLav('tariffa',1)">+</button></div></label>
+      </div>
+      <div class="ns-totale" id="ns-totale"></div>
+    </div>
+    <p class="errore" id="ns-errore" hidden></p>
+    <button class="salva" id="ns-salva" type="button" onclick="salvaNuovaSpesa()" disabled>Salva</button>
   </div>
 </div>
 
@@ -2482,7 +2555,7 @@ function apriFoglio(giorno, perCliente) {
   notaInCorso = null;
   // Giorno già scelto: quello toccato sul calendario; altrimenti il primo dei giorni migliori
   const g = giorno || (scelto > tra(0) ? scelto : null);
-  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = []; semCfgAperto = false; prezzoFine = false; prezzoFineCentro = null;
+  tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = ''; semestrale = false; mesiSemestrale = []; semCfgAperto = false; rotellaLavoro.reset();
   quandoFisso = !!g;
   quando = g || giorniMigliori()[0];
   dateScelte = []; allineaDate();
@@ -2726,110 +2799,111 @@ const PREZZO_COARSE = [null, 20, 50, 100, 150, 200, 250, 300, 400, 500, 600, 700
 const PREZZO_W = 80;
 const PREZZO_DEFAULT_IDX = 4; // 100€: edit(0) —(1) 20(2) 50(3) 100(4)
 
-function valoriPrezzoFine(centro) {
-  const passo = centro >= 1000 ? 25 : 5;
+const SVG_MATITA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const SVG_INDIETRO_P = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`;
+// Rotella del prezzo, la stessa per il nuovo lavoro e per le spese.
+// Tenendo premuto su una cifra si scende di livello: passi da 5 € (25 € sopra i 1000), poi da 1 €, poi da 0,10 €.
+// "Tutti" riporta ai valori normali; la matita apre la casella per scrivere la cifra.
+const PASSI_ROTELLA = [null, c => c >= 1000 ? 25 : 5, () => 1, () => 0.1];
+function valoriPrezzoFine(centro, livello) {
+  const passo = PASSI_ROTELLA[livello](centro);
   const vals = new Set();
   for (let i = -15; i <= 15; i++) {
-    const v = Math.round((centro + i * passo) / passo) * passo;
-    if (v >= 5) vals.add(v);
+    const v = Math.round((centro + i * passo) * 10) / 10;
+    if (v >= passo) vals.add(v);
   }
   return ['torna', ...[...vals].sort((a, b) => a - b)];
 }
-
-const SVG_MATITA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-const SVG_INDIETRO_P = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`;
-
-function disegnaPrezzoDrum() {
-  const drum = $('f-prezzo-drum');
-  if (!drum) return;
-  const valori = prezzoFine ? valoriPrezzoFine(prezzoFineCentro) : ['edit', ...PREZZO_COARSE];
-  const curValue = $('f-prezzo').value.trim();
-  const curV = curValue === '' ? null : Number(curValue);
-  drum.innerHTML = valori.map(v => {
-    if (v === 'edit') return `<div class="drum-voce drum-spec" data-v="edit">${SVG_MATITA}<small>Importo</small></div>`;
-    if (v === 'torna') return `<div class="drum-voce drum-spec" data-v="torna">${SVG_INDIETRO_P}<small>Tutti</small></div>`;
-    if (v === null) return `<div class="drum-voce" data-v="null"><b>—</b><small>senza</small></div>`;
-    return `<div class="drum-voce" data-v="${v}"><b>${v}</b><small>€</small></div>`;
-  }).join('');
-  drum.dataset.init = '1';
-  // Scroll to current value
-  let idx;
-  if (prezzoFine) {
-    const fi = valori.indexOf(curV);
-    idx = fi > 0 ? fi : Math.floor(valori.length / 2);
-  } else {
-    idx = curV == null ? PREZZO_DEFAULT_IDX : valori.indexOf(curV);
-    if (idx <= 0 && curV != null) {
+const cifraRotella = v => Number.isInteger(v) ? String(v) : String(v).replace('.', ',');
+function creaRotellaPrezzo({ drumId, campoId, pannelloId, inputId, dopo, riempi }) {
+  const r = { livello: 0, centro: null };
+  const valoriOra = () => r.livello ? valoriPrezzoFine(r.centro, r.livello) : ['edit', ...PREZZO_COARSE];
+  const leggi = () => { const t = $(campoId).value.trim(); return t === '' ? null : Number(t.replace(',', '.')); };
+  const metti = v => { $(campoId).value = v == null ? '' : String(v); if (dopo) dopo(); };
+  // Dove posizionare la rotella: la cifra scelta, o la più vicina tra quelle normali
+  const indice = valori => {
+    const v = leggi();
+    if (r.livello) { const fi = valori.indexOf(v); return fi > 0 ? fi : Math.floor(valori.length / 2); }
+    if (v == null) return PREZZO_DEFAULT_IDX;
+    let idx = valori.indexOf(v);
+    if (idx <= 0) {
       const nums = PREZZO_COARSE.filter(x => x != null);
-      const nearest = nums.reduce((b, x) => Math.abs(x - curV) < Math.abs(b - curV) ? x : b, nums[0]);
-      idx = valori.indexOf(nearest);
+      idx = valori.indexOf(nums.reduce((b, x) => Math.abs(x - v) < Math.abs(b - v) ? x : b, nums[0]));
     }
-    if (idx <= 0) idx = PREZZO_DEFAULT_IDX;
-  }
-  const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
-  imposta(); requestAnimationFrame(imposta);
-  // Event listeners: una sola volta per il drum container
-  if (!drum.dataset.events) {
+    return idx > 0 ? idx : PREZZO_DEFAULT_IDX;
+  };
+  r.reset = () => { r.livello = 0; r.centro = null; };
+  r.disegna = () => {
+    const drum = $(drumId);
+    if (!drum) return;
+    const valori = valoriOra();
+    drum.innerHTML = valori.map(v => {
+      if (v === 'edit') return `<div class="drum-voce drum-spec" data-v="edit">${SVG_MATITA}<small>Importo</small></div>`;
+      if (v === 'torna') return `<div class="drum-voce drum-spec" data-v="torna">${SVG_INDIETRO_P}<small>Tutti</small></div>`;
+      if (v === null) return `<div class="drum-voce" data-v="null"><b>—</b><small>senza</small></div>`;
+      return `<div class="drum-voce" data-v="${v}"><b>${cifraRotella(v)}</b><small>€</small></div>`;
+    }).join('');
+    drum.dataset.init = '1';
+    const idx = indice(valori);
+    // Quello che si vede al centro è anche il valore scelto (prima serviva muovere la rotella)
+    if (riempi && leggi() == null && typeof valori[idx] === 'number') metti(valori[idx]); // solo spese: un lavoro può restare "senza" prezzo
+    const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
+    imposta(); requestAnimationFrame(imposta);
+    if (drum.dataset.events) return;
     drum.dataset.events = '1';
-    $('prezzo-edit-input').oninput = () => {
-      const v = parseFloat($('prezzo-edit-input').value);
-      if (v > 0) $('f-prezzo').value = String(Math.round(v));
+    $(inputId).oninput = () => {
+      const v = parseFloat($(inputId).value.replace(',', '.'));
+      if (v > 0) metti(Math.round(v * 100) / 100);
     };
     const aggiornaSuFermo = () => {
-      const i = Math.round(drum.scrollLeft / PREZZO_W);
-      const cell = drum.querySelectorAll('.drum-voce')[i];
+      const cell = drum.querySelectorAll('.drum-voce')[Math.round(drum.scrollLeft / PREZZO_W)];
       if (!cell) return;
       const v = cell.dataset.v;
       if (v === 'edit') {
-        $('prezzo-edit-panel').hidden = false;
-        $('f-prezzo').value = '';
-        setTimeout(() => $('prezzo-edit-input').focus(), 80);
+        $(pannelloId).hidden = false;
+        metti(null);
+        setTimeout(() => $(inputId).focus(), 80);
       } else if (v === 'torna') {
-        prezzoFine = false; prezzoFineCentro = null;
-        $('prezzo-edit-panel').hidden = true;
-        disegnaPrezzoDrum();
+        r.reset();
+        $(pannelloId).hidden = true;
+        r.disegna();
       } else {
-        $('prezzo-edit-panel').hidden = true;
-        $('f-prezzo').value = v === 'null' ? '' : v;
+        $(pannelloId).hidden = true;
+        metti(v === 'null' ? null : Number(v));
       }
     };
     drum.addEventListener('scrollend', aggiornaSuFermo);
-    let st; drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiornaSuFermo, 160); }, { passive: true });
-    // Long press per zoom in
-    let lpTimer = null;
-    drum.addEventListener('touchstart', e => {
+    let st; drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiornaSuFermo, 160); clearTimeout(lp); }, { passive: true });
+    // Tieni premuto su una cifra → livello più fine (fino a 0,10 €)
+    let lp = null;
+    const ferma = () => { clearTimeout(lp); lp = null; };
+    drum.addEventListener('pointerdown', e => {
       const cell = e.target.closest('.drum-voce');
-      if (!cell || ['edit', 'torna', 'null'].includes(cell.dataset.v) || prezzoFine) return;
-      lpTimer = setTimeout(() => {
-        lpTimer = null;
-        const v = +cell.dataset.v;
+      if (!cell || ['edit', 'torna', 'null'].includes(cell.dataset.v) || r.livello >= 3) return;
+      lp = setTimeout(() => {
+        lp = null;
+        const v = Number(cell.dataset.v);
         if (navigator.vibrate) navigator.vibrate(30);
-        prezzoFine = true; prezzoFineCentro = v;
-        $('f-prezzo').value = String(v); $('prezzo-edit-panel').hidden = true;
-        disegnaPrezzoDrum();
+        r.livello++; r.centro = v;
+        $(pannelloId).hidden = true;
+        metti(v);
+        r.disegna();
       }, 900);
-    }, { passive: true });
-    drum.addEventListener('touchmove', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
-    drum.addEventListener('touchend', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
-    drum.addEventListener('touchcancel', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
-  }
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) drum.addEventListener(ev, ferma);
+  };
+  r.scorri = () => {
+    const drum = $(drumId);
+    if (!drum || !drum.dataset.init || r.livello) return;
+    const idx = indice(valoriOra());
+    const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
+    imposta(); requestAnimationFrame(imposta);
+  };
+  return r;
 }
-function scorriPrezzoDrum() {
-  const drum = $('f-prezzo-drum');
-  if (!drum || !drum.dataset.init || prezzoFine) return;
-  const raw = $('f-prezzo').value.trim();
-  const v = raw === '' ? null : Number(raw.replace(',', '.'));
-  const valori = ['edit', ...PREZZO_COARSE];
-  let idx = v == null ? PREZZO_DEFAULT_IDX : valori.indexOf(v);
-  if (idx <= 0 && v != null) {
-    const nums = PREZZO_COARSE.filter(x => x != null);
-    const nearest = nums.reduce((b, x) => Math.abs(x - v) < Math.abs(b - v) ? x : b, nums[0]);
-    idx = valori.indexOf(nearest);
-  }
-  if (idx <= 0) idx = PREZZO_DEFAULT_IDX;
-  const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
-  imposta(); requestAnimationFrame(imposta);
-}
+const rotellaLavoro = creaRotellaPrezzo({ drumId: 'f-prezzo-drum', campoId: 'f-prezzo', pannelloId: 'prezzo-edit-panel', inputId: 'prezzo-edit-input' });
+function disegnaPrezzoDrum() { rotellaLavoro.disegna(); }
+function scorriPrezzoDrum() { rotellaLavoro.scorri(); }
 const DRUM_W = 80;
 function disegnaDurata() {
   const drum = $('f-durata');
@@ -3382,7 +3456,7 @@ function inboxCampiHtml(item, cat) {
     return `<div class="inbox-edit-panel" hidden data-parte="${item.parte || ''}">
       <label>Cliente
         <div class="inbox-cerca-cliente">
-          <input type="text" value="${sicuro(cliente)}" placeholder="Chi ha pagato? Tocca per l'elenco" oninput="cercaClienteInbox(this)" onfocus="cercaClienteInbox(this)">
+          <input type="text" value="${sicuro(cliente)}" placeholder="Chi ha pagato? Tocca per l'elenco" data-solo="debitori" oninput="this.dataset.tutti = ''; cercaClienteNota(this)" onfocus="cercaClienteNota(this)" onchange="pagaClienteScelto(this)">
           <div class="inbox-cerca-risultati" hidden></div>
         </div>
       </label>
@@ -3501,11 +3575,11 @@ function inbox_cardHtml(item, cat) {
       </div>
       ${editBtn}
     </div>
+    ${campiHtml}
     <div class="inbox-card-azioni">
       <button class="inbox-btn-ok" onclick="confermaCarta(this.closest('.inbox-card'),${ic},'${cat}')">${etichettaOk}</button>
       <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
     </div>
-    ${campiHtml}
   </div>`;
 }
 
@@ -3525,7 +3599,7 @@ function apriModificaInboxCliente(card, item) {
   notaInCorso = null;
   tipo = TIPI[0]; durata = durataSolita; colore = ''; ripeti = 'no'; ora = '';
   semestrale = false; mesiSemestrale = []; semCfgAperto = false;
-  prezzoFine = false; prezzoFineCentro = null;
+  rotellaLavoro.reset();
   quandoFisso = false; quando = giorniMigliori()[0]; dateScelte = []; allineaDate();
   preparaFoglio('nuovo');
   for (const id of ['f-nome','f-dove','f-tel','f-note','f-cosa','f-prezzo']) $(id).value = '';
@@ -3682,7 +3756,17 @@ function confRiprCalendario() {
   setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
 }
 
-$('ripr-chiudi').onclick = () => { $('ripr-pop').hidden = true; _riprogrammaCard = null; _riprogrammaDataScelta = null; $('ripr-conferma-row').hidden = true; };
+$('ripr-chiudi').onclick = () => {
+  $('ripr-pop').hidden = true;
+  // Spostamento iniziato dal "+" e chiuso senza confermare: niente card a metà, si torna alla lista dei lavori
+  const dalPiu = _riprogrammaItem?.daPiu;
+  if (dalPiu) {
+    const v = INBOX_ESEMPI.riprogramma.voci, i = v.indexOf(_riprogrammaItem);
+    if (i >= 0) { v.splice(i, 1); aggiornaBadge(); if (!$('ai-inbox').hidden) apriInbox(_inboxCatCorrente); }
+  }
+  _riprogrammaCard = null; _riprogrammaItem = null; _riprogrammaDataScelta = null; $('ripr-conferma-row').hidden = true;
+  if (dalPiu && lavoriDaSpostare().length) apriSceltaLavoro();
+};
 $('ripr-prima').onclick = () => { _riprogrammaMese = new Date(_riprogrammaMese.getFullYear(), _riprogrammaMese.getMonth() - 1, 1); disegnaRiprCalendario(); };
 $('ripr-dopo').onclick  = () => { _riprogrammaMese = new Date(_riprogrammaMese.getFullYear(), _riprogrammaMese.getMonth() + 1, 1); disegnaRiprCalendario(); };
 $('ripr-mese').onclick  = () => {};
@@ -4013,14 +4097,113 @@ function aggiungiVoceVuota(cat, item) {
 const INBOX_AGGIUNGI = {
   cliente: { nome: 'Nuovo lavoro', emoji: '👤', spiega: 'Apre il foglio nuovo cliente', fai: () => { _ritornaInboxKey = _inboxCatCorrente || 'cliente'; chiudiInbox(); apriFoglio(); } }, // chiudendo si torna dove eri ("tutte" o "Nuovi lavori")
   nota:    { nome: 'Nota',         emoji: '📝', spiega: 'Per un cliente o per un giorno', fai: () => apriNuovaNota() },
-  costo:   { nome: 'Spesa',        emoji: '🧾', spiega: 'Una spesa con importo',        fai: () => aggiungiVoceVuota('costo', { testa: 'Nuova spesa', dati: '', campi: [['Descrizione', ''], ['Importo', '0']] }) },
+  costo:   { nome: 'Spesa',        emoji: '🧾', spiega: 'Dell\'attività o di un cliente', fai: () => apriNuovaSpesa() },
 };
+
+// --- Nuova spesa: dell'attività o di un cliente (uguale alla nota) ---
+// Attività → nelle spese della pagina Conti. Cliente → nei costi del suo lavoro più vicino a oggi.
+// "Lavoratore" (solo per un cliente): ore × € all'ora invece della rotella.
+let _ns = { modo: 'attivita', chip: '' };
+const rotellaSpesa = creaRotellaPrezzo({ drumId: 'ns-drum', campoId: 'ns-importo', pannelloId: 'ns-edit-panel', inputId: 'ns-edit-input', dopo: () => aggiornaNuovaSpesa(), riempi: true });
+const LAVORATORE = '👷 Lavoratore';
+function lavoroVicinoDi(cliente) {
+  const oggiMs = daIso(tra(0)).getTime();
+  return lavori.filter(l => !l.memo && normalizza(l.nome) === normalizza(cliente))
+    .sort((a, b) => Math.abs(daIso(a.data) - oggiMs) - Math.abs(daIso(b.data) - oggiMs))[0] || null;
+}
+function apriNuovaSpesa() {
+  _ns = { modo: 'attivita', chip: '' };
+  $('ns-cliente').dataset.tutti = '';
+  for (const id of ['ns-cliente', 'ns-testo', 'ns-importo', 'ns-edit-input', 'ns-ore']) $(id).value = '';
+  $('ns-tariffa').value = costoOrario;
+  $('ns-errore').hidden = true; $('ns-edit-panel').hidden = true;
+  $('ns-pop').querySelector('.inbox-cerca-risultati').hidden = true;
+  rotellaSpesa.reset();
+  $('ns-pop').hidden = false;
+  disegnaNuovaSpesa();
+  rotellaSpesa.disegna(); // dopo che la scheda è visibile, così la rotella sa dove posizionarsi
+}
+function chiudiNuovaSpesa() { $('ns-pop').hidden = true; }
+function nsScegli(modo) {
+  _ns.modo = modo;
+  if (_ns.chip === LAVORATORE && modo === 'attivita') { _ns.chip = ''; $('ns-testo').value = ''; }
+  $('ns-errore').hidden = true;
+  disegnaNuovaSpesa();
+}
+function nsClienteScelto() {
+  // Lavoratore: le ore sono quelle del lavoro del cliente
+  const l = lavoroVicinoDi($('ns-cliente').value.trim());
+  if (l && !$('ns-ore').value) $('ns-ore').value = l.oreVere != null ? l.oreVere : (l.durata || 2);
+  aggiornaNuovaSpesa();
+}
+function nsTestoScritto() {
+  if (_ns.chip && $('ns-testo').value.trim() !== _ns.chip.replace('👷 ', '')) { _ns.chip = ''; disegnaNuovaSpesa(); return; }
+  aggiornaNuovaSpesa();
+}
+function nsLav(campo, d) {
+  const inp = $(campo === 'ore' ? 'ns-ore' : 'ns-tariffa');
+  inp.value = Math.max(0, (parseFloat(inp.value) || 0) + d);
+  aggiornaNuovaSpesa();
+}
+function disegnaNuovaSpesa() {
+  const cli = _ns.modo === 'cliente';
+  $('ns-btn-attivita').classList.toggle('attivo', !cli);
+  $('ns-btn-cliente').classList.toggle('attivo', cli);
+  $('ns-cliente-wrap').hidden = !cli;
+  $('ns-testo').placeholder = cli ? 'Es. 5 sacchi di terriccio' : 'Es. Cambio olio del furgone';
+  const scelte =cli ? [...COSTI_RAPIDI, LAVORATORE] : TIPI_SPESA;
+  $('ns-chips').innerHTML = scelte.map(t => `<button type="button" class="chip${t === _ns.chip ? ' attivo' : ''}" data-t="${sicuro(t)}">${sicuro(t)}</button>`).join('');
+  $('ns-chips').querySelectorAll('.chip').forEach(b => { b.onclick = () => {
+    _ns.chip = _ns.chip === b.dataset.t ? '' : b.dataset.t;
+    $('ns-testo').value = _ns.chip.replace('👷 ', '');
+    if (_ns.chip === LAVORATORE) nsClienteScelto();
+    disegnaNuovaSpesa();
+  }; });
+  const lav = _ns.chip === LAVORATORE;
+  $('ns-importo-wrap').hidden = lav;
+  $('ns-lavoratore').hidden = !lav;
+  aggiornaNuovaSpesa();
+}
+function importoNuovaSpesa() {
+  if (_ns.chip === LAVORATORE) return arrotonda((parseFloat($('ns-ore').value) || 0) * (parseFloat($('ns-tariffa').value) || 0));
+  return parseFloat($('ns-importo').value) || 0;
+}
+function aggiornaNuovaSpesa() {
+  const imp = importoNuovaSpesa();
+  if (_ns.chip === LAVORATORE) $('ns-totale').textContent = `Totale ${euro(imp)}`;
+  $('ns-salva').disabled = !$('ns-testo').value.trim() || !(imp > 0);
+}
+function salvaNuovaSpesa() {
+  const err = t => { $('ns-errore').textContent = t; $('ns-errore').hidden = false; };
+  const testo = $('ns-testo').value.trim();
+  const importo = importoNuovaSpesa();
+  if (!testo) return err('Scrivi di che spesa si tratta');
+  if (!(importo > 0)) return err('Scegli l\'importo');
+  if (_ns.modo === 'attivita') {
+    const tipo = TIPI_SPESA.find(t => normalizza(t) === normalizza(testo));
+    const altro = TIPI_SPESA.find(t => normalizza(t) === 'altro');
+    spese.push({ id: Math.max(0, ...spese.map(x => x.id)) + 1, tipo: tipo || altro || maiuscola(testo), nota: tipo || !altro ? '' : testo, importo, data: tra(0), modo: 'una' });
+    chiudiNuovaSpesa(); tutto();
+    avvisa(`Spesa salvata nei Conti: ${maiuscola(testo)} ${euro(importo)}`);
+    return;
+  }
+  const scritto = $('ns-cliente').value.trim();
+  const cliente = nomiClienti().find(n => normalizza(n) === normalizza(scritto));
+  if (!cliente) return err(scritto ? `Non trovo "${scritto}" tra i clienti: sceglilo dall'elenco` : 'Scegli il cliente');
+  const l = lavoroVicinoDi(cliente);
+  if (!l) return err(`${cliente} non ha lavori: mettila come spesa dell'attività`);
+  if (!l.costi) l.costi = { generale: null, voci: [] };
+  if (_ns.chip === LAVORATORE) l.costi.voci.push({ tipo: 'Personale', ore: parseFloat($('ns-ore').value) || 0, tariffa: parseFloat($('ns-tariffa').value) || 0 });
+  else l.costi.voci.push({ tipo: maiuscola(testo), importo });
+  chiudiNuovaSpesa(); tutto();
+  avvisa(`${maiuscola(testo)} ${euro(importo)} nei costi di ${l.nome} (${nomeGiorno(l.data).toLowerCase()})`);
+}
 // Pagamento e Sposta lavoro: agiscono su cose che esistono già, quindi solo da "tutte" e solo se c'è qualcosa da fare
 const chiDeveSoldi = () => nomiClienti().filter(n => { try { return conto(n).dovuto > 0; } catch (e) { return false; } });
 const lavoriDaSpostare = () => lavori.filter(l => !l.fatto && !l.memo).sort((a, b) => a.data.localeCompare(b.data));
 const SCELTA_EXTRA = {
   paga:        { nome: 'Pagamento',    emoji: '💶', spiega: 'Chi ti ha pagato',        vuoto: 'Nessuno ti deve soldi',    attivo: () => chiDeveSoldi().length > 0,
-                 fai: () => aggiungiVoceVuota('paga', { testa: 'Nuovo pagamento', dati: '', stato: 'da_verificare', campi: [['Cliente', ''], ['Importo', '0']] }) },
+                 fai: () => apriNuovoPagamento() },
   riprogramma: { nome: 'Sposta lavoro', emoji: '📅', spiega: 'Cambia il giorno di un lavoro', vuoto: 'Nessun lavoro da spostare', attivo: () => lavoriDaSpostare().length > 0,
                  fai: () => apriSceltaLavoro() },
 };
@@ -4040,7 +4223,7 @@ function apriSceltaAggiungi() {
 let _nn = { modo: 'cliente', data: null };
 function apriNuovaNota(giorno) {
   _nn = { modo: giorno ? 'giorno' : 'cliente', data: giorno || tra(0) };
-  _nnTutti = false;
+  $('nn-cliente').dataset.tutti = '';
   $('nn-titolo').value = ''; $('nn-testo').value = ''; $('nn-cliente').value = '';
   $('nn-errore').hidden = true;
   $('nn-pop').querySelector('.inbox-cerca-risultati').hidden = true;
@@ -4050,36 +4233,47 @@ function apriNuovaNota(giorno) {
 function chiudiNuovaNota() { $('nn-pop').hidden = true; }
 // Lista clienti della nota: i 3 più probabili (lavoro in arrivo, poi visti da poco), "Mostra tutti" per gli altri.
 // Accanto al nome un solo segno grigio: lavoro in arrivo, oppure quanto deve, oppure l'ultimo lavoro.
-let _nnTutti = false;
 function cercaClienteNota(input) {
   const q = normalizza(input.value);
   const risultati = input.nextElementSibling;
   const oggi = tra(0);
   const fmtCorto = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' });
   const fmtSettCorto = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }); // "mar 24 nov"
-  const info = nomiClienti().filter(n => !q || normalizza(n).includes(q)).map(nome => {
+  // data-solo="debitori" (pagamenti): solo chi ti deve soldi, prima chi deve da più tempo
+  const soloDebitori = input.dataset.solo === 'debitori';
+  const tutti = input.dataset.tutti === '1';
+  let info = nomiClienti().filter(n => !q || normalizza(n).includes(q)).map(nome => {
     const suoi = lavori.filter(l => !l.memo && normalizza(l.nome) === normalizza(nome));
     const prossimo = suoi.filter(l => !l.fatto && l.data >= oggi).map(l => l.data).sort()[0] || null;
     const ultimo = suoi.filter(l => l.data <= oggi).map(l => l.data).sort().pop() || null;
-    let deve = 0; try { deve = conto(nome).dovuto || 0; } catch (e) {}
-    const segno = prossimo ? `lavoro ${prossimo === oggi ? 'oggi' : prossimo === tra(1) ? 'domani' : fmtSettCorto.format(daIso(prossimo))}`
+    let deve = 0, giorni = 0; try { const c = conto(nome); deve = c.dovuto || 0; giorni = c.giorni || 0; } catch (e) {}
+    const segno = soloDebitori ? `deve ${euro(deve)}`
+      : prossimo ? `lavoro ${prossimo === oggi ? 'oggi' : prossimo === tra(1) ? 'domani' : fmtSettCorto.format(daIso(prossimo))}`
       : deve > 0 ? `deve ${euro(deve)}`
       : ultimo ? `ultimo lavoro ${fmtCorto.format(daIso(ultimo))}` : '';
-    return { nome, prossimo, ultimo, segno };
+    return { nome, prossimo, ultimo, segno, deve, giorni };
   });
-  // Prima chi ha un lavoro in arrivo (il più vicino in cima), poi chi hai visto da poco
-  info.sort((a, b) => (a.prossimo && b.prossimo) ? a.prossimo.localeCompare(b.prossimo)
-    : a.prossimo ? -1 : b.prossimo ? 1 : (b.ultimo || '').localeCompare(a.ultimo || ''));
-  if (!info.length) { risultati.innerHTML = q ? '<p class="inbox-cerca-titolo">Nessun cliente con questo nome</p>' : ''; risultati.hidden = !q; return; }
-  const mostra = _nnTutti ? info : info.slice(0, 3);
-  risultati.innerHTML = mostra.map(c => `<button type="button" class="nn-cli" data-nome="${sicuro(c.nome)}"><span>${sicuro(c.nome)}</span>${c.segno ? `<small>${sicuro(c.segno)}</small>` : ''}</button>`).join('')
-    + (!_nnTutti && info.length > 3 ? `<button type="button" class="nn-tutti">Mostra tutti (${info.length})</button>` : '');
+  if (soloDebitori) {
+    info = info.filter(c => c.deve > 0);
+    info.sort((a, b) => (b.giorni - a.giorni) || (b.deve - a.deve));
+  } else {
+    // Prima chi ha un lavoro in arrivo (il più vicino in cima), poi chi hai visto da poco
+    info.sort((a, b) => (a.prossimo && b.prossimo) ? a.prossimo.localeCompare(b.prossimo)
+      : a.prossimo ? -1 : b.prossimo ? 1 : (b.ultimo || '').localeCompare(a.ultimo || ''));
+  }
+  if (!info.length) {
+    const vuoto = q ? (soloDebitori ? 'Nessuno con questo nome ti deve soldi' : 'Nessun cliente con questo nome') : (soloDebitori ? 'Nessuno ti deve soldi' : '');
+    risultati.innerHTML = vuoto ? `<p class="inbox-cerca-titolo">${vuoto}</p>` : ''; risultati.hidden = !vuoto; return;
+  }
+  const mostra = tutti ? info : info.slice(0, 3);
+  risultati.innerHTML = mostra.map(c => `<button type="button" class="nn-cli" data-nome="${sicuro(c.nome)}" data-deve="${c.deve}"><span>${sicuro(c.nome)}</span>${c.segno ? `<small>${sicuro(c.segno)}</small>` : ''}</button>`).join('')
+    + (!tutti && info.length > 3 ? `<button type="button" class="nn-tutti">Mostra tutti (${info.length})</button>` : '');
   risultati.querySelectorAll('button').forEach(b => {
     b.onmousedown = e => e.preventDefault(); // il tocco non chiude l'elenco prima di scegliere
     b.onclick = () => {
-      if (b.classList.contains('nn-tutti')) { _nnTutti = true; cercaClienteNota(input); return; }
-      input.value = b.dataset.nome; risultati.hidden = true; aggiornaNuovaNota();
-      $('nn-testo').focus();
+      if (b.classList.contains('nn-tutti')) { input.dataset.tutti = '1'; cercaClienteNota(input); return; }
+      input.value = b.dataset.nome; risultati.hidden = true;
+      input.dispatchEvent(new Event('change')); // la scheda (nota o spesa) decide cosa fare dopo
     };
   });
   risultati.hidden = false;
@@ -4138,6 +4332,42 @@ function salvaNuovaNota() {
   avvisa(`Nota salvata nel calendario ${nomeGiorno(_nn.data).toLowerCase()}`);
 }
 
+// Pagamento scelto da una lista (card o scheda): l'importo si scrive da solo con quanto deve (o la parte detta, "metà")
+function pagaClienteScelto(input) {
+  const pannello = input.closest('.inbox-edit-panel');
+  const num = pannello?.querySelector('input[type="number"]');
+  let deve = 0; try { deve = conto(input.value.trim()).dovuto || 0; } catch (e) {}
+  const parte = parseFloat(pannello?.dataset.parte) || 1;
+  if (num && !(parseFloat(num.value) > 0) && deve > 0) num.value = arrotonda(deve * parte);
+  if (input.id === 'np-cliente') aggiornaNuovoPagamento();
+}
+
+// --- Nuovo pagamento dal "+": stessa forma di Nota e Spesa; la X torna a tutte le notifiche senza lasciare card ---
+function apriNuovoPagamento() {
+  $('np-cliente').value = ''; $('np-cliente').dataset.tutti = '';
+  $('np-importo').value = '';
+  $('np-errore').hidden = true;
+  $('np-pop').querySelector('.inbox-cerca-risultati').hidden = true;
+  aggiornaNuovoPagamento();
+  $('np-pop').hidden = false;
+  setTimeout(() => { $('np-cliente').focus(); cercaClienteNota($('np-cliente')); }, 100);
+}
+function chiudiNuovoPagamento() { $('np-pop').hidden = true; }
+function aggiornaNuovoPagamento() {
+  $('np-salva').disabled = !$('np-cliente').value.trim() || !(parseFloat($('np-importo').value) > 0);
+}
+function salvaNuovoPagamento() {
+  const err = t => { $('np-errore').textContent = t; $('np-errore').hidden = false; };
+  const scritto = $('np-cliente').value.trim();
+  const nome = nomiClienti().find(n => normalizza(n) === normalizza(scritto));
+  if (!nome) return err(scritto ? `Non trovo "${scritto}" tra i clienti: sceglilo dall'elenco` : 'Scegli chi ti ha pagato');
+  const importo = parseFloat($('np-importo').value);
+  if (!(importo > 0)) return err('Scrivi quanto ti ha dato');
+  registraPagamento(nome, importo);
+  chiudiNuovoPagamento(); tutto();
+  avvisa(`${nome}: ${euro(importo)} registrati`);
+}
+
 // Sposta lavoro: prima si sceglie il lavoro, poi il giorno nel calendario
 function apriSceltaLavoro() {
   $('scegli-titolo').textContent = 'Quale lavoro sposti?';
@@ -4149,11 +4379,11 @@ function apriSceltaLavoro() {
     const l = lavori.find(x => String(x.id) === b.dataset.id);
     if (!l) return;
     const da = nomeGiorno(l.data).toLowerCase();
-    const item = { testa: l.nome, dati: 'da ' + da, lavoroId: l.id, campi: [['Cliente', l.nome], ['Da', da]] };
+    const item = { testa: l.nome, dati: 'da ' + da, lavoroId: l.id, daPiu: true, campi: [['Cliente', l.nome], ['Da', da]] };
     INBOX_ESEMPI.riprogramma.voci.unshift(item);
     aggiornaBadge();
-    apriInbox('riprogramma');
-    const card = $('ai-inbox-lista').querySelector('.inbox-card');
+    apriInbox('tutto'); // si resta su "tutte le notifiche": dopo la conferma non si finisce nella pagina Riprogramma
+    const card = $('ai-inbox-lista').querySelector('.inbox-card[data-cat="riprogramma"]');
     if (card) apriRiprogrammaInbox(card, item);
   }; });
   $('scegli-pop').hidden = false;
