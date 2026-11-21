@@ -1066,6 +1066,10 @@ button.s-riga:first-child { border-top: 0; }
 <body>
 <div class="app">
   <div class="esempio gutter">Prova grafica · dati inventati</div>
+  <div style="background:#ef4444;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <span style="color:#fff;font-size:13px;font-weight:700;">⚠️ Se non vedi gli ultimi aggiornamenti:</span>
+    <button onclick="(async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();const keys=await caches.keys();for(const k of keys)await caches.delete(k);}catch(e){}location.reload(true);})()" style="background:#fff;color:#ef4444;border:none;border-radius:8px;padding:8px 14px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;">🔄 Aggiorna app</button>
+  </div>
 
   <section id="vista-calendario">
     <div id="avvisi-home" class="gutter"></div>
