@@ -1037,8 +1037,8 @@ button.s-riga:first-child { border-top: 0; }
         Parla
       </button>
 
-      <!-- BARRA DI TEST — rimuovere dopo i test -->
-      <div id="test-bar" style="margin-top:12px;background:#fffbe6;border:1.5px dashed #f59e0b;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <!-- BARRA DI TEST — nascosta in produzione -->
+      <div id="test-bar" hidden style="margin-top:12px;background:#fffbe6;border:1.5px dashed #f59e0b;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
         <div style="font-size:11px;font-weight:800;color:#92400e;letter-spacing:.05em;text-transform:uppercase;">🧪 Modalità test AI</div>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="test-key" type="text" placeholder="Chiave Anthropic (sk-ant-…)" autocomplete="off" style="flex:1;padding:8px 10px;border-radius:9px;border:1.5px solid #f59e0b;font-size:13px;background:#fff;color:#000;" />
@@ -2704,7 +2704,7 @@ function salvaModifica() {
   const ripetiPrima = e.ripeti;
   for (const l of lavori) if (l.nome === vecchio) {
     l.nome = nuovo; l.dove = $('f-dove').value.trim();
-    l.tipo = tipo;
+    l.tipo = tipo; l.cosa = $('f-cosa').value.trim() || l.cosa; l.durata = durata || l.durata;
   }
   for (const p of pagamenti) if (p.nome === vecchio) p.nome = nuovo;
   delete extra[vecchio];
@@ -4799,7 +4799,7 @@ async function caricaMeteo() {
   try {
     // Coordinate con al massimo 4 decimali, come chiede MET Norway
     const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${zonaMeteo.lat.toFixed(4)}&lon=${zonaMeteo.lon.toFixed(4)}`;
-    const risposta = await fetch(url);
+    const risposta = await fetch(url, { headers: { 'User-Agent': 'AppArtigiani/0.4 github.com/app-artigiani' } });
     if (!risposta.ok) throw new Error(risposta.status);
     const dati = await risposta.json();
     // Pioggia nelle ore di lavoro (7-19): dalle previsioni ora per ora quando ci sono, se no a blocchi di 6 ore
@@ -4900,7 +4900,7 @@ function disegnaAzioni() {
   const nuovo = '<button type="button" class="nuovo a-nuovo"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button>';
   const note = `<button type="button" class="a-piccolo a-note" aria-label="Note: ${nNote}">${ICONA_NOTA}<small>Note</small>${numerino(nNote)}</button>`;
   const ind = `<button type="button" class="a-piccolo a-indietro${nInd ? ' da-vedere' : ''}" aria-label="Rimasti indietro: ${nInd}">${ICONA_INDIETRO}<small>Indietro</small>${numerino(nInd)}</button>`;
-  if ($('azioni-cli')) $('azioni-cli').innerHTML = nuovo + note;
+  if ($('azioni-cli')) $('azioni-cli').innerHTML = nuovo + note + ind;
   document.querySelectorAll('.a-nuovo').forEach(b => { b.onclick = () => apriFoglio(); });
   document.querySelectorAll('.a-note').forEach(b => { b.onclick = apriNota; });
   document.querySelectorAll('.a-indietro').forEach(b => { b.onclick = apriIndietro; });
@@ -4917,6 +4917,7 @@ function disegnaIndietro() {
     : '<p class="imp-testo">Niente di rimasto indietro.</p>';
   $('ri-elenco').querySelectorAll('[data-fatto]').forEach(b => {
     b.onclick = () => {
+      b.disabled = true;
       const carta = document.createElement('article'); carta.dataset.id = b.dataset.fatto;   // segnaFatto lavora su una "carta"
       $('indietro-pop').hidden = !(lavori[+b.dataset.fatto].prezzo != null);   // se chiede il prezzo, lascio spazio alla sua finestra
       segnaFatto(carta);
@@ -5600,9 +5601,7 @@ function marcaMedia(d) {
 
 function infoBtn(d) {
   if (!d.info) return '';
-  const titolo = d.info.titolo.replace(/'/g, "\\'");
-  const testo = d.info.testo.replace(/'/g, "\\'");
-  return `<button type="button" class="prev-info-btn" onclick="apriPrevInfo('${titolo}','${testo}')" aria-label="Informazioni">i</button>`;
+  return `<button type="button" class="prev-info-btn" data-titolo="${sicuro(d.info.titolo)}" data-testo="${sicuro(d.info.testo)}" onclick="apriPrevInfo(this.dataset.titolo,this.dataset.testo)" aria-label="Informazioni">i</button>`;
 }
 
 function disegnaSezioneForm(s) {
@@ -5659,8 +5658,8 @@ function apriPrevInfo(titolo, testo) {
     document.body.appendChild(pop);
   }
   pop.innerHTML = `<div class="prev-info-box">
-    <h4>${titolo}</h4>
-    <p>${testo}</p>
+    <h4>${sicuro(titolo)}</h4>
+    <p>${sicuro(testo)}</p>
     <button onclick="chiudiPrevInfo()">Chiudi</button>
   </div>`;
   pop.hidden = false;
