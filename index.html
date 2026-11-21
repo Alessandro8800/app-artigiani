@@ -2668,7 +2668,15 @@ function salva() {
   if (n > 1) nuovo.date = dateOrdinate();
   lavori.push(nuovo);
   const e = prendiExtra(nome);
-  if (!clienteScelto) { e.tel = leggiTelefoni(); e.colore = colore; e.note = $('f-note').value.trim(); e.semestrale = semestrale; e.mesiSemestrale = mesiSemestrale; }
+  if (!clienteScelto) {
+    const telNuovi = leggiTelefoni();
+    if (telNuovi && telNuovi.length) e.tel = telNuovi;
+    e.colore = colore;
+    const noteNuove = $('f-note').value.trim();
+    if (noteNuove) e.note = noteNuove;
+    e.semestrale = semestrale;
+    e.mesiSemestrale = mesiSemestrale;
+  }
   let ripetuti = 0;
   if (ripeti !== 'no') { e.ripeti = ripeti; togliRipetuti(nome); ripetuti = generaSerie(nuovo, ripeti); }
   setTimeout(() => {
@@ -2909,15 +2917,15 @@ function inboxCampiHtml(item, cat) {
     const cliente = (item.campi.find(([l]) => l === 'Cliente') || [])[1] || '';
     const nota = (item.campi.find(([l]) => l === 'Nota') || [])[1] || '';
     return `<div class="inbox-edit-panel" hidden>
-      <label>Cliente<input type="text" value="${cliente}"></label>
-      <label>Nota<textarea rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${nota}</textarea></label>
+      <label>Cliente<input type="text" value="${sicuro(cliente)}"></label>
+      <label>Nota<textarea rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${sicuro(nota)}</textarea></label>
     </div>`;
   }
   if (cat === 'costo') {
     const desc = (item.campi.find(([l]) => l === 'Descrizione') || [])[1] || '';
     const imp = (item.campi.find(([l]) => l === 'Importo') || [])[1] || '0';
     return `<div class="inbox-edit-panel" hidden>
-      <label>Descrizione<input type="text" value="${desc}"></label>
+      <label>Descrizione<input type="text" value="${sicuro(desc)}"></label>
       <label>Importo (€)
         <div class="inbox-stepper">
           <button type="button" onclick="stepperCambia(this,-1)">−</button>
@@ -2945,7 +2953,7 @@ function inboxCampiHtml(item, cat) {
     return `<div class="inbox-edit-panel" hidden>
       <label>Cliente
         <div class="inbox-cerca-cliente">
-          <input type="text" value="${cliente}" placeholder="Cerca cliente..." oninput="cercaClienteInbox(this)">
+          <input type="text" value="${sicuro(cliente)}" placeholder="Cerca cliente..." oninput="cercaClienteInbox(this)">
           <div class="inbox-cerca-risultati" hidden></div>
         </div>
       </label>
@@ -2985,8 +2993,8 @@ function inbox_cardHtml(item, cat) {
       return `<div class="inbox-card" data-cat="${cat}">
         <div class="inbox-card-top">
           <div class="inbox-card-info">
-            <div class="inbox-card-testa">${item.testa}</div>
-            <div class="inbox-card-dati">${item.dati}</div>
+            <div class="inbox-card-testa">${sicuro(item.testa)}</div>
+            <div class="inbox-card-dati">${sicuro(item.dati)}</div>
           </div>
         </div>
         <div class="inbox-card-azioni">
@@ -3009,8 +3017,8 @@ function inbox_cardHtml(item, cat) {
       return `<div class="inbox-card inbox-card-sospeso" data-cat="${cat}">
         <div class="inbox-card-top">
           <div class="inbox-card-info">
-            <div class="inbox-card-testa">${item.testa}</div>
-            <div class="inbox-card-dati">${item.dati}</div>
+            <div class="inbox-card-testa">${sicuro(item.testa)}</div>
+            <div class="inbox-card-dati">${sicuro(item.dati)}</div>
             <div class="inbox-card-suggerimenti">Manca: ${mancanti.join(', ')}</div>
           </div>
           <button class="inbox-card-edit-btn" onclick="apriModificaInboxCliente(this.closest('.inbox-card'),${ic})" aria-label="Completa">${SVG_EDIT}</button>
@@ -3026,8 +3034,8 @@ function inbox_cardHtml(item, cat) {
   return `<div class="inbox-card" data-cat="${cat}">
     <div class="inbox-card-top">
       <div class="inbox-card-info">
-        <div class="inbox-card-testa">${item.testa}</div>
-        <div class="inbox-card-dati">${item.dati}</div>
+        <div class="inbox-card-testa">${sicuro(item.testa)}</div>
+        <div class="inbox-card-dati">${sicuro(item.dati)}</div>
       </div>
       ${editBtn}
     </div>
@@ -3202,7 +3210,7 @@ function cercaClienteInbox(input) {
   if (!q) { risultati.hidden = true; return; }
   const trovati = CLIENTI_FAKE.filter(c => c.toLowerCase().includes(q));
   if (!trovati.length) { risultati.hidden = true; return; }
-  risultati.innerHTML = trovati.map(c => `<button type="button" onclick="this.closest('.inbox-cerca-cliente').querySelector('input').value='${c}';this.closest('.inbox-cerca-risultati').hidden=true">${c}</button>`).join('');
+  risultati.innerHTML = trovati.map(c => `<button type="button" data-nome="${sicuro(c)}" onclick="const inp=this.closest('.inbox-cerca-cliente').querySelector('input');inp.value=this.dataset.nome;this.closest('.inbox-cerca-risultati').hidden=true">${sicuro(c)}</button>`).join('');
   risultati.hidden = false;
 }
 
@@ -3924,6 +3932,7 @@ function chiudiMicBox() {
 }
 
 $('ai-mic').onclick = () => {
+  if (_micRiconosc) return;
   const btn = $('ai-mic');
   const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -4212,8 +4221,15 @@ document.addEventListener('DOMContentLoaded', () => {
     sr.onresult = e => {
       let interim = '', finale = '';
       for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) finale += e.results[i][0].transcript; else interim += e.results[i][0].transcript; }
-      if (finale) { _micFinaleTrovato = true; $('mic-box-testo').textContent = finale; setTimeout(() => { aggiungiVoceInbox(finale, 'cliente'); chiudiMicBox(); }, 1200); }
-      else if (interim) { $('mic-box-testo').innerHTML = `<em>${interim}</em>`; }
+      if (finale) {
+        _micFinaleTrovato = true;
+        $('mic-box-testo').textContent = finale;
+        const doSave = cat => { setTimeout(() => { aggiungiVoceInbox(finale, cat); chiudiMicBox(); }, 1200); };
+        if (!ANTHROPIC_KEY) {
+          if (!chiediChiaveAI()) { doSave(categorizzaVoce(finale)); return; }
+        }
+        categorizzaVoceAI(finale).then(doSave).catch(() => doSave(categorizzaVoce(finale)));
+      } else if (interim) { $('mic-box-testo').innerHTML = `<em>${interim}</em>`; }
     };
     sr.onerror = e => { if (e.error === 'no-speech') { $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>'; setTimeout(chiudiMicBox, 1800); } else if (e.error === 'not-allowed') { $('mic-box-testo').innerHTML = '<em>Microfono bloccato. Vai in Impostazioni del browser → Autorizzazioni → Microfono.</em>'; setTimeout(chiudiMicBox, 4000); } else if (e.error !== 'aborted') chiudiMicBox(); };
     sr.onend = () => { if (!_micFinaleTrovato) setTimeout(() => { if (!$('mic-box').hidden) chiudiMicBox(); }, 400); };
