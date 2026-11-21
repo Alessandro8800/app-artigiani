@@ -1150,7 +1150,7 @@ button.s-riga:first-child { border-top: 0; }
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="test-frase" type="text" placeholder="Scrivi una frase e premi Invio…" style="flex:1;padding:8px 10px;border-radius:9px;border:1.5px solid #f59e0b;font-size:13px;background:#fff;color:#000;" onkeydown="if(event.key==='Enter')$('test-invia').click()" />
-          <button id="test-invia" onclick="(function(){const t=$('test-frase').value.trim();if(!t)return;$('test-frase').value='';const box=$('mic-box');$('mic-box-testo').textContent=t;$('mic-box-cat-wrap').hidden=false;const catEl=$('mic-box-cat');catEl.className='mic-box-cat';catEl.innerHTML='<span class=\'mic-box-elabora\'><span></span><span></span><span></span></span> Elaboro…';box.hidden=false;const mostraCat=(ris)=>{const cat=(ris&&typeof ris==='object')?ris.categoria:ris;const info=CAT_INFO[cat]||CAT_INFO['tutto'];catEl.className='mic-box-cat cat-'+cat;catEl.textContent=info.emoji+' '+info.nome;setTimeout(()=>{aggiungiVoceInbox(t,ris);box.hidden=true;},1200);};if(!ANTHROPIC_KEY){alert('Prima inserisci la chiave Anthropic qui sopra.');return;}categorizzaVoceAI(t).then(mostraCat).catch(()=>mostraCat(categorizzaVoce(t)));})();" style="padding:8px 12px;border-radius:9px;border:none;background:#f59e0b;color:#000;font-weight:800;cursor:pointer;">Invia</button>
+          <button id="test-invia" onclick="(function(){const t=$('test-frase').value.trim();if(!t)return;$('test-frase').value='';const box=$('mic-box');$('mic-box-testo').textContent=t;$('mic-box-cat-wrap').hidden=false;const catEl=$('mic-box-cat');catEl.className='mic-box-cat';catEl.innerHTML='<span class=\'mic-box-elabora\'><span></span><span></span><span></span></span> Elaboro…';box.hidden=false;const mostraCat=(ris)=>{const et=etichettaRisultato(ris);catEl.className='mic-box-cat cat-'+et.cat;catEl.textContent=et.testo;setTimeout(()=>{aggiungiVoceInbox(t,ris);box.hidden=true;},1200);};if(!ANTHROPIC_KEY){alert('Prima inserisci la chiave Anthropic qui sopra.');return;}categorizzaVoceAI(t).then(mostraCat).catch(()=>mostraCat({operations:[{tipo:'nota',testo:t}],_fallback:true}));})();" style="padding:8px 12px;border-radius:9px;border:none;background:#f59e0b;color:#000;font-weight:800;cursor:pointer;">Invia</button>
         </div>
       </div>
       <!-- FINE BARRA DI TEST -->
@@ -4033,57 +4033,8 @@ $('ai-inbox-edit').onclick = () => {
   lista.classList.toggle('edit-mode');
   $('ai-inbox-edit').classList.toggle('attivo', lista.classList.contains('edit-mode'));
 };
-$('ai-inbox-mic').onclick = () => {
-  const btn = $('ai-inbox-mic');
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) { btn.classList.toggle('attivo'); return; }
-  const catCorrente = _inboxCatCorrente || 'nota';
-  const box = $('mic-box');
-  $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
-  const catEl = $('mic-box-cat');
-  const catWrap = $('mic-box-cat-wrap');
-  const info = CAT_INFO[catCorrente] || { nome: catCorrente, emoji: '📝' };
-  catEl.textContent = info.emoji + ' ' + info.nome;
-  catEl.className = 'mic-box-cat cat-' + catCorrente;
-  catWrap.hidden = false;
-  box.hidden = false;
-  document.body.classList.add('bloccato');
-  btn.classList.add('ascolta');
-  _micFinaleTrovato = false;
-  _micSorgente = 'inbox';
-  const sr = new SpeechRecognition();
-  _micRiconosc = sr;
-  sr.lang = 'it-IT';
-  sr.interimResults = true;
-  sr.continuous = false;
-  sr.maxAlternatives = 1;
-  sr.onresult = (e) => {
-    let interim = '', finale = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finale += e.results[i][0].transcript;
-      else interim += e.results[i][0].transcript;
-    }
-    if (finale) {
-      _micFinaleTrovato = true;
-      $('mic-box-testo').textContent = finale;
-      setTimeout(() => { aggiungiVoceInbox(finale, catCorrente); chiudiMicBox(); }, 1200);
-    } else if (interim) {
-      $('mic-box-testo').innerHTML = `<em>${interim}</em>`;
-    }
-  };
-  sr.onerror = (e) => {
-    if (e.error === 'no-speech') {
-      $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>';
-      setTimeout(chiudiMicBox, 1800);
-    } else if (e.error !== 'aborted') {
-      chiudiMicBox();
-    }
-  };
-  sr.onend = () => {
-    if (!_micFinaleTrovato) setTimeout(() => { if ($('mic-box') && !$('mic-box').hidden) chiudiMicBox(); }, 400);
-  };
-  sr.start();
-};
+// Mic dentro l'inbox: stesso percorso AI degli altri (prima saltava l'AI)
+$('ai-inbox-mic').onclick = () => avviaMicrofono('inbox');
 
 aggiornaBadge();
 
@@ -4191,7 +4142,11 @@ ESEMPI
   // Se la risposta non è leggibile, la frase diventa una nota: non si perde mai.
   const notaGrezza = { operations: [{ tipo: 'nota', nome: null, lavoro: null, data: null, importo: null, testo, missing_fields: [] }], _fallback: true };
 
+  // Tempo massimo 15 secondi: oltre, la chiamata si interrompe e scatta il fallback "nota"
+  const ctrl = new AbortController();
+  const scadenza = setTimeout(() => ctrl.abort(), 15000);
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    signal: ctrl.signal,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -4205,7 +4160,7 @@ ESEMPI
       system,
       messages: [{ role: 'user', content: testo }]
     })
-  });
+  }).finally(() => clearTimeout(scadenza));
   if (!resp.ok) throw new Error('API ' + resp.status);
   const json = await resp.json();
   try {
@@ -4385,6 +4340,8 @@ function _aggiungiOperazioni(testo, risultato, giorno) {
   // Badge aggiornati una volta sola, alla fine
   if (note) { aggiornaBadgeNote(); if (typeof disegnaNoteRapide === 'function') disegnaNoteRapide(); }
   if (inbox) aggiornaBadge();
+  // Se l'inbox è aperta (mic dentro l'inbox), ridisegna la lista per mostrare le nuove card
+  if (inbox && !$('ai-inbox').hidden && _inboxCatCorrente) apriInbox(_inboxCatCorrente);
 
   if (risultato._fallback) { avvisa('Salvato come nota, controlla'); return; }
   const pezzi = [];
@@ -4518,97 +4475,142 @@ function chiudiMicBox() {
   if (_micSorgente === 'inbox') {
     const inboxMic = $('ai-inbox-mic');
     if (inboxMic) inboxMic.classList.remove('ascolta');
+  } else if (_micSorgente === 'clienti') {
+    const cb = $('c-btn-mic');
+    if (cb) cb.classList.remove('ascolta');
   } else {
     const btn = $('ai-mic');
     btn.classList.remove('ascolta');
-    const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
     btn.innerHTML = SVG_MIC + ' Parla';
   }
   _micSorgente = null;
 }
 
-$('ai-mic').onclick = () => {
+// Cosa scrivere nel riquadro del microfono dopo la risposta dell'AI
+function etichettaRisultato(ris) {
+  if (ris && typeof ris === 'object' && Array.isArray(ris.operations)) {
+    if (ris._fallback) return { cat: 'nota', testo: '📝 Salvo come nota (AI non raggiungibile)' };
+    const tipi = ris.operations.map(o => _TIPO_ALIAS[o.tipo] || o.tipo);
+    const info = t => CAT_INFO[t] || CAT_INFO.nota;
+    if (tipi.length === 1) return { cat: tipi[0], testo: info(tipi[0]).emoji + ' ' + info(tipi[0]).nome };
+    return { cat: 'tutto', testo: `${tipi.length} operazioni: ${tipi.map(t => info(t).emoji).join(' ')}` };
+  }
+  const cat = (ris && typeof ris === 'object') ? (ris.tipo || ris.categoria || 'tutto') : (ris || 'tutto');
+  const info = CAT_INFO[cat] || CAT_INFO.tutto;
+  return { cat, testo: info.emoji + ' ' + info.nome };
+}
+
+// ---- Microfono unico: stesso percorso (voce → AI → inbox) per tutti e 3 i bottoni ----
+// sorgente: 'globale' (barra in basso) | 'inbox' (dentro le notifiche) | 'clienti' (pagina Clienti)
+const _MIC_BOTTONI = { globale: 'ai-mic', inbox: 'ai-inbox-mic', clienti: 'c-btn-mic' };
+const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
+
+function avviaMicrofono(sorgente) {
   if (_micRiconosc) return;
-  const btn = $('ai-mic');
-  const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>`;
+  const btn = $(_MIC_BOTTONI[sorgente]);
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    // Nessun supporto vocale: simulazione come prima
-    if (btn.classList.contains('ascolta')) {
-      btn.classList.remove('ascolta');
-      btn.innerHTML = SVG_MIC + ' Parla';
-      aggiungiItemSimulato();
-    } else {
-      btn.classList.add('ascolta');
-      btn.innerHTML = SVG_MIC + ' In ascolto…';
+    // Nessun supporto vocale: simulazione come prima (solo bottone globale)
+    if (sorgente === 'globale') {
+      if (btn.classList.contains('ascolta')) {
+        btn.classList.remove('ascolta');
+        btn.innerHTML = SVG_MIC + ' Parla';
+        aggiungiItemSimulato();
+      } else {
+        btn.classList.add('ascolta');
+        btn.innerHTML = SVG_MIC + ' In ascolto…';
+      }
+    } else if (sorgente === 'inbox') {
+      btn.classList.toggle('attivo');
     }
     return;
   }
-  const box = $('mic-box');
+
+  // 1. Resetta lo stato e apre il riquadro
+  const catWrap = $('mic-box-cat-wrap');
+  const catEl = $('mic-box-cat');
+  const catIniziale = sorgente === 'inbox' ? (_inboxCatCorrente && _inboxCatCorrente !== 'tutto' ? _inboxCatCorrente : 'nota')
+                    : sorgente === 'clienti' ? 'cliente' : null;
   $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
-  $('mic-box-cat-wrap').hidden = true;
-  box.hidden = false;
+  if (catIniziale) {
+    const info = CAT_INFO[catIniziale] || CAT_INFO.nota;
+    catEl.textContent = info.emoji + ' ' + info.nome;
+    catEl.className = 'mic-box-cat cat-' + catIniziale;
+    catWrap.hidden = false;
+  } else {
+    catWrap.hidden = true;
+  }
+  $('mic-box').hidden = false;
   document.body.classList.add('bloccato');
-  btn.classList.add('ascolta');
-  btn.innerHTML = SVG_MIC + ' In ascolto…';
+  if (btn) btn.classList.add('ascolta');
+  if (sorgente === 'globale') btn.innerHTML = SVG_MIC + ' In ascolto…';
   _micFinaleTrovato = false;
-  _micSorgente = 'globale';
+  _micSorgente = sorgente;
+
+  // 2. Riconoscimento vocale (uguale per tutti)
   const sr = new SpeechRecognition();
   _micRiconosc = sr;
   sr.lang = 'it-IT';
   sr.interimResults = true;
   sr.continuous = false;
   sr.maxAlternatives = 1;
+
   sr.onresult = (e) => {
     let interim = '', finale = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       if (e.results[i].isFinal) finale += e.results[i][0].transcript;
       else interim += e.results[i][0].transcript;
     }
-    const catWrap = $('mic-box-cat-wrap');
-    const catEl = $('mic-box-cat');
     if (finale) {
       _micFinaleTrovato = true;
       $('mic-box-testo').textContent = finale;
+      // 4. "Elaboro…" mentre l'AI lavora
       catWrap.hidden = false;
       catEl.className = 'mic-box-cat';
       catEl.innerHTML = '<span class="mic-box-elabora"><span></span><span></span><span></span></span> Elaboro…';
-      const mostraCat = (ris) => {
-        const cat = (ris && typeof ris === 'object') ? (ris.tipo || ris.categoria || 'tutto') : (ris || 'tutto');
-        const info = CAT_INFO[cat] || CAT_INFO['tutto'];
-        catEl.className = 'mic-box-cat cat-' + cat;
-        catEl.textContent = info.emoji + ' ' + info.nome;
+      const mostra = (ris) => {
+        if ($('mic-box').hidden) return; // l'utente ha già chiuso il riquadro
+        const et = etichettaRisultato(ris);
+        catEl.className = 'mic-box-cat cat-' + et.cat;
+        catEl.textContent = et.testo;
         if (navigator.vibrate && vibrazioneAttiva) navigator.vibrate(60);
+        // Countdown 4 secondi + Annulla
         const autoWrap = document.createElement('div');
         autoWrap.className = 'mic-box-auto-wrap';
         autoWrap.innerHTML = '<div class="mic-box-auto-bar"><div class="mic-box-auto-progresso"></div></div><button class="mic-box-annulla-btn">Annulla</button>';
-        $('mic-box-cat-wrap').appendChild(autoWrap);
+        catWrap.appendChild(autoWrap);
         void autoWrap.offsetWidth;
         autoWrap.querySelector('.mic-box-auto-progresso').classList.add('corre');
-        let salvaTimer = setTimeout(() => { aggiungiVoceInbox(finale, ris); chiudiMicBox(); }, 4000);
+        const salvaTimer = setTimeout(() => { aggiungiVoceInbox(finale, ris); chiudiMicBox(); }, 4000);
         autoWrap.querySelector('.mic-box-annulla-btn').onclick = () => { clearTimeout(salvaTimer); chiudiMicBox(); };
       };
-      if (!ANTHROPIC_KEY) {
-        if (!chiediChiaveAI()) { mostraCat(categorizzaVoce(finale)); return; }
+      if (!ANTHROPIC_KEY && !chiediChiaveAI()) {
+        // Senza chiave: riconoscimento base a parole chiave (dentro l'inbox resta nella scheda aperta)
+        mostra(sorgente === 'inbox' ? catIniziale : categorizzaVoce(finale));
+        return;
       }
-      categorizzaVoceAI(finale).then(mostraCat).catch(() => mostraCat(categorizzaVoce(finale)));
+      // 5. Se l'AI fallisce (rete, errore, tempo scaduto) → nota grezza, la trascrizione non si perde
+      categorizzaVoceAI(finale).then(mostra).catch(() => mostra({ operations: [{ tipo: 'nota', testo: finale }], _fallback: true }));
     } else if (interim) {
-      $('mic-box-testo').innerHTML = `<em>${interim}</em>`;
-      const cat = categorizzaVoce(interim);
-      if (cat !== 'tutto') {
-        const info = CAT_INFO[cat];
-        catEl.textContent = info.emoji + ' ' + info.nome;
-        catEl.className = 'mic-box-cat cat-' + cat;
-        catWrap.hidden = false;
-      } else {
-        catWrap.hidden = true;
+      $('mic-box-testo').innerHTML = `<em>${sicuro(interim)}</em>`;
+      // 3. Indovina la categoria mentre si parla: solo per il bottone globale
+      if (sorgente === 'globale') {
+        const cat = categorizzaVoce(interim);
+        if (cat !== 'tutto') {
+          const info = CAT_INFO[cat];
+          catEl.textContent = info.emoji + ' ' + info.nome;
+          catEl.className = 'mic-box-cat cat-' + cat;
+          catWrap.hidden = false;
+        } else {
+          catWrap.hidden = true;
+        }
       }
     }
   };
   sr.onerror = (e) => {
     if (e.error === 'no-speech') {
       $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>';
-      $('mic-box-cat-wrap').hidden = true;
+      catWrap.hidden = true;
       setTimeout(chiudiMicBox, 1800);
     } else if (e.error === 'not-allowed') {
       $('mic-box-testo').innerHTML = '<em>Microfono bloccato. Vai in Impostazioni del browser → Autorizzazioni → Microfono.</em>';
@@ -4621,7 +4623,9 @@ $('ai-mic').onclick = () => {
     if (!_micFinaleTrovato) setTimeout(() => { if ($('mic-box') && !$('mic-box').hidden) chiudiMicBox(); }, 400);
   };
   sr.start();
-};
+}
+
+$('ai-mic').onclick = () => avviaMicrofono('globale');
 $('mic-box-chiudi').onclick = chiudiMicBox;
 
 // Costi rapidi: con un tocco si aggiunge la voce e si scrive l'importo. Si cambiano dalle Impostazioni.
@@ -4791,46 +4795,10 @@ function disegnaRubrica(filtroQ = '') {
   lista.querySelectorAll('.apri').forEach(b => { b.onclick = () => { chiudiRubrica(); apriScheda(b.dataset.nome); }; });
 }
 
-// Mic dalla pagina Clienti → va direttamente nella categoria 'cliente'
+// Mic dalla pagina Clienti: stesso percorso AI degli altri
 document.addEventListener('DOMContentLoaded', () => {
   const cb = $('c-btn-mic');
-  if (cb) cb.onclick = () => {
-    _inboxCatCorrente = 'cliente';
-    _micSorgente = 'inbox';
-    const inboxMic = $('ai-inbox-mic');
-    if (inboxMic) { inboxMic.classList.add('ascolta'); }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const box = $('mic-box');
-    $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
-    const catEl = $('mic-box-cat');
-    const catWrap = $('mic-box-cat-wrap');
-    catEl.textContent = '👤 Nuovo cliente';
-    catEl.className = 'mic-box-cat cat-cliente';
-    catWrap.hidden = false;
-    box.hidden = false;
-    document.body.classList.add('bloccato');
-    _micFinaleTrovato = false;
-    const sr = new SpeechRecognition();
-    _micRiconosc = sr;
-    sr.lang = 'it-IT'; sr.interimResults = true; sr.continuous = false; sr.maxAlternatives = 1;
-    sr.onresult = e => {
-      let interim = '', finale = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) finale += e.results[i][0].transcript; else interim += e.results[i][0].transcript; }
-      if (finale) {
-        _micFinaleTrovato = true;
-        $('mic-box-testo').textContent = finale;
-        const doSave = cat => { setTimeout(() => { aggiungiVoceInbox(finale, cat); chiudiMicBox(); }, 1200); };
-        if (!ANTHROPIC_KEY) {
-          if (!chiediChiaveAI()) { doSave(categorizzaVoce(finale)); return; }
-        }
-        categorizzaVoceAI(finale).then(doSave).catch(() => doSave(categorizzaVoce(finale)));
-      } else if (interim) { $('mic-box-testo').innerHTML = `<em>${interim}</em>`; }
-    };
-    sr.onerror = e => { if (e.error === 'no-speech') { $('mic-box-testo').innerHTML = '<em>Non ho sentito niente. Riprova.</em>'; setTimeout(chiudiMicBox, 1800); } else if (e.error === 'not-allowed') { $('mic-box-testo').innerHTML = '<em>Microfono bloccato. Vai in Impostazioni del browser → Autorizzazioni → Microfono.</em>'; setTimeout(chiudiMicBox, 4000); } else if (e.error !== 'aborted') chiudiMicBox(); };
-    sr.onend = () => { if (!_micFinaleTrovato) setTimeout(() => { if (!$('mic-box').hidden) chiudiMicBox(); }, 400); };
-    sr.start();
-  };
+  if (cb) cb.onclick = () => avviaMicrofono('clienti');
 });
 
 // Sollecito: arancione = ora del messaggio (WhatsApp con il testo già scritto), rosso = ora di telefonare
