@@ -859,6 +859,12 @@ button.s-riga:first-child { border-top: 0; }
 .campo input, .campo textarea { width: 100%; min-height: 56px; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); font-size: 18px; font-weight: 600; }
 .campo textarea { resize: none; }
 .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--foglia); }
+/* Autocomplete indirizzo */
+#campo-dove { position: relative; }
+.dove-suggerimenti { position: absolute; left: 0; right: 0; top: 100%; background: var(--carta); border-radius: 12px; border: 1.5px solid var(--foglia); overflow: hidden; z-index: 200; margin-top: 4px; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
+.dove-suggerimento { display: block; width: 100%; padding: 11px 16px; text-align: left; border: none; border-top: 1px solid var(--linea); background: none; color: var(--testo); font-size: 15px; font-weight: 600; cursor: pointer; }
+.dove-suggerimento:first-child { border-top: none; }
+.dove-suggerimento:active { background: var(--foglia-chiara); color: var(--foglia); }
 .con-euro { position: relative; }
 .con-euro input { padding-right: 44px; }
 .con-euro::after { content: "€"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--testo-2); }
@@ -5683,8 +5689,73 @@ $('i-ripristina').onchange = async e => {
     avvisa(`Ripristinati ${lavori.length} lavori`);
   } catch { avvisa('Questo file non è una copia dei dati'); }
 };
+// ---- Autocompletamento indirizzo (Nominatim / OpenStreetMap — gratuito, nessuna chiave) ----
+let _doveTimer = null, _doveAbort = null;
+
+async function _nomCerca(q) {
+  if (_doveAbort) _doveAbort.abort();
+  _doveAbort = new AbortController();
+  const { lat, lon } = zonaMeteo;  // usa la città già impostata per il meteo
+  const dl = 0.45, dL = 0.63;     // box ~50 km intorno alla città
+  const vb = `${lon-dL},${lat+dl},${lon+dL},${lat-dl}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=it&limit=5&addressdetails=1&viewbox=${vb}`;
+  const r = await fetch(url, { signal: _doveAbort.signal, headers: { 'Accept-Language': 'it,en' } });
+  return r.json();
+}
+
+function _doveFormatta(r) {
+  const a = r.address || {};
+  const via = a.road || a.pedestrian || a.path || '';
+  const num = a.house_number || '';
+  const loc = a.city || a.town || a.village || a.municipality || '';
+  if (via) return [via + (num ? ' ' + num : ''), loc].filter(Boolean).join(', ');
+  return r.display_name.split(',').slice(0, 2).join(',').trim();
+}
+
+function _doveAvviaAutocomplete() {
+  const input = $('f-dove');
+  const wrap = $('campo-dove');
+  const nascondi = () => wrap.querySelector('.dove-suggerimenti')?.remove();
+
+  input.addEventListener('input', () => {
+    clearTimeout(_doveTimer);
+    nascondi();
+    const q = input.value.trim();
+    if (q.length < 3) return;
+    _doveTimer = setTimeout(async () => {
+      try {
+        const ris = await _nomCerca(q);
+        nascondi();
+        if (!ris.length) return;
+        const sg = document.createElement('div');
+        sg.className = 'dove-suggerimenti';
+        ris.forEach(r => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'dove-suggerimento';
+          btn.textContent = _doveFormatta(r);
+          btn.onmousedown = e => e.preventDefault();
+          btn.onclick = () => { input.value = btn.textContent; nascondi(); };
+          sg.appendChild(btn);
+        });
+        wrap.appendChild(sg);
+      } catch { /* abort o rete assente */ }
+    }, 450);
+  });
+
+  input.addEventListener('blur', () => setTimeout(nascondi, 150));
+  document.addEventListener('click', e => { if (!wrap.contains(e.target)) nascondi(); });
+}
+
+// Estrae un indirizzo da testo libero (note vocali) — usata dall'AI quando elabora nuovi clienti
+function estraiIndirizzo(testo) {
+  const m = testo.match(/\b(Via|Viale|Piazza|Corso|Largo|Vicolo|Strada|Contrada|Loc\.?)\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]+(?:\s*,?\s*\d+\s*[A-Za-z]?)?/i);
+  return m ? m[0].trim() : null;
+}
+
 applicaAccento();
-caricaMeteo();   // previsioni del meteo all'apertura
+caricaMeteo();
+_doveAvviaAutocomplete();
 
 // ---- Resto della pagina ----
 // Frecce: nei giorni cambiano mese, nei mesi cambiano anno
