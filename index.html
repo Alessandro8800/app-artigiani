@@ -6243,12 +6243,14 @@ function parsaDataOra(testo) {
   // "22/11", "il 22-11" (solo se il testo è proprio una data, non una frase intera)
   const mNum = basso.trim().match(/^(?:il\s+|per il\s+)?(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s*[\/.-]\s*\d{2,4})?$/);
   if (!mData && mNum && +mNum[2] >= 1 && +mNum[2] <= 12) mData = [null, mNum[1], MESI[+mNum[2] - 1]];
-  // "il 22" da solo → il prossimo 22 (questo mese, o il mese dopo se è già passato)
-  const mGiorno = basso.trim().match(/^(?:il\s+|per il\s+)?(\d{1,2})$/);
+  // "il 22", "il giorno 22" → il prossimo 22 (questo mese, o il mese dopo se è già passato)
+  // "22 di questo mese" → questo mese; "5 del mese prossimo" / "5 del prossimo mese" → il mese dopo
+  const mGiorno = basso.trim().match(/^(?:per\s+)?(?:il\s+)?(?:giorno\s+)?(\d{1,2})(?:\s+(?:di|del)?\s*(questo mese|mese corrente|mese prossimo|prossimo mese))?$/);
   if (!mData && mGiorno && +mGiorno[1] >= 1 && +mGiorno[1] <= 31) {
-    const d = new Date(adesso.getFullYear(), adesso.getMonth(), +mGiorno[1]);
-    if (d < oggiMezzanotte) d.setMonth(d.getMonth() + 1);
-    if (d.getDate() === +mGiorno[1]) mData = [null, String(d.getDate()), MESI[d.getMonth()], d.getFullYear()];
+    const g = +mGiorno[1], quale = mGiorno[2] || '';
+    const d = new Date(adesso.getFullYear(), adesso.getMonth() + (quale.includes('prossimo') ? 1 : 0), g);
+    if (!quale && d < oggiMezzanotte) d.setMonth(d.getMonth() + 1);
+    if (d.getDate() === g) mData = [null, String(g), MESI[d.getMonth()], d.getFullYear()];
   }
   // "tra 3 giorni", "fra una settimana", "tra due settimane"
   const mTra = basso.match(/\b(?:tra|fra)\s+(\d{1,2}|un|uno|una|due|tre|quattro|cinque|sei|sette|otto|nove|dieci|quindici)\s+(giorn[oi]|settiman[ae])\b/);
