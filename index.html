@@ -566,10 +566,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .riprogramma.attivo { background: var(--foglia); color: var(--sul-foglia); }
 .sposta-qui { color: var(--foglia); cursor: pointer; border: 2px solid var(--foglia-chiara); }
 /* Azioni nella card lavoro (Fatto · Sposta · Annulla · Maps) */
-.card-azioni { display: flex; gap: 6px; padding-top: 10px; }
-.ca-fatto { flex: 2; min-height: 42px; width: auto; height: auto; border-radius: 11px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 15px; font-weight: 800; cursor: pointer; position: static; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .2s, color .2s; }
+.card-azioni { display: flex; gap: 8px; padding-top: 10px; justify-content: flex-end; align-items: center; }
+.ca-fatto { width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 22px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s, color .2s; }
 .lavoro.fatto .ca-fatto { background: var(--foglia-chiara); color: var(--foglia); }
-.ca-maps { flex-shrink: 0; min-width: 42px; min-height: 42px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.ca-maps { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); display: flex; align-items: center; justify-content: center; text-decoration: none; }
 .l-azioni-top { display: flex; gap: 8px; padding-top: 2px; }
 .l-btn-ripr { flex: 1; min-height: 44px; border-radius: 12px; background: var(--foglia-chiara); color: var(--foglia); border: none; font-size: 14px; font-weight: 800; cursor: pointer; }
 .l-btn-annulla { flex: 1; min-height: 44px; border-radius: 12px; background: none; color: #d44; border: 1.5px solid #d44; font-size: 14px; font-weight: 800; cursor: pointer; }
@@ -1997,7 +1997,7 @@ function cartaLavoro(l, parte = 1, di = 1) {
       <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
     </button>
     <div class="card-azioni">
-      <button class="ca-fatto spunta" aria-label="Segna come fatto">✓ Fatto</button>
+      <button class="ca-fatto spunta" aria-label="Segna come fatto">✓</button>
       ${mapsBtn}
     </div>
   </article>`;
