@@ -535,8 +535,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-cerca-risultati button:active { background: var(--foglia-chiara); }
 .ripr-info { font-size: 15px; font-weight: 800; color: #fff; padding: 10px 0 14px; text-align: center; }
 .ripr-info-row { display: flex; align-items: center; padding: 10px 0 14px; gap: 10px; }
-.ripr-nome-input { flex: 1; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.3); border-radius: 9px; color: #fff; font-size: 15px; font-weight: 700; padding: 7px 12px; min-width: 0; }
-.ripr-nome-input::placeholder { color: rgba(255,255,255,.45); }
+/* Nome del cliente nel calendario "sposta": solo da leggere (cambiarlo faceva perdere il lavoro da spostare) */
+.ripr-nome { flex: 1; min-width: 0; color: #fff; font-size: 17px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ripr-data-vec { font-size: 13px; color: rgba(255,255,255,.65); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
 .inbox-btn-indietro { height: 30px; padding: 0 14px; border-radius: 9px; background: none; border: 1.5px solid rgba(255,255,255,.35); color: rgba(255,255,255,.85); font-size: 13px; font-weight: 700; cursor: pointer; }
 .f-piede-indietro { display: flex; gap: 10px; }
@@ -1534,7 +1534,7 @@ button.s-riga:first-child { border-top: 0; }
   <div class="q-pop-box" role="dialog" aria-modal="true" aria-label="Scegli nuovo giorno">
     <div class="q-pop-testa">
       <div class="ripr-info-row">
-        <input type="text" id="ripr-nome" class="ripr-nome-input" placeholder="Nome cliente">
+        <strong id="ripr-nome" class="ripr-nome"></strong>
         <span id="ripr-data-vec" class="ripr-data-vec"></span>
       </div>
       <button class="chiudi" id="ripr-chiudi" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
@@ -3569,7 +3569,7 @@ function apriRiprogrammaInbox(card, item) {
   const get = (l) => (item.campi.find(([k]) => k === l) || [])[1] || '';
   const cliente = get('Cliente');
   const da = get('Da');
-  $('ripr-nome').value = cliente;
+  $('ripr-nome').textContent = cliente || 'Lavoro da spostare';
   $('ripr-data-vec').textContent = da;
   _riprogrammaMese = new Date();
   _riprogrammaDataScelta = null;
@@ -3610,7 +3610,9 @@ function disegnaRiprCalendario() {
 function confRiprCalendario() {
   if (!_riprogrammaDataScelta) return;
   if (_riprogrammaCard) {
-    const cliente = $('ripr-nome').value.trim();
+    // Il cliente è sempre quello della card (il nome nel popup non si può più cambiare)
+    const cliente = ((_riprogrammaItem?.campi || []).find(([k]) => k === 'Cliente') || [])[1] || '';
+    if (!cliente) { avvisa('Questa voce non dice di quale cliente: scartala e ridilla con il nome'); return; }
     const lavoroTarget = lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(cliente)).sort((a, b) => a.data.localeCompare(b.data))[0];
     // Anche dal calendario: niente spostamenti allo stesso giorno o nel passato
     if (lavoroTarget && _riprogrammaDataScelta === lavoroTarget.data) { avvisa(`È già fissato per ${nomeGiorno(lavoroTarget.data).toLowerCase()}: scegli un altro giorno`); return; }
