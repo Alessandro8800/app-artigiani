@@ -959,6 +959,13 @@ button.s-riga:first-child { border-top: 0; }
 .q-pop-testa { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .q-pop-testa strong { font-family: var(--font-titoli); font-size: 20px; color: #fff; }
 .q-pop .g:disabled { opacity: .35; }
+.scegli-lista { display: flex; flex-direction: column; gap: 8px; }
+.scegli-voce { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--sfondo); color: var(--testo); text-align: left; }
+.scegli-voce:active { background: var(--foglia-chiara); border-color: var(--foglia); }
+.scegli-emoji { font-size: 24px; width: 32px; text-align: center; }
+.scegli-voce span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.scegli-voce strong { font-size: 16px; }
+.scegli-voce small { font-size: 13px; color: var(--testo-2); }
 .zona-ok { background: var(--foglia-chiara); border: 1.5px solid var(--foglia); color: var(--testo); border-radius: 12px; padding: 10px 12px; font-size: 15px; animation: sali .25s ease-out; }
 .zona-gira { display: inline-block; width: 16px; height: 16px; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: zona-gira .8s linear infinite; vertical-align: -3px; margin-right: 4px; }
 @keyframes zona-gira { to { transform: rotate(360deg); } }
@@ -1553,6 +1560,17 @@ button.s-riga:first-child { border-top: 0; }
     <div class="ripr-conferma-row" id="ripr-conferma-row" hidden>
       <button id="ripr-conferma-btn" onclick="confRiprCalendario()">Conferma</button>
     </div>
+  </div>
+</div>
+
+<!-- "+" dall'inbox "tutte": si sceglie cosa aggiungere -->
+<div class="q-pop" id="scegli-pop" hidden onclick="if (event.target === this) this.hidden = true">
+  <div class="q-pop-box chiave-box" role="dialog" aria-modal="true" aria-labelledby="scegli-titolo">
+    <div class="chiave-testa">
+      <strong id="scegli-titolo">Cosa vuoi aggiungere?</strong>
+      <button class="chiudi" onclick="$('scegli-pop').hidden = true" aria-label="Chiudi"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="scegli-lista" id="scegli-lista"></div>
   </div>
 </div>
 
@@ -3840,7 +3858,7 @@ function confermaCarta(card, item, cat) {
     }
     if (giorno) {
       const data = parseDataRelativa(giorno) || tra(1);
-      const nomeEvento = item.testa || nota.slice(0, 40);
+      const nomeEvento = (item.testa !== 'Nuova nota' && item.testa) || nota.slice(0, 40);   // nota aggiunta col "+": titolo = il testo
       lavori.push({ id: lavori.length, nome: nomeEvento, data, fatto: false, prezzo: null, dove: '', tipo: TIPI[0], durata: 0.5, cosa: nota, memo: true });
       avvisa(`Promemoria salvato per ${maiuscola(fmtSettBreve.format(daIso(data)))}`);
       tutto();
@@ -3850,7 +3868,7 @@ function confermaCarta(card, item, cat) {
       avvisa(`Nota salvata per ${cliente}`);
       tutto();
     } else {
-      const titolo = item.testa && item.testa !== nota ? item.testa : generaTitoloAuto(nota);
+      const titolo = item.testa && item.testa !== nota && item.testa !== 'Nuova nota' ? item.testa : generaTitoloAuto(nota);
       noteRapide.unshift({ id: ++_nrId, titolo, testo: nota, fatta: false });
       avvisa('Nota rapida salvata');
       disegnaNoteRapide(); aggiornaBadgeNote();
@@ -3888,21 +3906,15 @@ function apriInbox(key) {
   const lista = $('ai-inbox-lista');
   lista.classList.remove('edit-mode');
   $('ai-inbox-edit').classList.remove('attivo');
-  $('ai-inbox-mic').hidden = key === 'tutto';
+  $('ai-inbox-mic').hidden = false;          // il microfono c'è sempre, anche in "tutte"
   $('ai-inbox-mic').classList.remove('ascolta');
   const addBtn = $('ai-inbox-add');
-  if (key === 'cliente') {
+  if (INBOX_AGGIUNGI[key]) {
     addBtn.hidden = false;
-    addBtn.onclick = () => { _ritornaInboxKey = 'cliente'; chiudiInbox(); apriFoglio(); };
-  } else if (key === 'nota') {
+    addBtn.onclick = INBOX_AGGIUNGI[key].fai;
+  } else if (key === 'tutto') {
     addBtn.hidden = false;
-    addBtn.onclick = () => aggiungiItemSimulato();
-  } else if (key === 'costo') {
-    addBtn.hidden = false;
-    addBtn.onclick = () => {
-      INBOX_ESEMPI.costo.voci.unshift({ testa: 'Nuova spesa', dati: '', campi: [['Descrizione',''],['Importo','0']] });
-      apriInbox('costo');
-    };
+    addBtn.onclick = apriSceltaAggiungi;     // "tutte": prima si sceglie la categoria
   } else {
     addBtn.hidden = true;
   }
@@ -3936,6 +3948,28 @@ function apriInbox(key) {
 }
 
 function chiudiInbox() { $('ai-inbox').hidden = true; document.body.classList.remove('bloccato'); }
+
+// Il "+" dell'inbox: cosa fa in ogni categoria. Da "tutte" si sceglie prima la categoria e poi fa la stessa cosa.
+// Una voce nuova si apre già con il pannello da compilare.
+function aggiungiVoceVuota(cat, item) {
+  INBOX_ESEMPI[cat].voci.unshift(item);
+  aggiornaBadge();
+  apriInbox(cat);
+  const card = $('ai-inbox-lista').querySelector('.inbox-card');
+  const pannello = card && card.querySelector('.inbox-edit-panel');
+  if (pannello) { pannello.hidden = false; setTimeout(() => (pannello.querySelector('textarea') || pannello.querySelector('input'))?.focus(), 100); } // nota: dritto sul testo
+}
+const INBOX_AGGIUNGI = {
+  cliente: { nome: 'Nuovo lavoro', emoji: '👤', spiega: 'Apre il foglio nuovo cliente', fai: () => { _ritornaInboxKey = 'cliente'; chiudiInbox(); apriFoglio(); } },
+  nota:    { nome: 'Nota',         emoji: '📝', spiega: 'Una nota da scrivere',         fai: () => aggiungiVoceVuota('nota', { testa: 'Nuova nota', dati: 'da scrivere', campi: [['Cliente', ''], ['Nota', '']] }) },
+  costo:   { nome: 'Spesa',        emoji: '🧾', spiega: 'Una spesa con importo',        fai: () => aggiungiVoceVuota('costo', { testa: 'Nuova spesa', dati: '', campi: [['Descrizione', ''], ['Importo', '0']] }) },
+};
+function apriSceltaAggiungi() {
+  $('scegli-lista').innerHTML = Object.entries(INBOX_AGGIUNGI).map(([k, a]) =>
+    `<button type="button" class="scegli-voce" data-k="${k}"><span class="scegli-emoji">${a.emoji}</span><span><strong>${a.nome}</strong><small>${a.spiega}</small></span></button>`).join('');
+  $('scegli-lista').querySelectorAll('.scegli-voce').forEach(b => { b.onclick = () => { $('scegli-pop').hidden = true; INBOX_AGGIUNGI[b.dataset.k].fai(); }; });
+  $('scegli-pop').hidden = false;
+}
 
 let _storicoKey = null;
 let _storicoRiprIdx = null; // idx in STORICO_ESEMPI quando si riprogramma dallo storico
@@ -4931,7 +4965,8 @@ function avviaMicrofono(sorgente) {
   // 1. Resetta lo stato e apre il riquadro
   const catWrap = $('mic-box-cat-wrap');
   const catEl = $('mic-box-cat');
-  const catIniziale = sorgente === 'inbox' ? (_inboxCatCorrente && _inboxCatCorrente !== 'tutto' ? _inboxCatCorrente : 'nota')
+  // Dentro una categoria si mostra quella; in "tutte" niente (decide l'AI)
+  const catIniziale = sorgente === 'inbox' ? (_inboxCatCorrente && _inboxCatCorrente !== 'tutto' ? _inboxCatCorrente : null)
                     : sorgente === 'clienti' ? 'cliente' : null;
   $('mic-box-testo').innerHTML = '<em>Parla pure…</em>';
   if (catIniziale) {
