@@ -347,6 +347,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .banner strong { font-size: 15px; }
 .banner small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
 .banner .salva { width: auto; height: 42px; padding: 0 16px; font-size: 15px; border-radius: 12px; }
+.banner-x { width: 42px; height: 42px; border: 0; border-radius: 12px; background: none; color: var(--testo-2); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .nota-riga { display: flex; gap: 6px; align-items: stretch; background: var(--carta); border: 1.5px dashed var(--foglia); border-radius: 14px; padding: 4px; margin-bottom: 6px; }
 .nota-testo { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
 .nota-testo span { font-weight: 700; font-size: 16px; }
@@ -3909,6 +3910,7 @@ let _nrId = 10;
 // ===== PERSISTENZA LOCALE (Dexie/IndexedDB) =====
 let _dbPronto = false;
 let _dexie = null;
+let inizioChiuso = false; // l'utente ha chiuso con la X il banner "Inizia da qui" (resta in Impostazioni → Per iniziare)
 
 async function dbInizia() {
   if (_dexie) return;
@@ -3923,7 +3925,8 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso']);
+    if (r[6]) inizioChiuso = !!r[6].valore;
     if (!r[0]) return; // prima volta: array già vuoti, niente da caricare
     if (r[0]) lavori.splice(0, Infinity, ...JSON.parse(r[0].valore));
     if (r[1]) pagamenti.splice(0, Infinity, ...JSON.parse(r[1].valore));
@@ -3944,6 +3947,7 @@ function dbSalva() {
       { chiave: 'noteRapide', valore: JSON.stringify(noteRapide) },
       { chiave: '_nrId',      valore: _nrId },
       { chiave: 'prevDati',   valore: prevDati },
+      { chiave: 'inizioChiuso', valore: inizioChiuso },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -5634,11 +5638,16 @@ function sistemaNota(n) {
 // Avvisi in cima alla prima pagina: copia dei dati e note da sistemare
 function disegnaAvvisiHome() {
   disegnaAzioni();
-  const vuota = !clientiConosciuti().length
-    ? `<div class="banner"><span><strong>Inizia da qui</strong><small>Segna chi ti deve già soldi e prendi i clienti dalla rubrica.</small></span><button type="button" class="salva" id="b-inizio">Inizia</button></div>` : '';
+  // Primo accesso: visibile finché non c'è nessun cliente o finché l'utente non lo chiude con la X
+  const vuota = (!clientiConosciuti().length && !inizioChiuso)
+    ? `<div class="banner"><span><strong>Inizia da qui</strong><small>Segna chi ti deve già soldi e prendi i clienti dalla rubrica.</small></span><button type="button" class="salva" id="b-inizio">Inizia</button><button type="button" class="banner-x" id="b-inizio-x" aria-label="Chiudi, lo ritrovi in Impostazioni"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button></div>` : '';
   // (L'avviso della copia dei dati è tolto per ora: con il server dopo la beta la copia sarà automatica)
   $('avvisi-home').innerHTML = vuota;
   if ($('b-inizio')) $('b-inizio').onclick = apriInizio;
+  if ($('b-inizio-x')) $('b-inizio-x').onclick = () => {
+    inizioChiuso = true; dbSalva(); disegnaAvvisiHome();
+    avvisa('Lo ritrovi in Impostazioni → Per iniziare');
+  };
 }
 
 // ======== 4. Rimasti indietro: lavori di giorni passati non segnati "Fatto" ========
@@ -6064,6 +6073,7 @@ const GRUPPI_IMP = [
         if (!pronto) { pronto = true; $('i-cancella').classList.add('conferma'); $('i-cancella').textContent = 'Tocca di nuovo per cancellare'; t = setTimeout(() => { pronto = false; if ($('i-cancella')) disegnaImpostazioni(); }, 4000); return; }
         clearTimeout(t);
         lavori.splice(0); pagamenti.splice(0); Object.keys(extra).forEach(k => delete extra[k]); noteRapide.splice(0); _nrId = 10;
+        inizioChiuso = false; // app di nuovo vuota → torna il banner "Inizia da qui"
         tutto(); rigaAperta = null; disegnaImpostazioni(); avvisa('Tutti i dati sono stati cancellati');
       };
     } },
