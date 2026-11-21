@@ -1068,7 +1068,7 @@ button.s-riga:first-child { border-top: 0; }
 </head>
 <body>
 <div class="app">
-  <div class="esempio gutter">Prova grafica · dati inventati</div>
+  <div class="esempio gutter">Prova grafica · i tuoi dati si salvano sul telefono</div>
   <div style="background:#ef4444;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
     <span style="color:#fff;font-size:13px;font-weight:700;">⚠️ Se non vedi gli ultimi aggiornamenti:</span>
     <button onclick="(async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();const keys=await caches.keys();for(const k of keys)await caches.delete(k);}catch(e){}location.reload(true);})()" style="background:#fff;color:#ef4444;border:none;border-radius:8px;padding:8px 14px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;">🔄 Aggiorna app</button>
@@ -1674,14 +1674,15 @@ button.s-riga:first-child { border-top: 0; }
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.8/dexie.min.js"></script>
 <script>
-// ---- Dati inventati, sistemati attorno alla data di oggi ----
 const OGGI = new Date(); OGGI.setHours(0, 0, 0, 0);
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const tra = n => { const d = new Date(OGGI); d.setDate(d.getDate() + n); return iso(d); };
 
-const lavori = [
-  // Fatti e NON pagati → "ha pagato" ha senso
+const lavori = [];
+/* -- dati demo rimossi -- se vuoi rivederli, controlla git log -- */
+const _DEMO_PLACEHOLDER_1 = [
   { g: -18, nome: 'Villa Verdi',       dove: 'Via Manzoni 4',      cosa: 'Taglio prato e bordi',    prezzo: 90,   fatto: true },
   { g: -11, nome: 'Sig. Rossi',        dove: 'Via Roma 12',        cosa: 'Potatura siepe',          prezzo: 150,  fatto: true },
   { g: -6,  nome: 'Marta Ferri',       dove: 'Via dei Tigli 14',   cosa: 'Taglio prato',            prezzo: 50,   fatto: true },
@@ -1744,11 +1745,7 @@ function togliRipetuti(nome) {
 
 // Pagamenti ricevuti. Scalano dal totale che il cliente deve, non da un lavoro preciso:
 // coprono i lavori fatti partendo dal più vecchio.
-const pagamenti = [
-  // (nella prova: pagati qualche giorno dopo il lavoro)
-  ...lavori.filter(l => l.pagato).map((l, i) => ({ nome: l.nome, data: tra(Math.min(l.g + [3, 0, 12, 6][i % 4], 0)), importo: l.prezzo })),
-  { nome: 'Villa Sangalli', data: tra(-30), importo: 200 },   // un acconto: ne restano 180
-];
+const pagamenti = [];
 
 const arrotonda = n => Math.round(n * 100) / 100;
 // Costi di un lavoro: il costo generale più le voci (il personale vale ore × costo all'ora). null = non segnati.
@@ -2252,7 +2249,7 @@ function scegli(s) {
   apriGiornoPanel(s);
 }
 
-function tutto() { if (typeof disegnaAvvisiHome === 'function') disegnaAvvisiHome(); disegnaTestata(); disegnaCalendario(); disegnaAgenda(); if (typeof disegnaClienti === 'function') disegnaClienti(); }
+function tutto() { if (typeof disegnaAvvisiHome === 'function') disegnaAvvisiHome(); disegnaTestata(); disegnaCalendario(); disegnaAgenda(); if (typeof disegnaClienti === 'function') disegnaClienti(); dbSalva(); }
 
 let timer;
 function avvisa(testo, azione, azione2) {
@@ -3862,17 +3859,56 @@ function riviSt(btn) {
 }
 
 // Note rapide (post-it sulla home)
-let noteRapide = [
-  { id: 1, titolo: 'Acquisto', testo: 'Comprare guanti antitaglio taglia L', fatta: false },
-  { id: 2, titolo: 'Preventivo', testo: 'Chiedere preventivo cisterna Fam. Colombo', fatta: false },
-  { id: 3, titolo: 'Verifica', testo: 'Verificare prezzo concime in sacchi 25kg', fatta: true },
-];
+let noteRapide = [];
 let _nrId = 10;
+
+// ===== PERSISTENZA LOCALE (Dexie/IndexedDB) =====
+let _dbPronto = false;
+let _dexie = null;
+
+async function dbInizia() {
+  if (_dexie) return;
+  try {
+    _dexie = new Dexie('artigiani-app');
+    _dexie.version(1).stores({ stato: 'chiave' });
+    await _dexie.open();
+    if (navigator.storage?.persist) navigator.storage.persist();
+  } catch (e) { console.warn('DB non disponibile:', e); }
+}
+
+async function dbCarica() {
+  if (!_dexie) return;
+  try {
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati']);
+    if (!r[0]) return; // prima volta: array già vuoti, niente da caricare
+    if (r[0]) lavori.splice(0, Infinity, ...JSON.parse(r[0].valore));
+    if (r[1]) pagamenti.splice(0, Infinity, ...JSON.parse(r[1].valore));
+    if (r[2]) { Object.keys(extra).forEach(k => delete extra[k]); Object.assign(extra, JSON.parse(r[2].valore)); }
+    if (r[3]) noteRapide.splice(0, Infinity, ...JSON.parse(r[3].valore));
+    if (r[4]) _nrId = r[4].valore;
+    if (r[5] && r[5].valore != null) prevDati = r[5].valore;
+  } catch (e) { console.warn('DB carica:', e); }
+}
+
+function dbSalva() {
+  if (!_dexie || !_dbPronto) return;
+  try {
+    _dexie.stato.bulkPut([
+      { chiave: 'lavori',     valore: JSON.stringify(lavori) },
+      { chiave: 'pagamenti',  valore: JSON.stringify(pagamenti) },
+      { chiave: 'extra',      valore: JSON.stringify(extra) },
+      { chiave: 'noteRapide', valore: JSON.stringify(noteRapide) },
+      { chiave: '_nrId',      valore: _nrId },
+      { chiave: 'prevDati',   valore: prevDati },
+    ]);
+  } catch (e) { console.warn('DB salva:', e); }
+}
 
 function aggiornaBadgeNote() {
   const n = noteRapide.filter(x => !x.fatta).length;
   const b = $('nr-badge');
   if (b) { b.textContent = n; b.hidden = n === 0; }
+  dbSalva();
 }
 
 function generaTitoloAuto(testo) {
@@ -5807,7 +5843,7 @@ const GRUPPI_IMP = [
       $('i-cancella').onclick = () => {
         if (!pronto) { pronto = true; $('i-cancella').classList.add('conferma'); $('i-cancella').textContent = 'Tocca di nuovo per cancellare'; t = setTimeout(() => { pronto = false; if ($('i-cancella')) disegnaImpostazioni(); }, 4000); return; }
         clearTimeout(t);
-        lavori.splice(0); pagamenti.splice(0); Object.keys(extra).forEach(k => delete extra[k]);
+        lavori.splice(0); pagamenti.splice(0); Object.keys(extra).forEach(k => delete extra[k]); noteRapide.splice(0); _nrId = 10;
         tutto(); rigaAperta = null; disegnaImpostazioni(); avvisa('Tutti i dati sono stati cancellati');
       };
     } },
@@ -6256,6 +6292,7 @@ function salvaPrevForm() {
     }
   }));
   prevDati = dati;
+  dbSalva();
   chiudiPrevForm();
   disegnaPreventivi();
 }
@@ -6273,7 +6310,7 @@ function disegnaPreventivi() {
         <p>Rispondi a qualche domanda sui tuoi prezzi (5 minuti) e poi basterà dirti un lavoro a voce — l'AI ti dà subito una stima.</p>
         <div class="prev-azioni">
           <button class="salva" onclick="apriPrevForm()">Compila ora →</button>
-          <button class="prev-salta" onclick="prevDati={}; disegnaPreventivi()">Salta per ora</button>
+          <button class="prev-salta" onclick="prevDati={}; dbSalva(); disegnaPreventivi()">Salta per ora</button>
         </div>
       </div>`;
   } else {
@@ -6289,7 +6326,12 @@ function disegnaPreventivi() {
   }
 }
 
-tutto();
+(async () => {
+  await dbInizia();
+  await dbCarica();
+  _dbPronto = true;
+  tutto();
+})();
 </script>
 </body>
 </html>
