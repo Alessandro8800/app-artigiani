@@ -3562,7 +3562,8 @@ function parseDataRelativa(testo) {
     return tra(diff);
   }
   if (/^\d{4}-\d{2}-\d{2}$/.test(testo.trim())) return testo.trim();
-  return null;
+  // "25 novembre", "prossima settimana", "tra 3 giorni"… → stesso calcolo di parsaDataOra
+  return parsaDataOra(testo).data;
 }
 
 function confermaCarta(card, item, cat) {
@@ -6129,9 +6130,11 @@ function parsaDataOra(testo) {
   const basso = testo.toLowerCase();
   const adesso = new Date();
   let data = null, ora = null;
-  // Ora
-  const mOra = basso.match(/alle?\s+(\d{1,2})(?::(\d{2}))?/);
-  if (mOra) {
+  const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  const RE_MESI = MESI.join('|');
+  // Ora ("alle 9", "alle 14:30") — ma non "al 25 novembre", che è una data
+  const mOra = basso.match(new RegExp(`alle?\\s+(\\d{1,2})(?::(\\d{2}))?\\b(?!\\s*°?\\s*(?:${RE_MESI}))`));
+  if (mOra && +mOra[1] <= 23) {
     ora = mOra[1].padStart(2, '0') + ':' + (mOra[2] || '00').padStart(2, '0');
   } else if (basso.includes('mattina') && !basso.includes('pomeriggio')) {
     ora = '09:00';
@@ -6141,14 +6144,45 @@ function parsaDataOra(testo) {
   // Formato HH:MM diretto
   if (!ora) { const mHM = basso.match(/\b(\d{1,2}):(\d{2})\b/); if (mHM) ora = mHM[1].padStart(2,'0') + ':' + mHM[2]; }
   // Data
-  if (basso.includes('oggi')) {
+  const oggiMezzanotte = new Date(adesso.getFullYear(), adesso.getMonth(), adesso.getDate());
+  const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  const NUMERI = { un: 1, uno: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6, sette: 7, otto: 8, nove: 9, dieci: 10, quindici: 15 };
+  // Date assolute: "25 novembre", "1° dicembre", "primo dicembre"
+  const mData = basso.match(new RegExp(`\\b(\\d{1,2}|primo)\\s*°?\\s+(${RE_MESI})\\b`));
+  // "tra 3 giorni", "fra una settimana", "tra due settimane"
+  const mTra = basso.match(/\b(?:tra|fra)\s+(\d{1,2}|un|uno|una|due|tre|quattro|cinque|sei|sette|otto|nove|dieci|quindici)\s+(giorn[oi]|settiman[ae])\b/);
+  const prossimaSett = /\b(?:prossima settimana|settimana prossima)\b/.test(basso);
+  if (mData) {
+    const giorno = mData[1] === 'primo' ? 1 : parseInt(mData[1], 10);
+    const mese = MESI.indexOf(mData[2]);
+    const d = new Date(adesso.getFullYear(), mese, giorno);
+    if (d.getMonth() === mese) {                                   // scarta date impossibili (31 aprile)
+      if (d < oggiMezzanotte) d.setFullYear(d.getFullYear() + 1);  // già passata → anno prossimo
+      data = iso(d);
+    }
+  } else if (mTra) {
+    const n = NUMERI[mTra[1]] || parseInt(mTra[1], 10);
+    const d = new Date(oggiMezzanotte);
+    d.setDate(d.getDate() + (mTra[2].startsWith('settiman') ? n * 7 : n));
+    data = iso(d);
+  } else if (prossimaSett) {
+    // "lunedì della prossima settimana" → quel giorno nella settimana dopo; da sola → tra 7 giorni
+    const i = GIORNI.findIndex(g => basso.includes(g));
+    const d = new Date(oggiMezzanotte);
+    if (i >= 0) {
+      const lunediProssimo = (8 - d.getDay()) % 7 || 7;              // giorni che mancano a lunedì prossimo
+      d.setDate(d.getDate() + lunediProssimo + ((i + 6) % 7));       // lunedì = 0 … domenica = 6
+    } else {
+      d.setDate(d.getDate() + 7);
+    }
+    data = iso(d);
+  } else if (basso.includes('oggi')) {
     data = iso(adesso);
   } else if (basso.includes('dopodomani')) {
     const d = new Date(adesso); d.setDate(d.getDate() + 2); data = iso(d);
   } else if (basso.includes('domani')) {
     const d = new Date(adesso); d.setDate(d.getDate() + 1); data = iso(d);
   } else {
-    const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
     for (let i = 0; i < GIORNI.length; i++) {
       if (basso.includes(GIORNI[i])) {
         const d = new Date(adesso);
