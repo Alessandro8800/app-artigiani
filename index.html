@@ -5710,7 +5710,7 @@ function indirizzoCompleto(dove) {
   const d = (dove || '').trim();
   if (!d || !zonaScelta) return d;
   if (normalizza(d).includes(normalizza(zonaMeteo.nome))) return d;
-  const soloVia = /^(via|viale|v\.le|piazza|p\.zza|piazzale|corso|c\.so|vicolo|largo|strada|str\.|localita|località|loc\.|contrada|borgo)\s.+?\d+\s*\w?$/i.test(d) || !/\d/.test(d) && d.split(/\s+/).length <= 4;
+  const soloVia = /^(via|viale|v\.le|piazza|p\.zza|piazzale|corso|c\.so|vicolo|largo|strada|str\.|localita|località|loc\.|contrada|borgo)\s.+?\d+\s*(?:[\/\-]?\s*[a-z]{1,3}|bis|ter)?$/i.test(d) || !/\d/.test(d) && d.split(/\s+/).length <= 4;
   return soloVia ? `${d}, ${zonaMeteo.nome}` : d;
 }
 let meteo = {}, meteoStato = 'non caricato';
@@ -6445,9 +6445,17 @@ async function _nomFetch(q, bounded, signal) {
 
 // Vie mentre scrivi: Photon (OpenStreetMap, gratis) capisce le parole a metà ("via garib") e mette
 // per prime quelle vicine alla tua zona. Restituisce testi pronti: "Via Garibaldi 5, Conegliano".
+// Numero civico in fondo: "via Roma 12", "12/a", "12 bis", "12a"
+const RE_CIVICO = /^(.*\D)[\s,]+(\d{1,4}\s*(?:[\/\-]?\s*[a-z]{1,3}|bis|ter)?)\s*$/i;
+
 async function _photonVie(q, signal) {
   const { lat, lon } = zonaMeteo;
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&location_bias_scale=0.5&bbox=6.6,35.4,18.6,47.1`;
+  // Con il civico: cerco la VIA vicina senza numero, poi rimetto il numero scritto.
+  // (Molti civici non sono sulle mappe: cercandoli si perderebbe il numero o uscirebbero paesi lontani.)
+  const mc = q.match(RE_CIVICO);
+  const civico = mc ? mc[2].replace(/\s+/g, '') : '';
+  const cerca = mc ? mc[1].trim() : q;
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(cerca)}&limit=10&lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&location_bias_scale=0.5&bbox=6.6,35.4,18.6,47.1`;
   const r = await fetch(url, { signal });
   if (!r.ok) throw new Error(r.status);
   const testi = [];
@@ -6460,7 +6468,8 @@ async function _photonVie(q, signal) {
     const via = p.osm_key === 'highway' ? p.name : p.street;    // una strada, oppure un indirizzo con la sua via
     const paese = p.city || p.town || p.village || p.district || p.county || '';
     if (!via) continue;
-    const t = [via + (p.housenumber ? ' ' + p.housenumber : ''), paese].filter(Boolean).join(', ');
+    const numero = civico || p.housenumber || '';   // il numero scritto vale sempre di più
+    const t = [via + (numero ? ' ' + numero : ''), paese].filter(Boolean).join(', ');
     if (!testi.includes(t)) testi.push(t);
   }
   return testi.slice(0, 5);
