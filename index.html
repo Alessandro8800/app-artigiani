@@ -497,7 +497,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-tipo-btn.attivo { background: var(--foglia); color: var(--sul-foglia); border-color: var(--foglia); }
 .inbox-cerca-cliente { position: relative; }
 .inbox-cerca-cliente input { width: 100%; }
-.inbox-cerca-risultati { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 10px; overflow: hidden; z-index: 10; }
+/* L'elenco sta dentro la card (la card si allunga) e scorre se le persone sono tante: non finisce mai fuori schermo */
+.inbox-cerca-risultati { position: static; margin-top: 6px; background: var(--carta); border: 1.5px solid var(--linea); border-radius: 10px; max-height: 236px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .inbox-cerca-risultati button { width: 100%; padding: 10px 12px; border: none; background: none; color: var(--testo); font-size: 14px; text-align: left; cursor: pointer; border-bottom: 1px solid var(--linea); }
 .inbox-cerca-risultati button:last-child { border-bottom: none; }
 .inbox-cerca-risultati button { display: flex; justify-content: space-between; gap: 8px; }
@@ -3569,7 +3570,7 @@ function cercaClienteInbox(input) {
   const conDebito = nome => { try { return conto(nome).dovuto || 0; } catch (e) { return 0; } };
   let trovati = nomiClienti().filter(c => !q || normalizza(c).includes(q)).map(c => ({ nome: c, deve: conDebito(c) }));
   trovati.sort((a, b) => b.deve - a.deve);
-  trovati = trovati.slice(0, 8);
+  trovati = trovati.slice(0, 50); // tutti quelli che servono: l'elenco scorre
   if (!trovati.length) { risultati.hidden = true; return; }
   risultati.innerHTML = (!q && trovati[0].deve > 0 ? '<p class="inbox-cerca-titolo">Ti devono soldi:</p>' : '')
     + trovati.map(c => `<button type="button" data-nome="${sicuro(c.nome)}" data-deve="${c.deve}">${sicuro(c.nome)}${c.deve > 0 ? ` <b>${euro(c.deve)}</b>` : ''}</button>`).join('');
@@ -3583,7 +3584,10 @@ function cercaClienteInbox(input) {
       if (num && !(parseFloat(num.value) > 0) && +b.dataset.deve > 0) num.value = b.dataset.deve;
     };
   });
+  const eraNascosto = risultati.hidden;
   risultati.hidden = false;
+  // Appena si apre, porta l'elenco in vista (sopra la tastiera)
+  if (eraNascosto) setTimeout(() => risultati.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50);
 }
 
 // --- Simulazione: aggiunge item dopo la registrazione vocale ---
