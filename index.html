@@ -2096,7 +2096,17 @@ function _gpVistaMain() {
 }
 
 function gpNuovoLavoro() { chiudiGiornoPanel(); apriFoglio(_gpGiorno); }
-function gpNuovaNota()   { chiudiGiornoPanel(); apriNoteRapide(); apriFormNota(); }
+function gpNuovaNota() {
+  chiudiGiornoPanel();
+  chiudiFormNota();
+  $('nr-lista').hidden = true;
+  $('nr-open-btn').hidden = true;
+  document.querySelector('#note-rapide h2').textContent = 'Nuova nota';
+  $('note-rapide').dataset.modoNuova = '1';
+  $('note-rapide').hidden = false;
+  document.body.classList.add('bloccato');
+  apriFormNota();
+}
 
 function _gpVistaRiprogramma() {
   const s = _gpGiorno;
@@ -3819,6 +3829,12 @@ function apriNoteRapide() {
   document.body.classList.add('bloccato');
 }
 function chiudiNoteRapide() {
+  if ($('note-rapide').dataset.modoNuova) {
+    delete $('note-rapide').dataset.modoNuova;
+    $('nr-lista').hidden = false;
+    $('nr-open-btn').hidden = false;
+    document.querySelector('#note-rapide h2').textContent = 'Note rapide';
+  }
   $('note-rapide').hidden = true;
   document.body.classList.remove('bloccato');
   aggiornaBadgeNote();
