@@ -930,6 +930,14 @@ button.s-riga:first-child { border-top: 0; }
 .q-pop-testa { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .q-pop-testa strong { font-family: var(--font-titoli); font-size: 20px; color: #fff; }
 .q-pop .g:disabled { opacity: .35; }
+.zona-cerca { display: flex; gap: 8px; align-items: stretch; }
+.zona-cerca .imp-input { flex: 1; min-width: 0; }
+.zona-cerca .secondario { min-height: 48px; padding: 0 16px; font-size: 15px; }
+.zona-risultati { display: flex; flex-direction: column; border: 1.5px solid var(--linea); border-radius: 12px; overflow: hidden; }
+.zona-risultati button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--linea); background: var(--carta); color: var(--testo); text-align: left; }
+.zona-risultati button:last-child { border-bottom: 0; }
+.zona-risultati button small { color: var(--testo-2); font-size: 12px; }
+.zona-risultati .imp-testo { margin: 10px 12px; }
 .chiave-box { background: var(--carta); color: var(--testo); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .chiave-testa { display: flex; align-items: center; justify-content: space-between; }
 .chiave-testa strong { font-family: var(--font-titoli); font-size: 20px; }
@@ -2034,7 +2042,7 @@ function riempiAnno(g) {
 function cartaLavoro(l, parte = 1, di = 1) {
   const c = prendiExtra(l.nome).colore;
   const giorni = di > 1 ? `<span class="etichetta piu-giorni">giorno ${parte} di ${di}</span>` : '';
-  const mapsBtn = l.dove ? `<a class="ca-maps" href="https://maps.google.com/?q=${encodeURIComponent(l.dove)}" target="_blank" rel="noopener" aria-label="Apri in Maps"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>` : '';
+  const mapsBtn = l.dove ? `<a class="ca-maps" href="https://maps.google.com/?q=${encodeURIComponent(indirizzoCompleto(l.dove))}" target="_blank" rel="noopener" aria-label="Apri in Maps"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>` : '';
   return `<article class="lavoro${c ? ' colorato' : ''}${l.memo ? ' memo' : ''}" data-id="${l.id}"${c ? ` style="--c:${c}"` : ''}>
     <button class="testo" aria-label="Apri il lavoro di ${sicuro(l.nome)}">
       <span class="nome">${sicuro(l.nome)}${l.memo ? '<span class="etichetta">Promemoria</span>' : l.tipo && l.tipo !== TIPI[0] ? `<span class="etichetta">${l.tipo}</span>` : ''}${giorni}</span>
@@ -3979,8 +3987,9 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona']);
     if (r[6]) inizioChiuso = !!r[6].valore;
+    if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon }; zonaScelta = true; }
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
     if (r[7]) { const ib = JSON.parse(r[7].valore); for (const k of Object.keys(INBOX_ESEMPI)) INBOX_ESEMPI[k].voci.splice(0, Infinity, ...(ib[k] || [])); }
     if (r[8]) { const st = JSON.parse(r[8].valore); for (const k of Object.keys(STORICO_ESEMPI)) STORICO_ESEMPI[k].splice(0, Infinity, ...(st[k] || [])); }
@@ -4026,6 +4035,7 @@ function dbSalva() {
       { chiave: 'storico',    valore: JSON.stringify(STORICO_ESEMPI) },
       { chiave: 'spese',      valore: JSON.stringify(spese) },
       { chiave: 'daSistemare', valore: JSON.stringify(daSistemare) },
+      { chiave: 'zona',       valore: zonaScelta ? JSON.stringify(zonaMeteo) : '' },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -5645,7 +5655,44 @@ $('spesa-pop').addEventListener('click', e => { if (e.target === $('spesa-pop'))
 // Da MET Norway (istituto meteorologico norvegese, pubblico): gratis anche per uso commerciale,
 // licenza CC BY 4.0, basta citarlo. Previsioni fino a 9 giorni. Per l'Italia dà i millimetri di pioggia
 // (la probabilità in % c'è solo per i paesi nordici), quindi: da 0,5 mm "possibile", da 4 mm "pioggia".
-let zonaMeteo = { nome: 'Monza', lat: 45.5845, lon: 9.2744 };   // nella prova: una zona della Brianza, come i dati inventati
+// LA TUA ZONA (Impostazioni → La tua zona): paese/città dove lavori di solito. Serve a:
+// meteo, suggerimenti delle vie (cerca prima qui intorno) e "Apri in Maps" per le vie senza paese.
+let zonaMeteo = { nome: 'Monza', lat: 45.5845, lon: 9.2744 };   // finché non la scegli: una zona della Brianza
+let zonaScelta = false;                                          // true quando l'utente l'ha impostata
+function impostaZona(z) {
+  zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon };
+  zonaScelta = true;
+  _doveCache.clear();               // i suggerimenti delle vie ora cercano nella nuova zona
+  dbSalva(); caricaMeteo();
+  avvisa(`La tua zona: ${z.nome}`);
+}
+// Cerca un paese/città in Italia (OpenStreetMap, gratis, senza chiave)
+async function cercaZona(testo) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(testo)}&countrycodes=it&limit=6&addressdetails=1&featureType=settlement`;
+  const r = await fetch(url, { headers: { 'Accept-Language': 'it' } });
+  if (!r.ok) throw new Error(r.status);
+  return (await r.json()).map(x => {
+    const a = x.address || {};
+    const paese = a.city || a.town || a.village || a.municipality || a.hamlet || x.name;
+    const prov = a.county || a.state || '';
+    return { nome: paese, dettaglio: [prov, a.state && a.state !== prov ? a.state : ''].filter(Boolean).join(', '), lat: x.lat, lon: x.lon };
+  }).filter((z, i, tutti) => z.nome && tutti.findIndex(y => y.nome === z.nome && y.dettaglio === z.dettaglio) === i);
+}
+// Dal GPS al nome del paese
+async function zonaDaPosizione(lat, lon) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=12&addressdetails=1`;
+  const r = await fetch(url, { headers: { 'Accept-Language': 'it' } });
+  const a = (await r.json()).address || {};
+  return { nome: a.city || a.town || a.village || a.municipality || 'La tua zona', lat, lon };
+}
+// "via Roma 12" senza paese → "via Roma 12, Conegliano" (per Maps). Se il paese c'è già, non tocco niente.
+function indirizzoCompleto(dove) {
+  const d = (dove || '').trim();
+  if (!d || !zonaScelta) return d;
+  if (normalizza(d).includes(normalizza(zonaMeteo.nome))) return d;
+  const soloVia = /^(via|viale|v\.le|piazza|p\.zza|piazzale|corso|c\.so|vicolo|largo|strada|str\.|localita|località|loc\.|contrada|borgo)\s.+?\d+\s*\w?$/i.test(d) || !/\d/.test(d) && d.split(/\s+/).length <= 4;
+  return soloVia ? `${d}, ${zonaMeteo.nome}` : d;
+}
 let meteo = {}, meteoStato = 'non caricato';
 let meteoAcceso = true;   // si spegne dalle Impostazioni: niente azzurro, gocce né millimetri
 const PIOGGIA_POSSIBILE = 0.5, PIOGGIA_SICURA = 4;
@@ -6083,21 +6130,46 @@ const GRUPPI_IMP = [
     } },
   ]],
   ['Il mio lavoro', [
+    { id: 'zona', nome: 'La tua zona', valore: () => zonaScelta ? zonaMeteo.nome : 'Non ancora scelta', corpo: el => {
+      el.innerHTML = `<p class="imp-testo">Il paese o la città dove lavori di solito. Serve per le vie (se dici "via Roma 12" senza paese, Maps la cerca qui), per i suggerimenti degli indirizzi e per il meteo.</p>
+        ${zonaScelta ? `<p class="imp-testo">Adesso: <b>${sicuro(zonaMeteo.nome)}</b></p>` : ''}
+        <div class="zona-cerca"><input id="i-zona" class="imp-input" placeholder="Scrivi il paese, es. Conegliano" autocomplete="off" enterkeyhint="search"><button type="button" class="secondario" id="i-zona-cerca">Cerca</button></div>
+        <div class="zona-risultati" id="i-zona-risultati" hidden></div>
+        <button type="button" class="secondario" id="i-zona-gps">📍 Usa dove sono adesso</button>`;
+      const cerca = async () => {
+        const t = $('i-zona').value.trim();
+        if (t.length < 2) return avvisa('Scrivi il nome del paese');
+        const box = $('i-zona-risultati');
+        box.hidden = false; box.innerHTML = '<p class="imp-testo">Cerco…</p>';
+        try {
+          const trovati = await cercaZona(t);
+          if (!trovati.length) { box.innerHTML = '<p class="imp-testo">Non trovo questo paese in Italia. Controlla come è scritto.</p>'; return; }
+          box.innerHTML = trovati.map((z, i) => `<button type="button" data-i="${i}"><strong>${sicuro(z.nome)}</strong><small>${sicuro(z.dettaglio)}</small></button>`).join('');
+          box.querySelectorAll('button').forEach(b => { b.onclick = () => { impostaZona(trovati[+b.dataset.i]); disegnaImpostazioni(); }; });
+        } catch (e) { box.innerHTML = '<p class="imp-testo">Serve internet per cercare il paese.</p>'; }
+      };
+      $('i-zona-cerca').onclick = cerca;
+      $('i-zona').onkeydown = e => { if (e.key === 'Enter') cerca(); };
+      $('i-zona-gps').onclick = () => {
+        if (!navigator.geolocation) return avvisa('Questo telefono non dà la posizione');
+        avvisa('Cerco dove sei…');
+        navigator.geolocation.getCurrentPosition(async p => {
+          try { impostaZona(await zonaDaPosizione(p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4))); }
+          catch (e) { impostaZona({ nome: 'La tua zona', lat: p.coords.latitude, lon: p.coords.longitude }); }
+          disegnaImpostazioni();
+        }, () => avvisa('Posizione non disponibile: scrivi il paese'), { timeout: 10000 });
+      };
+    } },
     { id: 'meteo', nome: 'Meteo nel calendario', valore: () => meteoAcceso ? `Acceso · ${zonaMeteo.nome} · ${meteoStato === 'ok' ? 'previsioni per 9 giorni' : meteoStato}` : 'Spento', corpo: el => {
       el.innerHTML = `<div class="notifica-testa"><span><strong>Mostra la pioggia nel calendario</strong><small>Caselle azzurre, gocce e millimetri</small></span>
           <button type="button" class="interruttore${meteoAcceso ? ' acceso' : ''}" id="i-meteo-acceso" role="switch" aria-checked="${meteoAcceso}" aria-label="Meteo nel calendario"><i></i></button></div>
         ${meteoAcceso ? '' : '<!--'}<p class="imp-testo">I giorni con pioggia prevista diventano azzurri nel calendario: azzurro chiaro = possibile (da ${String(PIOGGIA_POSSIBILE).replace('.', ',')} mm), azzurro forte = pioggia (da ${PIOGGIA_SICURA} mm), nelle ore di lavoro 7-19.</p>
-        <button type="button" class="secondario" id="i-posizione">Usa dove sono adesso</button>
+        <p class="imp-testo">Previsioni per <b>${sicuro(zonaMeteo.nome)}</b>${zonaScelta ? '' : ' (zona di prova)'}: si cambia in "La tua zona".</p>
         <button type="button" class="secondario" id="i-aggiorna-meteo">Aggiorna le previsioni</button>
         <p class="imp-testo">Previsioni di <b>MET Norway</b> (istituto meteorologico norvegese), gratuite, licenza CC BY 4.0.</p>${meteoAcceso ? '' : '-->'}`;
       $('i-meteo-acceso').onclick = () => { meteoAcceso = !meteoAcceso; tutto(); disegnaImpostazioni(); if (meteoAcceso && meteoStato !== 'ok') caricaMeteo(); };
       if (!meteoAcceso) return;
       $('i-aggiorna-meteo').onclick = caricaMeteo;
-      $('i-posizione').onclick = () => {
-        if (!navigator.geolocation) return avvisa('Questo telefono non dà la posizione');
-        navigator.geolocation.getCurrentPosition(p => { zonaMeteo = { nome: 'La tua zona', lat: p.coords.latitude, lon: p.coords.longitude }; caricaMeteo(); avvisa('Zona aggiornata'); },
-          () => avvisa('Posizione non disponibile: resta ' + zonaMeteo.nome), { timeout: 8000 });
-      };
     } },
     { id: 'giorni', nome: 'Giorni in cui lavoro', valore: riassuntoGiorni, corpo: el => {
       el.innerHTML = `<div class="giorni-sett">${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((g, i) => `<button type="button" class="${giorniLavoro[i] ? 'attivo' : ''}" data-i="${i}" aria-pressed="${giorniLavoro[i]}" aria-label="${NOMI_GIORNI[i]}">${g}</button>`).join('')}</div>
@@ -6782,6 +6854,7 @@ function disegnaPreventivi() {
   _dbPronto = true;
   tutto();
   aggiornaBadge(); aggiornaBadgeNote(); // numeri dell'inbox e delle note ricaricati dal telefono
+  if (zonaScelta) caricaMeteo();        // previsioni della tua zona (all'avvio erano partite con quella di prova)
 })();
 
 // Data della versione in uso (quando è stata pubblicata): serve a capire se il telefono ha l'ultima

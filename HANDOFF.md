@@ -481,6 +481,7 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - Badge Riprogramma: l'id giusto è `ai-b-riprogramma` (era `ai-b-sposta`, inesistente).
 - Lavoro senza giorno per un cliente con un lavoro futuro → card "➕ Aggiungi a <giorno>" (somma cosa/prezzo/durata a quel lavoro, `aggiungiALavoroInbox`) oppure "Nuovo lavoro". Cliente già noto: la via si prende dai suoi dati.
 - Riquadro microfono: al massimo una barra del conto alla rovescia (prima si accumulavano).
+- **Impostazioni → Il mio lavoro → "La tua zona"**: paese cercato a mano (Nominatim, `cercaZona`) o dal GPS (`zonaDaPosizione`, reverse geocoding). `impostaZona()` aggiorna `zonaMeteo` + `zonaScelta`, salvati in Dexie (`zona`). La zona serve a: meteo, suggerimenti vie (box ~80 km), e "Apri in Maps" (`indirizzoCompleto`: "via Roma 12" → "via Roma 12, Conegliano"; se il paese c'è già non tocca). Il bottone posizione del meteo è stato tolto (la zona si cambia in un posto solo).
 - **Fallback:** AI in errore, risposta illeggibile o oltre 15 secondi → nota grezza + avviso "Salvato come nota, controlla". Senza chiave (e se l'utente non la inserisce) resta il riconoscimento a parole chiave; dal mic dell'inbox va nella scheda aperta.
 - I numeri di riga citati sopra negli step sono cambiati.
 
