@@ -290,7 +290,7 @@ Quando l'utente clicca **✓ Conferma** su una card, `confermaCarta(card, item, 
 
 | tipo | Campi obbligatori | Campi opzionali | Destinazione |
 |---|---|---|---|
-| `cliente` | `nome`, `lavoro` | `data`, `importo` | Apre foglio pre-compilato |
+| `cliente` | `nome`, `lavoro` | `data`, `importo` | `INBOX_ESEMPI.cliente` (il foglio si apre solo toccando la card) |
 | `nota` | `testo` | `data` | `noteRapide[]` (con data se presente) |
 | `costo` | `importo` o `testo` | `nome` (cliente di cui è la spesa) | `INBOX_ESEMPI.costo` |
 | `riprogramma` | `nome` | `data` (nuova data) | `INBOX_ESEMPI.riprogramma` |
@@ -459,7 +459,7 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 ### Come è stato fatto (step 1–5) — cose da sapere
 - **Funzioni nuove:** `validaOperazione(op, testo)` (livello 3: il codice ricalcola i campi mancanti, normalizza il tipo, forza `stato: 'da_verificare'` sui pagamenti), `_operazioneInItem` + `_aggiungiOperazioni` (livello 4), `avviaMicrofono(sorgente)`, `etichettaRisultato(ris)` (testo del riquadro mic, es. "3 operazioni: 👤 💶 📝").
 - **Bug trovato e corretto:** Haiku a volte risponde con un blocco `thinking` vuoto prima del testo. Il vecchio codice leggeva solo `content[0]` → in quei casi finiva sempre nel fallback a parole chiave senza che nessuno se ne accorgesse. Ora legge tutti i blocchi di tipo `text`.
-- **Una sola operazione cliente/riprogramma** → si apre subito il foglio / il popup (come prima). **Più operazioni** → tutte diventano card nell'inbox.
+- **Decisione del titolare (21/11): dopo il microfono non si apre MAI niente da solo.** Ogni operazione (anche una sola, anche un nuovo lavoro o uno spostamento) diventa una card nell'inbox. L'utente parla e torna a lavorare; conferma dopo con calma. Il foglio cliente e il popup calendario si aprono solo se l'utente tocca la card.
 - **Nota con un nome cliente** → card nell'inbox Note (alla conferma va nella scheda cliente). Nota senza nome → direttamente in `noteRapide` (come prima).
 - **Pagamenti dalla voce:** il bottone dice "✓ Ricevuto". Se manca il cliente o la cifra, il primo tocco apre il pannello (con il dovuto già scritto) invece di registrare: serve un secondo tocco dopo aver controllato.
 - **Card con `item.mancanti`** (dai `missing_fields`) → bordo arancione + "Manca: …" anche per paga/costo/riprogramma. Il cliente usa ancora il suo controllo (nome, via, giorno).

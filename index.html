@@ -4318,7 +4318,6 @@ function _operazioneInItem(o, giorno) {
 function _aggiungiOperazioni(testo, risultato, giorno) {
   const ops = risultato.operations.filter(op => op && typeof op === 'object').map(op => validaOperazione(op, testo));
   if (!ops.length) ops.push(validaOperazione({ tipo: 'nota', testo }, testo));
-  const solaUna = ops.length === 1;
   let note = 0, inbox = 0;
 
   for (const o of ops) {
@@ -4331,9 +4330,8 @@ function _aggiungiOperazioni(testo, risultato, giorno) {
       continue;
     }
     const { cat, item } = _operazioneInItem(o, giorno);
-    // Una sola operazione cliente/riprogramma → si apre subito la schermata da completare (come prima)
-    if (solaUna && cat === 'cliente') { setTimeout(() => apriModificaInboxCliente(null, item), 100); return; }
-    if (solaUna && cat === 'riprogramma') { setTimeout(() => apriRiprogrammaInbox(null, item), 100); return; }
+    // Sempre nell'inbox, mai schermate che si aprono da sole: l'utente parla e torna a lavorare,
+    // poi conferma con calma (es. la sera).
     INBOX_ESEMPI[cat].voci.unshift(item);
     inbox++;
   }
