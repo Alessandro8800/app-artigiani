@@ -3485,13 +3485,13 @@ function apriStorico(key) {
             <div class="storico-stato ${cls}">${icona}</div>
             <div class="storico-info"><strong>${sicuro(it.testa)}</strong><span>${sub}</span></div>
             <div class="st-quick">
-              <button class="st-btn verde" onclick="confermaSt(this,${it._idx})">✓ Conf.</button>
-              <button class="st-btn rosso" onclick="scartaSt(this,${it._idx})">✕ Scarta</button>
+              <button class="st-btn verde" data-testa="${sicuro(it.testa)}" data-dati="${sicuro(it.dati || '')}" onclick="confermaSt(this)">✓ Conf.</button>
+              <button class="st-btn rosso" data-testa="${sicuro(it.testa)}" data-dati="${sicuro(it.dati || '')}" onclick="scartaSt(this)">✕ Scarta</button>
             </div>
           </div>
         </div>`;
       }
-      const btnRivedi = `<button class="storico-reattiva" onclick="riviSt(this,${it._idx})">Rivedi</button>`;
+      const btnRivedi = `<button class="storico-reattiva" data-testa="${sicuro(it.testa)}" data-dati="${sicuro(it.dati || '')}" onclick="riviSt(this)">Rivedi</button>`;
       return `<div class="storico-item">
         <div class="storico-card">
           <div class="storico-stato ${cls}">${icona}</div>
@@ -3506,36 +3506,52 @@ function apriStorico(key) {
 function chiudiStorico() { $('storico').hidden = true; }
 
 // Conf./Scarta da storico (solo attesa): anima poi aggiorna
-function confermaSt(btn, idx) {
+function confermaSt(btn) {
   const item = btn.closest('.storico-item');
+  const testa = btn.dataset.testa;
+  const dati = btn.dataset.dati;
   item.classList.add('scivola');
   item.addEventListener('animationend', () => {
-    const v = (INBOX_ESEMPI[_storicoKey]?.voci || []).splice(idx, 1)[0];
-    if (v) STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'confermato', stato: 'ok' });
+    const voci = INBOX_ESEMPI[_storicoKey]?.voci || [];
+    const idx = voci.findIndex(v => v.testa === testa && (v.dati || '') === dati);
+    if (idx !== -1) {
+      const v = voci.splice(idx, 1)[0];
+      STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'confermato', stato: 'ok' });
+    }
     aggiornaBadge();
     apriStorico(_storicoKey);
   }, { once: true });
 }
 
-function scartaSt(btn, idx) {
+function scartaSt(btn) {
   const item = btn.closest('.storico-item');
+  const testa = btn.dataset.testa;
+  const dati = btn.dataset.dati;
   item.classList.add('scivola');
   item.addEventListener('animationend', () => {
-    const v = (INBOX_ESEMPI[_storicoKey]?.voci || []).splice(idx, 1)[0];
-    if (v) STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'annullato', stato: 'no' });
+    const voci = INBOX_ESEMPI[_storicoKey]?.voci || [];
+    const idx = voci.findIndex(v => v.testa === testa && (v.dati || '') === dati);
+    if (idx !== -1) {
+      const v = voci.splice(idx, 1)[0];
+      STORICO_ESEMPI[_storicoKey].unshift({ testa: v.testa, dati: v.dati || '', extra: 'annullato', stato: 'no' });
+    }
     aggiornaBadge();
     apriStorico(_storicoKey);
   }, { once: true });
 }
 
 // Rivedi: anima la card, sposta item dall'archivio tornato nell'inbox, apre inbox
-function riviSt(btn, idx) {
+function riviSt(btn) {
   const item = btn.closest('.storico-item');
+  const testa = btn.dataset.testa;
+  const dati = btn.dataset.dati;
   item.classList.add('scivola');
   item.addEventListener('animationend', () => {
-    const it = (STORICO_ESEMPI[_storicoKey] || []).splice(idx, 1)[0];
-    if (it) {
-      const v = { testa: it.testa, dati: it.dati, campi: [] };
+    const storico = STORICO_ESEMPI[_storicoKey] || [];
+    const idx = storico.findIndex(it => it.testa === testa && (it.dati || '') === dati);
+    if (idx !== -1) {
+      const it = storico.splice(idx, 1)[0];
+      const v = { testa: it.testa, dati: it.dati, campi: it.campi || [] };
       if (!INBOX_ESEMPI[_storicoKey]) INBOX_ESEMPI[_storicoKey] = { voci: [] };
       INBOX_ESEMPI[_storicoKey].voci.unshift(v);
       aggiornaBadge();
@@ -5399,7 +5415,8 @@ $('i-ripristina').onchange = async e => {
       if (im.TIPI_SPESA) TIPI_SPESA.splice(0, TIPI_SPESA.length, ...im.TIPI_SPESA);
       if (Array.isArray(d.spese)) spese.splice(0, spese.length, ...d.spese);
       if (im.COSTI_RAPIDI) COSTI_RAPIDI.splice(0, COSTI_RAPIDI.length, ...im.COSTI_RAPIDI);
-      if (im.costoOrario) costoOrario = im.costoOrario; LAVORI_COMUNI.splice(0, LAVORI_COMUNI.length, ...im.LAVORI_COMUNI);
+      if (im.costoOrario) costoOrario = im.costoOrario;
+      if (im.LAVORI_COMUNI) LAVORI_COMUNI.splice(0, LAVORI_COMUNI.length, ...im.LAVORI_COMUNI);
       im.giorniLavoro.forEach((v, i) => (giorniLavoro[i] = v));
       if (im.soglie) Object.assign(soglie, im.soglie);
       if (im.DURATE) DURATE.splice(0, DURATE.length, ...im.DURATE);
