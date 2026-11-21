@@ -565,6 +565,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .riprogramma.pioggia { background: var(--pioggia-2); color: var(--goccia); }
 .riprogramma.attivo { background: var(--foglia); color: var(--sul-foglia); }
 .sposta-qui { color: var(--foglia); cursor: pointer; border: 2px solid var(--foglia-chiara); }
+/* Azioni nella card lavoro (Fatto · Sposta · Annulla · Maps) */
+.card-azioni { display: flex; gap: 6px; padding-top: 10px; }
+.ca-fatto { flex: 2; min-height: 42px; width: auto; height: auto; border-radius: 11px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 15px; font-weight: 800; cursor: pointer; position: static; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .2s, color .2s; }
+.lavoro.fatto .ca-fatto { background: var(--foglia-chiara); color: var(--foglia); }
+.ca-sposta, .ca-annulla { flex: 1; min-height: 42px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--carta); font-size: 13px; font-weight: 700; cursor: pointer; }
+.ca-sposta { color: var(--testo); }
+.ca-annulla { color: #d44; }
+.ca-maps { flex-shrink: 0; min-width: 42px; min-height: 42px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--foglia); display: flex; align-items: center; justify-content: center; text-decoration: none; }
 
 /* Conti */
 .k-periodo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
@@ -1962,22 +1970,22 @@ function riempiAnno(g) {
   }
 }
 
-function cartaLavoro(l, parte = 1, di = 1, sposta = false) {
-  const c = prendiExtra(l.nome).colore;   // colore del cliente: bordo a sinistra
+function cartaLavoro(l, parte = 1, di = 1) {
+  const c = prendiExtra(l.nome).colore;
   const giorni = di > 1 ? `<span class="etichetta piu-giorni">giorno ${parte} di ${di}</span>` : '';
+  const mapsBtn = l.dove ? `<a class="ca-maps" href="https://maps.google.com/?q=${encodeURIComponent(l.dove)}" target="_blank" rel="noopener" aria-label="Apri in Maps"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>` : '';
   return `<article class="lavoro${c ? ' colorato' : ''}${l.memo ? ' memo' : ''}" data-id="${l.id}"${c ? ` style="--c:${c}"` : ''}>
     <button class="testo" aria-label="Apri il lavoro di ${sicuro(l.nome)}">
       <span class="nome">${sicuro(l.nome)}${l.memo ? '<span class="etichetta">Promemoria</span>' : l.tipo && l.tipo !== TIPI[0] ? `<span class="etichetta">${l.tipo}</span>` : ''}${giorni}</span>
       ${l.dove ? `<span class="dove"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z M12 12.2a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>${sicuro(l.dove)}</span>` : ''}
       <span class="cosa">${l.ora ? `<b class="ora-pill">${nomeOra(l.ora)}</b> ` : ''}${sicuro(l.cosa || 'Lavoro')}${l.prezzo ? ` · <span class="prezzo">${euro(l.prezzo)}</span>` : ''}</span>
     </button>
-    ${sposta ? `<button type="button" class="spunta sposta-qui" data-sp="${l.id}" aria-label="Scegli il nuovo giorno per ${sicuro(l.nome)}">
-      <svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <small>Sposta</small></button>` : `<button class="spunta" aria-label="Segna come fatto">
-      <svg class="anelli" viewBox="0 0 62 62"><circle class="anello-base" cx="31" cy="31" r="28"/><circle class="anello" cx="31" cy="31" r="28" pathLength="100"/></svg>
-      <svg class="segno-svg" width="24" height="24" viewBox="0 0 24 24"><path class="segno" d="M5 12.5l4.5 4.5L19 7.5" pathLength="100"/></svg>
-      <small>Fatto</small>
-    </button>`}
+    <div class="card-azioni">
+      <button class="ca-fatto spunta" aria-label="Segna come fatto">✓ Fatto</button>
+      <button class="ca-sposta" data-id="${l.id}">↷ Sposta</button>
+      <button class="ca-annulla" data-id="${l.id}">✕ Annulla</button>
+      ${mapsBtn}
+    </div>
   </article>`;
 }
 
@@ -2000,17 +2008,13 @@ function disegnaAgenda() {
     const tutti = (mappa[s] || { lavori: [] }).lavori;
     const daFare = tutti.filter(v => !v.l.fatto).sort((a, b) => minutiOra(a.l.ora) - minutiOra(b.l.ora));
     const totale = daFare.reduce((t, v) => t + (v.parte === 1 ? v.l.prezzo || 0 : 0), 0);
-    // "Riprogramma": i lavori di questo giorno mostrano un calendario al posto di "Fatto" (azzurro se è prevista pioggia)
-    const inSposta = riprogramma === s;
-    const tastoRip = daFare.length ? `<button type="button" class="riprogramma${inSposta ? ' attivo' : ''}${livelloPioggia(s) ? ' pioggia' : ''}" data-rip="${s}">${inSposta ? 'Fine' : 'Riprogramma'}</button>` : '';
     const meteoGiorno = testoPioggia(s) ? `<div class="meteo-giorno livello-${livelloPioggia(s)}">${GOCCIA}${testoPioggia(s)}</div>` : '';
     const conteggio = daFare.length ? `<span class="conteggio">${daFare.length} ${daFare.length === 1 ? 'lavoro' : 'lavori'} · ${euro(totale)}</span>` : '';
-    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2>${tastoRip}</div>${meteoGiorno || conteggio ? `<div class="giorno-sotto">${conteggio}${meteoGiorno}</div>` : ''}`;
+    const testa = `<div class="giorno-testa"><h2>${nomeGiorno(s)}</h2></div>${meteoGiorno || conteggio ? `<div class="giorno-sotto">${conteggio}${meteoGiorno}</div>` : ''}`;
     const corpo = daFare.length
-      ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di, inSposta)).join('')}</div>`
+      ? `<div class="lista">${daFare.map(v => cartaLavoro(v.l, v.parte, v.di)).join('')}</div>`
       : tutti.length ? `<div class="vuoto tutto-fatto">Tutto fatto</div>`
-      : s >= tra(0) ? `<div class="vuoto con-tasto">Nessun lavoro<button class="aggiungi-qui" data-s="${s}"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Nuovo cliente</button></div>`
-      : `<div class="vuoto">Nessun lavoro</div>`;
+      : '';
     return `<section class="giorno" id="g-${s}">${testa}${corpo}</section>`;
   }).join('') + (agendaLunga
     ? `<button type="button" class="mostra-altro" id="mostra-altro">Mostra meno</button><p class="mostra-nota">Fino a ${nomeGiorno(tra(61)).toLowerCase()} · oltre la settimana si vedono solo i giorni con lavori</p>`
@@ -2020,8 +2024,8 @@ function disegnaAgenda() {
     if (!agendaLunga) document.getElementById('g-' + tra(6)).scrollIntoView({ block: 'start' });
   };
   document.querySelectorAll('.lavoro .spunta').forEach(b => { b.onclick = () => segnaFatto(b.closest('.lavoro')); });
-  document.querySelectorAll('#agenda .riprogramma').forEach(b => { b.onclick = () => { riprogramma = riprogramma === b.dataset.rip ? null : b.dataset.rip; disegnaAgenda(); }; });
-  document.querySelectorAll('#agenda .sposta-qui').forEach(b => { b.onclick = () => apriCalSposta(+b.dataset.sp); });
+  document.querySelectorAll('.lavoro .ca-sposta').forEach(b => { b.onclick = () => apriCalSposta(+b.dataset.id); });
+  document.querySelectorAll('.lavoro .ca-annulla').forEach(b => { b.onclick = () => annullaLavoro(+b.dataset.id); });
   // Tocco sul lavoro: si apre la scheda del cliente
   document.querySelectorAll('.lavoro .testo').forEach(b => { b.onclick = () => apriLavoro(+b.closest('.lavoro').dataset.id); });
   // Giorno vuoto: "Nuovo cliente" apre il foglio con quel giorno già scelto
@@ -2042,6 +2046,14 @@ function segnaFatto(carta, prezzoChiesto) {
     disegnaAgenda(); disegnaAzioni();   // anche i numerini di Note e Indietro
     avvisa(`${l.nome}: fatto`, { etichetta: 'Annulla', fai: () => { l.fatto = false; tutto(); } }, { etichetta: 'Costi', fai: () => apriLavoro(l.id, 'costi') });
   }, 1250);
+}
+
+function annullaLavoro(id) {
+  const idx = lavori.findIndex(l => l.id === id);
+  if (idx < 0) return;
+  const salvato = lavori.splice(idx, 1)[0];
+  tutto();
+  avvisa(`${salvato.nome}: annullato`, { etichetta: 'Annulla', fai: () => { lavori.splice(idx, 0, salvato); tutto(); } });
 }
 
 // ---- Pannello giorno calendario ----
