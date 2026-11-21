@@ -463,7 +463,8 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - **Nota con un nome cliente** → card nell'inbox Note (alla conferma va nella scheda cliente). Nota senza nome → direttamente in `noteRapide` (come prima).
 - **Pagamenti dalla voce:** il bottone dice "✓ Ricevuto". Se manca il cliente o la cifra, il primo tocco apre il pannello (con il dovuto già scritto) invece di registrare: serve un secondo tocco dopo aver controllato.
 - **Card con `item.mancanti`** (dai `missing_fields`) → bordo arancione + "Manca: …" anche per paga/costo/riprogramma. Il cliente usa ancora il suo controllo (nome, via, giorno).
-- **Indirizzo e orario** non sono nello schema: l'AI li mette in `testo`, che per i clienti finisce nel campo Note del foglio.
+- **Solo per `tipo: cliente`** lo schema ha 3 campi in più: `indirizzo` (→ casella Indirizzo del foglio), `ora` (`"mattina"` | `"pomeriggio"` | null — il foglio non ha un'ora precisa: "alle 9" → mattina, "alle 15" → pomeriggio, vedi `fasciaOra()`), `ore` (durata in ore → drum Durata). Altri dettagli (telefono, "mezza giornata"…) restano in `testo` → campo Note del foglio.
+- La durata detta a voce cambia solo quel lavoro (prima sovrascriveva anche `durataSolita`).
 - **Fallback:** AI in errore, risposta illeggibile o oltre 15 secondi → nota grezza + avviso "Salvato come nota, controlla". Senza chiave (e se l'utente non la inserisce) resta il riconoscimento a parole chiave; dal mic dell'inbox va nella scheda aperta.
 - I numeri di riga citati sopra negli step sono cambiati.
 
@@ -621,6 +622,7 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 5. **Scheda conti — grafica** — migliorare aspetto grafico (non bug critici).
 6. **Preventivi AI** — box testo/voce → Claude genera stima usando i dati dei form preventivi (`prevDati`).
 7. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
+8. **Idea futura (21/11): cronometro lavori a voce** — "ok, inizio il taglio prato da Rossi" … "ok, ho finito da Rossi" → l'app conta le ore passate su quel lavoro. Serve per il report (ore lavorate) e per capire se il prezzo era giusto (€ all'ora reali). Da progettare insieme prima di scrivere codice.
 
 **Già fatto:**
 - ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)

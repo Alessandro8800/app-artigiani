@@ -3370,12 +3370,12 @@ function apriModificaInboxCliente(card, item) {
   if (dataTestuale) {
     const { data: d, ora: o } = parsaDataOra(dataTestuale);
     if (d) { quandoFisso = true; quando = d; dateScelte = []; allineaDate(); }
-    if (o && !ora) { ora = o; }
+    if (o && !ora) { ora = fasciaOra(o); }
   }
   const oraField = get('Ora');
-  if (oraField) { const { ora: o } = parsaDataOra('alle ' + oraField); if (o) ora = o; }
+  if (oraField) { const f = fasciaOra(oraField); if (f) ora = f; } // "mattina", "pomeriggio" o "09:00" → mattina
   const oreStr = get('OreStimate') || get('Ore stimate') || get('Durata');
-  if (oreStr) { const n = parseFloat(oreStr.replace(',', '.')); if (n > 0) { durata = Math.round(n * 60); durataSolita = durata; } }
+  if (oreStr) { const n = parseFloat(oreStr.replace(',', '.')); if (n > 0) { durata = Math.round(n * 60); } } // solo questo lavoro, non la durata solita
   aggiornaCliente(); disegnaQuando(); disegnaDurata(); disegnaOra();
   // Evidenzia campi essenziali mancanti
   setTimeout(() => {
@@ -4106,7 +4106,11 @@ CAMPI
 - lavoro: cosa fare ("taglio prato", "potatura"), o null.
 - data: il giorno in parole come detto ("domani", "giovedì", "25 novembre"), o null. Non calcolare date.
 - importo: numero in euro senza simbolo (150), o null. Per "cliente" è il prezzo del lavoro.
-- testo: per "nota" il testo della nota; per "costo" cosa è stato comprato; per gli altri tipi eventuali dettagli in più detti (indirizzo, orario, telefono), altrimenti null.
+- testo: per "nota" il testo della nota; per "costo" cosa è stato comprato; per gli altri tipi eventuali dettagli in più detti (telefono, cancello…), altrimenti null.
+Solo per "cliente", aggiungi anche questi campi se detti (altrimenti null):
+- indirizzo: via e paese ("via Mazzini 7 Conegliano").
+- ora: "mattina" se dice mattina o un'ora prima delle 13 ("alle 9"), "pomeriggio" se dice pomeriggio o un'ora dalle 13 in poi ("alle 15"), altrimenti null.
+- ore: quanto dura il lavoro, in ore come numero (3, 1.5), o null.
 - missing_fields: elenco dei campi OBBLIGATORI che mancano, es. ["nome"]. Vuoto [] se c'è tutto.
 
 REGOLE
@@ -4119,8 +4123,8 @@ ESEMPI
 "domani da Mario taglio siepe, Rossi mi ha pagato 200, venerdì devo comprare i guanti"
 → {"operations":[{"tipo":"cliente","nome":"Mario","lavoro":"taglio siepe","data":"domani","importo":null,"testo":null,"missing_fields":[]},{"tipo":"pagamento","nome":"Rossi","lavoro":null,"data":null,"importo":200,"testo":null,"missing_fields":[]},{"tipo":"nota","nome":null,"lavoro":null,"data":"venerdì","importo":null,"testo":"comprare i guanti","missing_fields":[]}]}
 
-"Taglio prato Giovanni Rossi via Mazzini 7 Conegliano giovedì alle 9, 70 euro"
-→ {"operations":[{"tipo":"cliente","nome":"Giovanni Rossi","lavoro":"taglio prato","data":"giovedì","importo":70,"testo":"via Mazzini 7 Conegliano, alle 9","missing_fields":[]}]}
+"Taglio prato Giovanni Rossi via Mazzini 7 Conegliano giovedì alle 9, 70 euro, ci vogliono due ore"
+→ {"operations":[{"tipo":"cliente","nome":"Giovanni Rossi","lavoro":"taglio prato","data":"giovedì","importo":70,"testo":null,"indirizzo":"via Mazzini 7 Conegliano","ora":"mattina","ore":2,"missing_fields":[]}]}
 
 "sposta Verdi a giovedì e ho fatto 40 euro di benzina"
 → {"operations":[{"tipo":"riprogramma","nome":"Verdi","lavoro":null,"data":"giovedì","importo":null,"testo":null,"missing_fields":[]},{"tipo":"costo","nome":null,"lavoro":null,"data":null,"importo":40,"testo":"benzina","missing_fields":[]}]}
@@ -4256,6 +4260,17 @@ const _TIPO_ALIAS = { lavoro: 'cliente', sposta: 'riprogramma', paga: 'pagamento
 const _OBBLIGATORI = { cliente: ['nome', 'lavoro'], riprogramma: ['nome'], pagamento: ['nome'], costo: [], nota: ['testo'] };
 const _NOMI_CAMPI = { nome: 'nome', lavoro: 'lavoro', data: 'giorno', importo: 'importo', testo: 'testo' };
 
+// Il foglio conosce solo "mattina", "pomeriggio" o niente: un'ora precisa diventa una delle due
+function fasciaOra(v) {
+  if (!v) return '';
+  const t = String(v).toLowerCase();
+  if (t.includes('mattin')) return 'mattina';
+  if (t.includes('pomerigg')) return 'pomeriggio';
+  const m = t.match(/(\d{1,2})(?::\d{2})?/);
+  if (m && +m[1] <= 23) return +m[1] < 13 ? 'mattina' : 'pomeriggio';
+  return '';
+}
+
 function validaOperazione(op, testo) {
   const pulisci = v => (typeof v === 'string' && v.trim()) ? v.trim() : null;
   let tipo = String(op.tipo || '').toLowerCase().trim();
@@ -4270,6 +4285,12 @@ function validaOperazione(op, testo) {
     importo: Number.isFinite(imp) && imp > 0 ? imp : null,
     testo: pulisci(op.testo),
   };
+  if (tipo === 'cliente') {
+    o.indirizzo = pulisci(op.indirizzo);
+    o.ora = fasciaOra(pulisci(op.ora));
+    const ore = typeof op.ore === 'number' ? op.ore : parseFloat(String(op.ore ?? '').replace(',', '.'));
+    o.ore = Number.isFinite(ore) && ore > 0 && ore <= 24 ? ore : null;
+  }
   if (tipo === 'nota' && !o.testo) o.testo = testo; // una nota senza testo usa la frase intera
   const mancanti = new Set((Array.isArray(op.missing_fields) ? op.missing_fields : []).map(String));
   for (const c of _OBBLIGATORI[tipo]) if (!o[c]) mancanti.add(c);
@@ -4286,8 +4307,11 @@ function _operazioneInItem(o, giorno) {
   if (o.tipo === 'cliente') {
     const campi = [];
     if (o.nome) campi.push(['Nome', o.nome]);
+    if (o.indirizzo) campi.push(['Indirizzo', o.indirizzo]);
     if (o.lavoro) campi.push(['Lavoro', o.lavoro]);
     if (o.data) campi.push(['Data', o.data]);
+    if (o.ora) campi.push(['Ora', o.ora]);
+    if (o.ore != null) campi.push(['OreStimate', String(o.ore)]);
     if (o.importo != null) campi.push(['Prezzo', String(o.importo)]);
     if (o.testo) campi.push(['Note', o.testo]);
     return { cat: 'cliente', item: { testa: o.nome || o.lavoro || 'Nuovo lavoro', dati: [o.lavoro, o.data].filter(Boolean).join(' · ') || giorno, campi } };
