@@ -4145,7 +4145,7 @@ TIPI
 CAMPI
 - nome: nome del cliente come detto ("Villa Verdi", "Rossi"), o null.
 - lavoro: cosa fare ("taglio prato", "potatura"), o null.
-- data: il giorno in parole come detto ("domani", "giovedì", "25 novembre"), o null. Non calcolare date.
+- data: il giorno in parole come detto ("domani", "giovedì", "25 novembre"), o null. Non calcolare date. Le date con il mese scrivile sempre "numero mese" senza "di" ("22 novembre", non "22 di novembre").
 - importo: numero in euro senza simbolo (150), o null. Per "cliente" è il prezzo del lavoro.
 - testo: per "nota" il testo della nota; per "costo" cosa è stato comprato; per gli altri tipi eventuali dettagli in più detti (telefono, cancello…), altrimenti null.
 Solo per "cliente", aggiungi anche questi campi se detti (altrimenti null):
@@ -6238,14 +6238,25 @@ function parsaDataOra(testo) {
   const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
   const NUMERI = { un: 1, uno: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6, sette: 7, otto: 8, nove: 9, dieci: 10, quindici: 15 };
   // Date assolute: "25 novembre", "1° dicembre", "primo dicembre"
-  const mData = basso.match(new RegExp(`\\b(\\d{1,2}|primo)\\s*°?\\s+(${RE_MESI})\\b`));
+  // anche "22 di novembre"
+  let mData = basso.match(new RegExp(`\\b(\\d{1,2}|primo)\\s*°?\\s+(?:di\\s+)?(${RE_MESI})\\b`));
+  // "22/11", "il 22-11" (solo se il testo è proprio una data, non una frase intera)
+  const mNum = basso.trim().match(/^(?:il\s+|per il\s+)?(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s*[\/.-]\s*\d{2,4})?$/);
+  if (!mData && mNum && +mNum[2] >= 1 && +mNum[2] <= 12) mData = [null, mNum[1], MESI[+mNum[2] - 1]];
+  // "il 22" da solo → il prossimo 22 (questo mese, o il mese dopo se è già passato)
+  const mGiorno = basso.trim().match(/^(?:il\s+|per il\s+)?(\d{1,2})$/);
+  if (!mData && mGiorno && +mGiorno[1] >= 1 && +mGiorno[1] <= 31) {
+    const d = new Date(adesso.getFullYear(), adesso.getMonth(), +mGiorno[1]);
+    if (d < oggiMezzanotte) d.setMonth(d.getMonth() + 1);
+    if (d.getDate() === +mGiorno[1]) mData = [null, String(d.getDate()), MESI[d.getMonth()], d.getFullYear()];
+  }
   // "tra 3 giorni", "fra una settimana", "tra due settimane"
   const mTra = basso.match(/\b(?:tra|fra)\s+(\d{1,2}|un|uno|una|due|tre|quattro|cinque|sei|sette|otto|nove|dieci|quindici)\s+(giorn[oi]|settiman[ae])\b/);
   const prossimaSett = /\b(?:prossima settimana|settimana prossima)\b/.test(basso);
   if (mData) {
     const giorno = mData[1] === 'primo' ? 1 : parseInt(mData[1], 10);
     const mese = MESI.indexOf(mData[2]);
-    const d = new Date(adesso.getFullYear(), mese, giorno);
+    const d = new Date(mData[3] || adesso.getFullYear(), mese, giorno);
     if (d.getMonth() === mese) {                                   // scarta date impossibili (31 aprile)
       if (d < oggiMezzanotte) d.setFullYear(d.getFullYear() + 1);  // già passata → anno prossimo
       data = iso(d);
