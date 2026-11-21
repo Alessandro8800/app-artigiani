@@ -473,6 +473,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .inbox-card-edit-btn { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; margin-top: -2px; }
 .inbox-card-edit-btn:active { background: var(--linea); }
 .inbox-card-suggerimenti { font-size: 12px; color: var(--testo-2); margin-top: 4px; line-height: 1.4; }
+.inbox-card-avviso { color: var(--ambra); font-weight: 700; font-size: 13px; }
 .inbox-card-sospeso { border: 1.5px solid #f59e0b; }
 .inbox-btn-sospeso { flex: 2; height: 30px; border-radius: 9px; background: none; border: 2px solid #f59e0b; color: #f59e0b; font-weight: 800; font-size: 13px; cursor: pointer; }
 .inbox-btn-sospeso:active { background: rgba(245,158,11,0.12); }
@@ -3281,18 +3282,20 @@ function inbox_cardHtml(item, cat) {
   if (cat === 'riprogramma') {
     const campi = item.campi || [];
     const getC = k => (campi.find(([c]) => c === k) || [])[1] || '';
-    if (!parseDataRelativa(getC('A'))) {
+    // Senza giorno, oppure con un giorno sbagliato (lo stesso o già passato) → si sceglie dal calendario
+    if (item.avviso || !parseDataRelativa(getC('A'))) {
       const mancaR = (Array.isArray(item.mancanti) && item.mancanti.length) ? item.mancanti : [];
-      return `<div class="inbox-card${mancaR.length ? ' inbox-card-sospeso' : ''}" data-cat="${cat}">
+      return `<div class="inbox-card${mancaR.length || item.avviso ? ' inbox-card-sospeso' : ''}" data-cat="${cat}">
         <div class="inbox-card-top">
           <div class="inbox-card-info">
             <div class="inbox-card-testa">${sicuro(item.testa)}</div>
             <div class="inbox-card-dati">${sicuro(item.dati)}</div>
+            ${item.avviso ? `<div class="inbox-card-suggerimenti inbox-card-avviso">⚠️ ${sicuro(item.avviso)}: scegli un altro giorno</div>` : ''}
             ${mancaR.length ? `<div class="inbox-card-suggerimenti">Manca: ${sicuro(mancaR.join(', '))}</div>` : ''}
           </div>
         </div>
         <div class="inbox-card-azioni">
-          <button class="inbox-btn-pianifica" onclick="apriRiprogrammaInbox(this.closest('.inbox-card'),${ic})">📅 Pianifica</button>
+          <button class="inbox-btn-pianifica" onclick="apriRiprogrammaInbox(this.closest('.inbox-card'),${ic})">📅 ${item.avviso ? 'Scegli il giorno' : 'Pianifica'}</button>
           <button class="inbox-btn-no" onclick="scartaCarta(this.closest('.inbox-card'),${ic},'${cat}')">Scarta</button>
         </div>
       </div>`;
@@ -3526,7 +3529,10 @@ function confRiprCalendario() {
   if (!_riprogrammaDataScelta) return;
   if (_riprogrammaCard) {
     const cliente = $('ripr-nome').value.trim();
-    const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
+    const lavoroTarget = lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(cliente)).sort((a, b) => a.data.localeCompare(b.data))[0];
+    // Anche dal calendario: niente spostamenti allo stesso giorno o nel passato
+    if (lavoroTarget && _riprogrammaDataScelta === lavoroTarget.data) { avvisa(`È già fissato per ${nomeGiorno(lavoroTarget.data).toLowerCase()}: scegli un altro giorno`); return; }
+    if (_riprogrammaDataScelta < tra(0)) { avvisa('Quel giorno è già passato: scegli un altro giorno'); return; }
     if (lavoroTarget) { spostaLavoro(lavoroTarget, _riprogrammaDataScelta); avvisa(`${cliente} spostato`); }
     if (_riprogrammaItem) rimuoviVoceInbox('riprogramma', _riprogrammaItem, 'ok');
     animaCard(_riprogrammaCard, 'ok');
@@ -3703,8 +3709,11 @@ function confermaCarta(card, item, cat) {
     const dataISO = parseDataRelativa(getCampo('A') || getCampo('data_iso'));
     if (dataISO) {
       const cliente = getCampo('Cliente');
-      const lavoroTarget = lavori.filter(l => !l.fatto && l.nome === cliente).sort((a, b) => a.data.localeCompare(b.data))[0];
-      if (lavoroTarget) { spostaLavoro(lavoroTarget, dataISO); avvisa(`${cliente} spostato`); }
+      const lavoroTarget = lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(cliente)).sort((a, b) => a.data.localeCompare(b.data))[0];
+      if (!lavoroTarget) { avvisa(`Non trovo un lavoro da spostare per ${cliente || 'questo cliente'}`); return; } // la card resta
+      const avviso = avvisoNuovaData(getCampo('A'), lavoroTarget);
+      if (avviso) { avvisa(avviso + ': scegli un altro giorno'); apriRiprogrammaInbox(card, item); return; }
+      spostaLavoro(lavoroTarget, dataISO); avvisa(`${lavoroTarget.nome} spostato`);
       rimuoviVoceInbox(cat, item, 'ok');
       animaCard(card, 'ok');
     } else {
@@ -4436,6 +4445,18 @@ function validaOperazione(op, testo) {
   return o;
 }
 
+// Spostamento: il nuovo giorno ha senso? Errori palesi → testo dell'avviso (altrimenti '')
+function avvisoNuovaData(testoData, lavoro) {
+  const { passata } = parsaDataOra(testoData);
+  const fmt = iso => nomeGiorno(iso).toLowerCase();
+  if (passata) return `${maiuscola(fmt(passata))} è già passato`;
+  const nuova = parseDataRelativa(testoData);
+  if (!nuova) return '';
+  if (nuova < tra(0)) return `${maiuscola(fmt(nuova))} è già passato`;
+  if (lavoro && nuova === lavoro.data) return `È già fissato per ${fmt(nuova)}`;
+  return '';
+}
+
 // ---- Livello 4: trasforma una operazione valida in una voce dell'inbox ----
 function _operazioneInItem(o, giorno) {
   const mancanti = o.missing_fields.map(c => _NOMI_CAMPI[c]);
@@ -4462,9 +4483,10 @@ function _operazioneInItem(o, giorno) {
     return { cat: 'cliente', item };
   }
   if (o.tipo === 'riprogramma') {
-    const prossimo = o.nome ? lavori.filter(l => !l.fatto && !l.memo && l.nome === o.nome).sort((a, b) => a.data.localeCompare(b.data))[0] : null;
+    const prossimo = o.nome ? lavori.filter(l => !l.fatto && !l.memo && normalizza(l.nome) === normalizza(o.nome)).sort((a, b) => a.data.localeCompare(b.data))[0] : null;
     const da = prossimo ? nomeGiorno(prossimo.data) : '';
-    return { cat: 'riprogramma', item: { testa: o.nome || 'Lavoro da spostare', dati: o.data ? `→ ${o.data}` : 'Nuovo giorno da scegliere', campi: [['Cliente', o.nome || ''], ['Da', da], ['A', o.data || '']], cal: true, mancanti } };
+    const avviso = o.data ? avvisoNuovaData(o.data, prossimo) : '';
+    return { cat: 'riprogramma', item: { testa: o.nome || 'Lavoro da spostare', dati: o.data ? `→ ${o.data}` : 'Nuovo giorno da scegliere', campi: [['Cliente', prossimo ? prossimo.nome : (o.nome || '')], ['Da', da], ['A', o.data || '']], cal: true, mancanti, ...(avviso ? { avviso } : {}) } };
   }
   if (o.tipo === 'pagamento') {
     const imp = o.importo != null ? euro(o.importo) : 'importo da controllare';
@@ -6322,7 +6344,7 @@ function parsaDataOra(testo) {
   if (!testo) return { data: null, ora: null };
   const basso = testo.toLowerCase();
   const adesso = new Date();
-  let data = null, ora = null;
+  let data = null, ora = null, passata = null;
   const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   const RE_MESI = MESI.join('|');
   // Ora ("alle 9", "alle 14:30") — ma non "al 25 novembre", che è una data
@@ -6363,7 +6385,12 @@ function parsaDataOra(testo) {
     const mese = MESI.indexOf(mData[2]);
     const d = new Date(mData[3] || adesso.getFullYear(), mese, giorno);
     if (d.getMonth() === mese) {                                   // scarta date impossibili (31 aprile)
-      if (d < oggiMezzanotte) d.setFullYear(d.getFullYear() + 1);  // già passata → anno prossimo
+      if (d < oggiMezzanotte) {
+        // Già passata quest'anno. Se è passata da poco (meno di 4 mesi: "20 ottobre" detto il 21 novembre)
+        // è quasi certamente un errore: lo segnalo con "passata". Altrimenti vale l'anno prossimo ("3 gennaio").
+        if (oggiMezzanotte - d <= 120 * 86400000) passata = iso(d);
+        d.setFullYear(d.getFullYear() + 1);
+      }
       data = iso(d);
     }
   } else if (mTra) {
@@ -6399,7 +6426,7 @@ function parsaDataOra(testo) {
       }
     }
   }
-  return { data, ora };
+  return { data, ora, passata };
 }
 
 // Estrae un indirizzo da testo libero (note vocali) — usata dall'AI quando elabora nuovi clienti
