@@ -464,7 +464,12 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - **Pagamenti dalla voce:** il bottone dice "✓ Ricevuto". Se manca il cliente o la cifra, il primo tocco apre il pannello (con il dovuto già scritto) invece di registrare: serve un secondo tocco dopo aver controllato.
 - **Card con `item.mancanti`** (dai `missing_fields`) → bordo arancione + "Manca: …" anche per paga/costo/riprogramma. Il cliente usa ancora il suo controllo (nome, via, giorno).
 - **Solo per `tipo: cliente`** lo schema ha 3 campi in più: `indirizzo` (→ casella Indirizzo del foglio), `ora` (`"mattina"` | `"pomeriggio"` | null — il foglio non ha un'ora precisa: "alle 9" → mattina, "alle 15" → pomeriggio, vedi `fasciaOra()`), `ore` (durata in ore → drum Durata). Altri dettagli (telefono, "mezza giornata"…) restano in `testo` → campo Note del foglio.
-- La durata detta a voce cambia solo quel lavoro (prima sovrascriveva anche `durataSolita`).
+- La durata detta a voce cambia solo quel lavoro (prima sovrascriveva anche `durataSolita`). **`durata` è in ORE** (come `DURATE`): il vecchio codice la moltiplicava per 60 → "Scegli ancora 15 giorni nel Quando" e il lavoro non si salvava.
+- `confermaInboxCliente()` toglie la card dall'inbox solo se `salva()` ha davvero aggiunto il lavoro.
+- "✓ Conferma" diretto su una card cliente completa usa il giorno detto (non più il primo giorno libero), più ora, durata e note.
+- Nota con un giorno (anche senza cliente) → card nell'inbox Note → alla conferma diventa promemoria (`memo: true`) nel calendario, col titolo = la frase. Nota senza giorno e senza cliente → direttamente in `noteRapide`.
+- **Chiave AI:** mai più `prompt()`. Popup `#chiave-pop` (`apriChiaveAI(sorgente, motivo)`): si apre quando si preme un microfono senza chiave, e dopo "Salva e parla" il microfono parte subito. Se l'AI risponde 401/403 la chiave viene tolta e il popup si riapre. In Impostazioni → I tuoi dati → "Chiave assistente vocale" si mette, cambia o toglie. Gli errori dicono il motivo (`motivoErroreAI`).
+- Banner "Inizia da qui": X per chiuderlo (`inizioChiuso`, salvato in Dexie); resta in Impostazioni → Per iniziare.
 - **Fallback:** AI in errore, risposta illeggibile o oltre 15 secondi → nota grezza + avviso "Salvato come nota, controlla". Senza chiave (e se l'utente non la inserisce) resta il riconoscimento a parole chiave; dal mic dell'inbox va nella scheda aperta.
 - I numeri di riga citati sopra negli step sono cambiati.
 

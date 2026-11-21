@@ -3312,7 +3312,7 @@ function inbox_cardHtml(item, cat) {
     const mancanti = [];
     if (!getC('Nome'))      mancanti.push('nome');
     if (!getC('Indirizzo')) mancanti.push('via');
-    if (!getC('Giorno'))    mancanti.push('giorno');
+    if (!getC('Giorno') && !parseDataRelativa(getC('Data'))) mancanti.push('giorno'); // "lunedì", "25 novembre"… valgono
     if (mancanti.length) {
       return `<div class="inbox-card inbox-card-sospeso" data-cat="${cat}">
         <div class="inbox-card-top">
@@ -3398,7 +3398,7 @@ function apriModificaInboxCliente(card, item) {
   const oraField = get('Ora');
   if (oraField) { const f = fasciaOra(oraField); if (f) ora = f; } // "mattina", "pomeriggio" o "09:00" → mattina
   const oreStr = get('OreStimate') || get('Ore stimate') || get('Durata');
-  if (oreStr) { const n = parseFloat(oreStr.replace(',', '.')); if (n > 0) { durata = Math.round(n * 60); } } // solo questo lavoro, non la durata solita
+  if (oreStr) { const n = parseFloat(oreStr.replace(',', '.')); if (n > 0) { durata = Math.round(n * 2) / 2; } } // durata in ORE (come DURATE); solo questo lavoro, non la durata solita
   aggiornaCliente(); disegnaQuando(); disegnaDurata(); disegnaOra();
   // Evidenzia campi essenziali mancanti
   setTimeout(() => {
@@ -3427,12 +3427,13 @@ function indietroInboxCliente() {
 }
 
 function confermaInboxCliente() {
-  if (_inboxCard) {
-    if (_inboxItem && _inboxCat) rimuoviVoceInbox(_inboxCat, _inboxItem, 'ok');
-    animaCard(_inboxCard, 'ok');
-  }
-  _inboxCard = null; _inboxItem = null; _inboxCat = null;
+  // Prima si salva; la card esce dall'inbox SOLO se il lavoro è stato salvato davvero
+  const prima = lavori.length;
   salva();
+  if (lavori.length === prima) return; // errore nel foglio (es. manca il nome): resta tutto com'è
+  if (_inboxItem && _inboxCat) rimuoviVoceInbox(_inboxCat, _inboxItem, 'ok');
+  if (_inboxCard && _inboxCard.isConnected) animaCard(_inboxCard, 'ok');
+  _inboxCard = null; _inboxItem = null; _inboxCat = null;
 }
 
 // --- Riprogramma: apre popup calendario con info cliente ---
@@ -3652,8 +3653,13 @@ function confermaCarta(card, item, cat) {
     const dove = getCampo('Indirizzo') || '';
     const prezzo = parseFloat(getCampo('Prezzo')) || 0;
     const cosa = getCampo('Lavoro') || '';
-    const data = giorniMigliori()[0] || tra(1);
-    lavori.push({ id: lavori.length, nome, data, fatto: false, prezzo, dove, tipo: TIPI[0], durata: durataSolita, cosa });
+    // Il giorno detto a voce; solo se manca, il primo giorno libero
+    const data = parseDataRelativa(getCampo('Giorno') || getCampo('Data')) || giorniMigliori()[0] || tra(1);
+    const ore = parseFloat(String(getCampo('OreStimate')).replace(',', '.'));
+    const nuovo = { id: lavori.length, nome, data, fatto: false, prezzo, dove, tipo: TIPI[0], durata: ore > 0 ? Math.round(ore * 2) / 2 : durataSolita, ora: fasciaOra(getCampo('Ora')), cosa };
+    lavori.push(nuovo);
+    const noteVoce = getCampo('Note');
+    if (noteVoce) { const e = prendiExtra(nome); e.note = e.note ? e.note + '\n' + noteVoce : noteVoce; }
     avvisa(`${nome} aggiunto per ${nomeGiorno(data).toLowerCase()}`);
     tutto();
     rimuoviVoceInbox(cat, item, 'ok');
@@ -4103,6 +4109,7 @@ try { ANTHROPIC_KEY = localStorage.getItem('anthropic_key') || ''; } catch(e){}
 let _chiaveSorgente = null;
 function apriChiaveAI(sorgente, motivo) {
   _chiaveSorgente = sorgente || 'globale';
+  $('chiave-salva').textContent = _chiaveSorgente === 'impostazioni' ? 'Salva' : 'Salva e parla';
   $('chiave-motivo').textContent = motivo || '';
   $('chiave-motivo').hidden = !motivo;
   $('chiave-errore').hidden = true;
@@ -4125,6 +4132,7 @@ $('chiave-salva').onclick = () => {
   try { localStorage.setItem('anthropic_key', k); } catch(e){}
   const sorgente = _chiaveSorgente;
   chiudiChiaveAI();
+  if (sorgente === 'impostazioni') { avvisa('Chiave salvata'); disegnaImpostazioni(); return; }
   avviaMicrofono(sorgente); // si parla subito (il tocco su "Salva" permette di accendere il microfono)
 };
 
@@ -4398,7 +4406,9 @@ function _operazioneInItem(o, giorno) {
   // nota
   const campi = [['Cliente', o.nome || ''], ['Nota', o.testo]];
   if (o.data) campi.push(['Giorno', o.data]);
-  return { cat: 'nota', item: { testa: o.nome ? `Nota ${o.nome}` : generaTitoloAuto(o.testo), dati: o.data || giorno, campi } };
+  // Titolo = la frase stessa (accorciata): diventa il nome del promemoria nel calendario
+  const titolo = o.testo.length > 40 ? o.testo.slice(0, 38).trim() + '…' : o.testo;
+  return { cat: 'nota', item: { testa: o.nome ? `Nota ${o.nome}` : maiuscola(titolo), dati: o.data || giorno, campi } };
 }
 
 function _aggiungiOperazioni(testo, risultato, giorno) {
@@ -4407,11 +4417,10 @@ function _aggiungiOperazioni(testo, risultato, giorno) {
   let note = 0, inbox = 0;
 
   for (const o of ops) {
-    // Nota senza cliente → direttamente nelle note rapide (come prima)
-    if (o.tipo === 'nota' && !o.nome) {
-      let dataNota = null;
-      if (o.data) { const { data: d } = parsaDataOra(o.data); dataNota = d; }
-      noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(o.testo), testo: o.testo, fatta: false, data: dataNota });
+    // Nota senza cliente e senza giorno → direttamente nelle note rapide.
+    // Con un giorno → card da confermare, che diventa un promemoria nel calendario.
+    if (o.tipo === 'nota' && !o.nome && !(o.data && parseDataRelativa(o.data))) {
+      noteRapide.unshift({ id: ++_nrId, titolo: generaTitoloAuto(o.testo), testo: o.testo, fatta: false, data: null });
       note++;
       continue;
     }
@@ -6054,6 +6063,16 @@ const GRUPPI_IMP = [
     } },
   ]],
   ['I tuoi dati', [
+    { id: 'chiave-ai', nome: 'Chiave assistente vocale', valore: () => ANTHROPIC_KEY ? `Salvata · …${ANTHROPIC_KEY.slice(-4)}` : 'Nessuna chiave', corpo: el => {
+      el.innerHTML = `<p class="imp-testo">Serve all'assistente vocale per capire quello che dici. Resta salvata solo su questo telefono.</p>
+        <button type="button" class="salva" id="i-chiave">${ANTHROPIC_KEY ? 'Cambia chiave' : 'Metti la chiave'}</button>
+        ${ANTHROPIC_KEY ? '<button type="button" class="secondario" id="i-chiave-togli">Togli la chiave</button>' : ''}`;
+      $('i-chiave').onclick = () => apriChiaveAI('impostazioni');
+      if ($('i-chiave-togli')) $('i-chiave-togli').onclick = () => {
+        ANTHROPIC_KEY = ''; try { localStorage.removeItem('anthropic_key'); } catch(e){}
+        avvisa('Chiave tolta'); disegnaImpostazioni();
+      };
+    } },
     { id: 'inizio', nome: 'Per iniziare', valore: () => 'Debiti di prima e clienti dalla rubrica', corpo: el => {
       el.innerHTML = '<p class="imp-testo">Per segnare chi ti deve già soldi da prima di usare l\'app, e per prendere i clienti dalla rubrica del telefono.</p><button type="button" class="salva" id="i-inizio">Apri</button>';
       $('i-inizio').onclick = apriInizio;
