@@ -855,6 +855,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .imp-r:first-of-type { border-top: 0; }
 .imp-testa { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 0; background: none; padding: 12px 16px; min-height: 60px; }
 .imp-testa > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* Icone calendario top-right */
+.cal-top-icone { display: flex; align-items: center; gap: 2px; }
+.cal-top-ic { background: none; border: 0; padding: 6px; color: var(--testo-2); border-radius: 50%; display: grid; place-items: center; }
+.cal-top-ic:active { background: var(--foglia-chiara); color: var(--foglia); }
 /* Profilo */
 .profilo-ai-box { background: var(--carta); border: 1px solid var(--linea); border-radius: 20px; overflow: hidden; margin-bottom: 12px; }
 .profilo-ai-testa { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--linea); }
@@ -1339,8 +1343,14 @@ button.s-riga:first-child { border-top: 0; }
     <div id="avvisi-home" class="gutter"></div>
     <header class="testata gutter">
       <h1 id="t-data"></h1>
-      <div class="testata-destra">
-        <p id="t-riassunto"></p>
+      <p id="t-riassunto" hidden></p>
+      <div class="cal-top-icone">
+        <button class="cal-top-ic" onclick="apriProfilo()" aria-label="Profilo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+        <button class="cal-top-ic" onclick="apriImpostazioni()" aria-label="Impostazioni">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+        </button>
       </div>
     </header>
     <div class="gutter">
@@ -1504,9 +1514,9 @@ button.s-riga:first-child { border-top: 0; }
   </div>
 
   <section id="vista-impostazioni" class="gutter" hidden>
-    <button class="imp-torna-btn" id="imp-torna-btn" onclick="tornaAProfilo()" hidden>
+    <button class="imp-torna-btn" id="imp-torna-btn" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      Profilo
+      <span id="imp-torna-label">Indietro</span>
     </button>
     <header class="testata"><h1>Impostazioni</h1></header>
     <div id="i-elenco"></div>
@@ -1514,6 +1524,10 @@ button.s-riga:first-child { border-top: 0; }
   </section>
 
   <section id="vista-profilo" class="gutter" hidden>
+    <button class="imp-torna-btn" onclick="tornaAlCalendario()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Calendario
+    </button>
     <header class="testata"><h1>Profilo</h1></header>
     <div class="profilo-ai-box">
       <div class="profilo-ai-testa">
@@ -1547,10 +1561,6 @@ button.s-riga:first-child { border-top: 0; }
   <button data-vista="preventivi">
     <svg width="28" height="28" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="14" x2="15" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     Preventivi
-  </button>
-  <button data-vista="profilo">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Profilo
   </button>
 </nav>
 
@@ -7993,22 +8003,47 @@ function disegnaProfilo() {
   const r = VOCI_PROFILO.find(x => x.id === rigaApertaProfilo);
   if (r) r.corpo($('prc-' + r.id));
   const btn = $('profilo-imp-btn');
-  if (btn) btn.onclick = apriImpostazioni;
+  if (btn) btn.onclick = () => apriImpostazioni(tornaAProfilo);
 }
 
-function apriImpostazioni() {
-  $('vista-profilo').hidden = true;
+function _nascondiTutti() {
+  ['calendario','clienti','conti','preventivi','impostazioni','profilo'].forEach(v => {
+    const el = $('vista-' + v); if (el) el.hidden = true;
+  });
+  document.querySelectorAll('.barra button').forEach(x => x.classList.remove('attiva'));
+}
+
+function apriProfilo() {
+  _nascondiTutti();
+  $('vista-profilo').hidden = false;
+  disegnaProfilo();
+  window.scrollTo(0, 0);
+}
+
+function apriImpostazioni(tornare) {
+  _nascondiTutti();
   $('vista-impostazioni').hidden = false;
-  $('imp-torna-btn').hidden = false;
+  const btn = $('imp-torna-btn');
+  btn.hidden = false;
+  btn.onclick = typeof tornare === 'function' ? tornare : tornaAlCalendario;
+  const label = $('imp-torna-label');
+  if (label) label.textContent = typeof tornare === 'function' && tornare === tornaAProfilo ? 'Profilo' : 'Calendario';
   disegnaImpostazioni();
   window.scrollTo(0, 0);
 }
 
 function tornaAProfilo() {
-  $('vista-impostazioni').hidden = true;
-  $('imp-torna-btn').hidden = true;
+  _nascondiTutti();
   $('vista-profilo').hidden = false;
   disegnaProfilo();
+  window.scrollTo(0, 0);
+}
+
+function tornaAlCalendario() {
+  _nascondiTutti();
+  $('vista-calendario').hidden = false;
+  const primo = document.querySelector('.barra button[data-vista="calendario"]');
+  if (primo) primo.classList.add('attiva');
   window.scrollTo(0, 0);
 }
 
@@ -8295,14 +8330,12 @@ document.querySelectorAll('.barra button').forEach(b => {
     document.querySelectorAll('.barra button').forEach(x => x.classList.toggle('attiva', x === b));
     $('vista-calendario').hidden = b.dataset.vista !== 'calendario';
     $('vista-clienti').hidden = b.dataset.vista !== 'clienti';
-    $('vista-impostazioni').hidden = true;
-    $('imp-torna-btn').hidden = true;
     $('vista-conti').hidden = b.dataset.vista !== 'conti';
     $('vista-preventivi').hidden = b.dataset.vista !== 'preventivi';
-    $('vista-profilo').hidden = b.dataset.vista !== 'profilo';
+    $('vista-impostazioni').hidden = true;
+    $('vista-profilo').hidden = true;
     if (b.dataset.vista === 'conti') disegnaConti();
     if (b.dataset.vista === 'clienti') disegnaClienti();
-    if (b.dataset.vista === 'profilo') disegnaProfilo();
     if (b.dataset.vista === 'preventivi') disegnaPreventivi();
     window.scrollTo(0, 0);
   };
