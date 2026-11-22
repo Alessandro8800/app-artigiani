@@ -730,6 +730,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-placeholder .prev-azioni { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 8px; }
 .prev-azioni .salva { width: 100%; }
 .prev-annulla { background: var(--rosso-chiaro); border: 1.5px solid var(--rosso); color: var(--rosso); font-size: 16px; font-weight: 800; padding: 14px; border-radius: 16px; cursor: pointer; font-family: var(--font-testo); width: 100%; }
+/* Barra input preventivo (fisso sopra la nav) */
+#prev-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--barra) + env(safe-area-inset-bottom, 0px)); z-index: 5; background: var(--carta); border-top: 1px solid var(--linea); padding: 8px max(16px, env(safe-area-inset-left,0px)); display: flex; justify-content: center; }
+.prev-bar-inner { width: 100%; max-width: 448px; display: flex; align-items: flex-end; gap: 6px; background: var(--sfondo); border-radius: 22px; border: 1.5px solid var(--linea); padding: 6px 6px 6px 14px; }
+.prev-bar-txt { flex: 1; background: none; border: none; font-size: 15px; font-weight: 600; color: var(--testo); font-family: var(--font-testo); resize: none; overflow: hidden; min-height: 26px; max-height: 120px; line-height: 1.4; padding: 4px 0; field-sizing: content; }
+.prev-bar-txt:focus { outline: none; }
+.prev-bar-txt::placeholder { color: var(--testo-2); font-weight: 500; }
+.prev-bar-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--sfondo); color: var(--testo-2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.prev-bar-btn svg { width: 18px; height: 18px; }
+.prev-bar-invia { background: var(--foglia); color: var(--sul-foglia); }
+.prev-bar-invia:disabled { opacity: .45; cursor: not-allowed; }
+.prev-bar-btn.ascolta { background: var(--verde-chiaro, rgba(0,180,100,.12)); color: var(--foglia); }
 .prev-sezione { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
 .prev-sezione h3 { font-family: var(--font-titoli); font-size: 18px; margin: 0; padding-bottom: 6px; border-bottom: 1px solid var(--linea); color: var(--foglia); }
 .prev-domanda { display: flex; flex-direction: column; gap: 10px; background: var(--carta); border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px; }
@@ -1438,6 +1449,15 @@ button.s-riga:first-child { border-top: 0; }
     <header class="testata"><h1>Preventivi</h1></header>
     <div id="prev-corpo"></div>
   </section>
+  <div id="prev-bar" hidden>
+    <div class="prev-bar-inner">
+      <textarea id="prev-bar-txt" class="prev-bar-txt" placeholder="Descrivi il lavoro da preventivare…" rows="1"></textarea>
+      <button id="prev-bar-mic" class="prev-bar-btn" onclick="avviaMicPrevBar()" title="Parla con il microfono"></button>
+      <button id="prev-bar-invia" class="prev-bar-btn prev-bar-invia" onclick="avviaGeneraPreventivo()" title="Genera preventivo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+  </div>
 
   <!-- Form calibrazione prezzi -->
   <div class="foglio-sfondo" id="prev-form" hidden>
@@ -8411,18 +8431,34 @@ ${contestoQ}`;
 }
 
 async function avviaGeneraPreventivo() {
-  const desc = $('prev-desc')?.value?.trim();
-  if (!desc) { avvisa('Scrivi prima il lavoro da fare'); return; }
-  const btn = $('prev-genera-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Genero…'; }
+  const txt = $('prev-bar-txt'); if (!txt) return;
+  const desc = txt.value.trim();
+  if (!desc) { avvisa('Descrivi prima il lavoro da fare'); return; }
+  const invia = $('prev-bar-invia');
+  if (invia) { invia.disabled = true; invia.innerHTML = '<span class="mic-box-elabora"><span></span><span></span><span></span></span>'; }
   const ris = await generaPreventivo(desc);
-  if (!ris) {
-    if (btn) { btn.disabled = false; btn.textContent = '✦ Genera preventivo'; }
-    avvisa('Errore nella generazione — riprova');
-    return;
-  }
+  if (invia) { invia.disabled = false; invia.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>'; }
+  if (!ris) { avvisa('Errore nella generazione — riprova'); return; }
+  txt.value = ''; txt.style.height = 'auto';
   _prevBozzaVoci = ris.voci; _prevBozzaNote = ris.note; _prevBozzaInput = desc; _prevEditId = null;
   _prevVista = 'anteprima'; disegnaPreventivi();
+}
+
+function avviaMicPrevBar() {
+  const btn = $('prev-bar-mic'); if (!btn) return;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { avvisa('Microfono non supportato'); return; }
+  if (btn.classList.contains('ascolta')) return;
+  btn.classList.add('ascolta');
+  const sr = new SpeechRecognition();
+  sr.lang = 'it-IT'; sr.interimResults = false; sr.continuous = false;
+  sr.onresult = e => {
+    const testo = e.results[0]?.[0]?.transcript || '';
+    const txt = $('prev-bar-txt'); if (txt && testo) { txt.value = testo; txt.style.height = 'auto'; txt.style.height = txt.scrollHeight + 'px'; txt.focus(); }
+    btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC;
+  };
+  sr.onerror = sr.onend = () => { if (btn.classList.contains('ascolta')) { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC; } };
+  sr.start();
 }
 
 function disegnaPrevVoci() {
@@ -8591,6 +8627,16 @@ async function avviaMicPrev() {
 
 function disegnaPreventivi() {
   const corpo = $('prev-corpo');
+  const bar = $('prev-bar');
+  // Barra input: visibile solo nella lista; nascosta in anteprima/completo
+  if (bar) {
+    bar.hidden = _prevVista !== 'lista';
+    if (!bar.hidden) {
+      const mic = $('prev-bar-mic'); if (mic && !mic.innerHTML.trim()) mic.innerHTML = SVG_MIC;
+    }
+  }
+
+  corpo.style.paddingBottom = '';
 
   if (_prevVista === 'completo') {
     const p = preventivi.find(x => x.id === _prevCompletoId);
@@ -8637,18 +8683,7 @@ function disegnaPreventivi() {
     return;
   }
 
-  if (_prevVista === 'nuovo') {
-    corpo.innerHTML = `
-      <button class="prev-torna" onclick="_prevVista='lista';disegnaPreventivi()">← Tutti i preventivi</button>
-      <div class="k-blocco">
-        <div class="k-titolo"><h2>Nuovo preventivo</h2></div>
-        <p style="font-size:14px;color:var(--testo-2);margin:0 0 10px">Descrivi il lavoro da fare. Puoi essere preciso quanto vuoi.</p>
-        <textarea id="prev-desc" class="prev-new-desc" placeholder="Es. Sostituzione caldaia a condensazione in appartamento 80mq, smontaggio vecchia, installazione nuova, collaudo e certificato"></textarea>
-      </div>
-      <button class="prev-genera" id="prev-genera-btn" onclick="avviaGeneraPreventivo()" style="margin-top:12px">✦ Genera preventivo</button>`;
-    setTimeout(() => $('prev-desc')?.focus(), 100);
-    return;
-  }
+  if (_prevVista === 'nuovo') { _prevVista = 'lista'; } // non esiste più, vai alla lista
 
   if (_prevVista === 'anteprima') {
     const tot = prevTotale(_prevBozzaVoci);
@@ -8717,20 +8752,18 @@ function disegnaPreventivi() {
     return;
   }
 
-  // Vista lista
+  // Vista lista (con barra in basso: aggiunge padding per non coprire le card)
+  corpo.style.paddingBottom = '72px';
   if (!preventivi.length) {
     corpo.innerHTML = `
-      <div class="prev-placeholder">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <div class="prev-placeholder" style="padding-top:60px">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.35">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
           <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
         </svg>
         <h2>Nessun preventivo</h2>
-        <p>Descrivi un lavoro — l'AI genera una stima con le voci e i prezzi.</p>
-        <div class="prev-azioni">
-          <button class="salva" onclick="_prevVista='nuovo';disegnaPreventivi()">Nuovo preventivo →</button>
-        </div>
+        <p style="color:var(--testo-2);font-size:15px">Scrivi o parla nella barra qui sotto — l'AI genera la stima con le voci.</p>
       </div>`;
     return;
   }
@@ -8738,7 +8771,6 @@ function disegnaPreventivi() {
   corpo.innerHTML = `
     <div class="prev-lista-header">
       <h2>${preventivi.length} preventiv${preventivi.length === 1 ? 'o' : 'i'}</h2>
-      <button onclick="_prevVista='nuovo';disegnaPreventivi()">+ Nuovo</button>
     </div>
     ${preventivi.slice().reverse().map(p => `
       <div class="prev-card">
@@ -8763,6 +8795,9 @@ function disegnaPreventivi() {
   await dbCarica();
   _dbPronto = true;
   tutto();
+  // Auto-resize textarea barra preventivi
+  const barTxt = $('prev-bar-txt');
+  if (barTxt) barTxt.addEventListener('input', () => { barTxt.style.height = 'auto'; barTxt.style.height = barTxt.scrollHeight + 'px'; });
   aggiornaBadge(); aggiornaBadgeNote(); // numeri dell'inbox e delle note ricaricati dal telefono
   if (zonaScelta) caricaMeteo();        // previsioni della tua zona (all'avvio erano partite con quella di prova)
   controllaCronometro(); disegnaAvvisiHome(); segnaAccesso();   // cronometro dimenticato acceso? prima controllo, poi segno l'accesso
