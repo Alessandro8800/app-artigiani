@@ -2090,7 +2090,7 @@ const TELEFONI = {};
 const extra = {};
 const prendiExtra = nome => extra[nome] || (extra[nome] = { tel: '', colore: '', ripeti: 'no', note: '', mesiSemestrale: [] });
 for (const [n, t] of Object.entries(TELEFONI)) prendiExtra(n).tel = t;
-const COLORI = [['', 'Nessuno'], ['#d64545', 'Rosso'], ['#e08a2e', 'Arancione'], ['#d4b11f', 'Giallo'], ['#3d9a5b', 'Verde'], ['#3b82c4', 'Azzurro'], ['#8a5cc7', 'Viola']];
+const COLORI = [['', 'Nessuno'], ['#d64545', 'Rosso'], ['#e08a2e', 'Arancione'], ['#d4b11f', 'Giallo'], ['#3d9a5b', 'Verde'], ['#3b82c4', 'Azzurro'], ['#8a5cc7', 'Viola'], ['#e05591', 'Rosa']];
 const RIPETI = { no: { nome: 'No' }, sett: { nome: 'Ogni settimana', giorni: 7 }, mese: { nome: 'Ogni mese', mesi: 1 }, anno: { nome: 'Ogni anno', mesi: 12 } };
 
 // La k-esima volta dopo la data di partenza (le domeniche passano al lunedì)
@@ -2874,7 +2874,7 @@ function disegnaColori() {
     };
   });
   $('f-colore-piu').onclick = () => {
-    if (COLORI.length - 1 + coloriMiei.length >= 20) { avvisa('Hai già 20 colori, il massimo'); return; }
+    if (COLORI.length - 1 + coloriMiei.length >= 7) { avvisa('Massimo 7 colori: togli un colore prima di aggiungerne uno'); return; }
     apriTavolozza(c => { if (!coloriMiei.includes(c)) coloriMiei.push(c); if (!_etMod) colore = c; disegnaColori(); });
   };
   $('f-et-mod').onclick = () => { _etMod = !_etMod; disegnaColori(); };
