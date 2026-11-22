@@ -855,6 +855,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .imp-r:first-of-type { border-top: 0; }
 .imp-testa { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 0; background: none; padding: 12px 16px; min-height: 60px; }
 .imp-testa > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.imp-chk { flex-shrink: 0; opacity: .55; }
+.imp-chk.imp-chk-ok { opacity: 1; }
+.imp-h-ok { font-size: .75em; color: var(--foglia); font-weight: 600; margin-left: 4px; }
 .imp-testa strong { font-size: 16px; }
 .imp-testa small { font-size: 14px; font-weight: 600; color: var(--testo-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .imp-testa .freccina { flex: none; color: var(--testo-2); transition: transform .2s; }
@@ -7489,8 +7492,8 @@ const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-labe
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
 const GRUPPI_IMP = [
-  ['La tua attività', [
-    { id: 'dati-attivita', nome: 'Dati per i preventivi', valore: () => datiAttivita.nome || 'Non ancora compilati', corpo: el => {
+  ['Per iniziare', [
+    { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome, corpo: el => {
       const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
       el.innerHTML = `
         <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
@@ -7505,15 +7508,7 @@ const GRUPPI_IMP = [
       segmenti($('i-att-iva-seg'), Object.fromEntries(ivaOpzioni.map(o => [o.k, o.label])), datiAttivita.iva, k => { datiAttivita.iva = k; dbSalva(); disegnaImpostazioni(); });
     } },
   ]],
-  ['Abbonamento', [
-    { id: 'piano', nome: 'Il tuo piano', valore: () => 'Prova gratuita · in arrivo', corpo: el => {
-      el.innerHTML = `<span class="imp-in-arrivo">In arrivo dopo la beta</span>
-        <p class="imp-testo">L'app sarà in abbonamento, mensile o annuale, dopo un periodo di prova gratuita. Qui vedrai il piano, quando si rinnova, e potrai gestirlo o disdirlo da Google Play.</p>
-        <button class="secondario" disabled>Gestisci abbonamento</button>
-        <button class="secondario" disabled>Ripristina acquisto</button>`;
-    } },
-  ]],
-  ['Aspetto', [
+  ['Come appare', [
     { id: 'tema', nome: 'Tema', valore: () => TEMI[tema], corpo: el => {
       el.innerHTML = '<div class="segmenti"></div>';
       segmenti(el.firstChild, TEMI, tema, k => {
@@ -7657,8 +7652,8 @@ const GRUPPI_IMP = [
       render();
     } },
   ]],
-  ['Il mio lavoro', [
-    { id: 'zona', nome: 'La tua zona', valore: () => zonaScelta ? zonaMeteo.nome : 'Non ancora scelta', corpo: el => {
+  ['Il lavoro', [
+    { id: 'zona', nome: 'La tua zona', valore: () => zonaScelta ? zonaMeteo.nome : 'Non ancora scelta', done: () => !!zonaScelta, corpo: el => {
       const dett = z => z.dettaglio ? ` (${sicuro(z.dettaglio)})` : '';
       // Conferma ben visibile per 20 secondi dopo la scelta; poi resta la riga "Adesso: …"
       const appena = zonaConferma && Date.now() - zonaConferma.quando < 20000;
@@ -7706,6 +7701,17 @@ const GRUPPI_IMP = [
         }, { timeout: 15000, maximumAge: 300000 });
       };
     } },
+    { id: 'giorni', nome: 'Giorni in cui lavoro', valore: riassuntoGiorni, done: () => true, corpo: el => {
+      el.innerHTML = `<div class="giorni-sett">${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((g, i) => `<button type="button" class="${giorniLavoro[i] ? 'attivo' : ''}" data-i="${i}" aria-pressed="${giorniLavoro[i]}" aria-label="${NOMI_GIORNI[i]}">${g}</button>`).join('')}</div>
+        <p class="imp-testo">I giorni spenti non te li propongo quando segni un lavoro. Dal calendario puoi sceglierli lo stesso.</p>`;
+      el.querySelectorAll('.giorni-sett button').forEach(b => {
+        b.onclick = () => {
+          const i = +b.dataset.i;
+          if (giorniLavoro[i] && giorniLavoro.filter(Boolean).length === 1) return avvisa('Almeno un giorno deve restare acceso');
+          giorniLavoro[i] = !giorniLavoro[i]; disegnaImpostazioni();
+        };
+      });
+    } },
     { id: 'meteo', nome: 'Meteo nel calendario', valore: () => meteoAcceso ? `Acceso · ${zonaMeteo.nome} · ${meteoStato === 'ok' ? 'previsioni per 9 giorni' : meteoStato}` : 'Spento', corpo: el => {
       el.innerHTML = `<div class="notifica-testa"><span><strong>Mostra la pioggia nel calendario</strong><small>Caselle azzurre, gocce e millimetri</small></span>
           <button type="button" class="interruttore${meteoAcceso ? ' acceso' : ''}" id="i-meteo-acceso" role="switch" aria-checked="${meteoAcceso}" aria-label="Meteo nel calendario"><i></i></button></div>
@@ -7717,17 +7723,25 @@ const GRUPPI_IMP = [
       if (!meteoAcceso) return;
       $('i-aggiorna-meteo').onclick = caricaMeteo;
     } },
-    { id: 'giorni', nome: 'Giorni in cui lavoro', valore: riassuntoGiorni, corpo: el => {
-      el.innerHTML = `<div class="giorni-sett">${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((g, i) => `<button type="button" class="${giorniLavoro[i] ? 'attivo' : ''}" data-i="${i}" aria-pressed="${giorniLavoro[i]}" aria-label="${NOMI_GIORNI[i]}">${g}</button>`).join('')}</div>
-        <p class="imp-testo">I giorni spenti non te li propongo quando segni un lavoro. Dal calendario puoi sceglierli lo stesso.</p>`;
-      el.querySelectorAll('.giorni-sett button').forEach(b => {
+    { id: 'ritardi', nome: 'Ritardo nei pagamenti', valore: () => `Arancione dopo ${soglie.arancio} g · rosso dopo ${soglie.rosso} g`, corpo: el => {
+      el.innerHTML = contatore('arancio', 'Arancione dopo', `${soglie.arancio} giorni`) + contatore('rosso', 'Rosso dopo', `${soglie.rosso} giorni`) + '<p class="imp-testo">Arancione: è ora di mandare un messaggio. Rosso: è ora di telefonare.</p>';
+      el.querySelectorAll('.contatore button').forEach(b => {
         b.onclick = () => {
-          const i = +b.dataset.i;
-          if (giorniLavoro[i] && giorniLavoro.filter(Boolean).length === 1) return avvisa('Almeno un giorno deve restare acceso');
-          giorniLavoro[i] = !giorniLavoro[i]; disegnaImpostazioni();
+          const k = b.dataset.k, v = soglie[k] + +b.dataset.d;
+          if (v < 1 || (k === 'arancio' && v >= soglie.rosso) || (k === 'rosso' && v <= soglie.arancio) || v > 180) return;
+          soglie[k] = v; disegnaImpostazioni();
         };
       });
     } },
+    { id: 'sollecito', nome: 'Messaggio per chi deve pagare', valore: () => firma ? `Firmato: ${firma}` : 'Testo già pronto, da cambiare', corpo: el => {
+      el.innerHTML = `<label class="campo"><span>La tua firma</span><input id="i-firma" class="imp-input" value="${sicuro(firma)}" placeholder="Es. Marco, giardiniere"></label>
+        <label class="campo"><span>Il messaggio</span><textarea id="i-modello" class="imp-input" rows="4">${sicuro(modelloSollecito)}</textarea></label>
+        <p class="imp-testo">{nome}, {importo}, {lavoro} e {firma} si scrivono da soli. Si manda col tasto "Messaggio" accanto a chi è in arancione o rosso: si apre WhatsApp col testo pronto, e lo puoi cambiare prima di mandarlo.</p>`;
+      $('i-firma').onchange = e => { firma = e.target.value.trim(); disegnaImpostazioni(); };
+      $('i-modello').onchange = e => { modelloSollecito = e.target.value; disegnaImpostazioni(); };
+    } },
+  ]],
+  ['Personalizza', [
     { id: 'tipi', nome: 'Tipi di cliente', valore: () => TIPI.join(', '), corpo: el => {
       // Rinominare cambia anche i clienti di quel tipo; un tipo in uso non si toglie
       listaModificabile(el, TIPI, {
@@ -7823,26 +7837,9 @@ const GRUPPI_IMP = [
         DURATE.push(o); ordina(); disegnaImpostazioni();
       };
     } },
-    { id: 'sollecito', nome: 'Messaggio per chi deve pagare', valore: () => firma ? `Firmato: ${firma}` : 'Testo già pronto, da cambiare', corpo: el => {
-      el.innerHTML = `<label class="campo"><span>La tua firma</span><input id="i-firma" class="imp-input" value="${sicuro(firma)}" placeholder="Es. Marco, giardiniere"></label>
-        <label class="campo"><span>Il messaggio</span><textarea id="i-modello" class="imp-input" rows="4">${sicuro(modelloSollecito)}</textarea></label>
-        <p class="imp-testo">{nome}, {importo}, {lavoro} e {firma} si scrivono da soli. Si manda col tasto "Messaggio" accanto a chi è in arancione o rosso: si apre WhatsApp col testo pronto, e lo puoi cambiare prima di mandarlo.</p>`;
-      $('i-firma').onchange = e => { firma = e.target.value.trim(); disegnaImpostazioni(); };
-      $('i-modello').onchange = e => { modelloSollecito = e.target.value; disegnaImpostazioni(); };
-    } },
     { id: 'tasse', nome: 'Tasse', valore: () => tasse ? `Metti da parte il ${tasse}% dell'utile` : 'Non conteggiate', corpo: el => {
       el.innerHTML = contatore('tasse', 'Da mettere da parte', `${tasse}%`) + '<p class="imp-testo">Nella pagina Conti vedi quanto mettere da parte e quanto ti resta davvero. Chiedi al tuo commercialista la percentuale giusta per te.</p>';
       el.querySelectorAll('[data-k=tasse]').forEach(b => { b.onclick = () => { tasse = Math.min(60, Math.max(0, tasse + +b.dataset.d)); disegnaImpostazioni(); }; });
-    } },
-    { id: 'ritardi', nome: 'Ritardo nei pagamenti', valore: () => `Arancione dopo ${soglie.arancio} g · rosso dopo ${soglie.rosso} g`, corpo: el => {
-      el.innerHTML = contatore('arancio', 'Arancione dopo', `${soglie.arancio} giorni`) + contatore('rosso', 'Rosso dopo', `${soglie.rosso} giorni`) + '<p class="imp-testo">Arancione: è ora di mandare un messaggio. Rosso: è ora di telefonare.</p>';
-      el.querySelectorAll('.contatore button').forEach(b => {
-        b.onclick = () => {
-          const k = b.dataset.k, v = soglie[k] + +b.dataset.d;
-          if (v < 1 || (k === 'arancio' && v >= soglie.rosso) || (k === 'rosso' && v <= soglie.arancio) || v > 180) return;
-          soglie[k] = v; disegnaImpostazioni();
-        };
-      });
     } },
   ]],
   ['Notifiche', [
@@ -7924,11 +7921,20 @@ const GRUPPI_IMP = [
 
 function disegnaImpostazioni() {
   const freccina = '<svg class="freccina" width="20" height="20" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  $('i-elenco').innerHTML = GRUPPI_IMP.map(([titolo, righe]) => `<div class="imp-gruppo righe"><h2>${titolo}</h2>${righe.map(r => `
-    <div class="imp-r${r.id === rigaAperta ? ' aperta' : ''}">
-      <button type="button" class="imp-testa" data-id="${r.id}" aria-expanded="${r.id === rigaAperta}"><span><strong>${r.nome}</strong><small>${sicuro(r.valore())}</small></span>${freccina}</button>
-      ${r.id === rigaAperta ? `<div class="imp-corpo" id="ic-${r.id}"></div>` : ''}
-    </div>`).join('')}</div>`).join('');
+  const checkOk  = '<svg class="imp-chk imp-chk-ok" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--foglia)" stroke-width="2"/><path d="M8 12l3 3 5-5" fill="none" stroke="var(--foglia)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const checkNo  = '<svg class="imp-chk" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--linea)" stroke-width="1.8" stroke-dasharray="4 3"/></svg>';
+  $('i-elenco').innerHTML = GRUPPI_IMP.map(([titolo, righe]) => {
+    const haCheck = righe.some(r => r.done);
+    const tuttiOk = haCheck && righe.filter(r => r.done).every(r => r.done());
+    return `<div class="imp-gruppo righe">
+      <h2>${titolo}${tuttiOk ? '<span class="imp-h-ok"> ✓</span>' : ''}</h2>
+      ${righe.map(r => `
+      <div class="imp-r${r.id === rigaAperta ? ' aperta' : ''}">
+        <button type="button" class="imp-testa" data-id="${r.id}" aria-expanded="${r.id === rigaAperta}">${r.done ? (r.done() ? checkOk : checkNo) : ''}<span><strong>${r.nome}</strong><small>${sicuro(r.valore())}</small></span>${freccina}</button>
+        ${r.id === rigaAperta ? `<div class="imp-corpo" id="ic-${r.id}"></div>` : ''}
+      </div>`).join('')}
+    </div>`;
+  }).join('');
   $('i-elenco').querySelectorAll('.imp-testa').forEach(b => { b.onclick = () => { rigaAperta = rigaAperta === b.dataset.id ? null : b.dataset.id; disegnaImpostazioni(); }; });
   const r = GRUPPI_IMP.flatMap(g => g[1]).find(x => x.id === rigaAperta);
   if (r) r.corpo($('ic-' + r.id));
