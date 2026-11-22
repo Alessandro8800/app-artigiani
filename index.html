@@ -2873,7 +2873,10 @@ function disegnaColori() {
       disegnaColori();
     };
   });
-  $('f-colore-piu').onclick = () => apriTavolozza(c => { if (!coloriMiei.includes(c)) coloriMiei.push(c); if (!_etMod) colore = c; disegnaColori(); });
+  $('f-colore-piu').onclick = () => {
+    if (COLORI.length - 1 + coloriMiei.length >= 20) { avvisa('Hai già 20 colori, il massimo'); return; }
+    apriTavolozza(c => { if (!coloriMiei.includes(c)) coloriMiei.push(c); if (!_etMod) colore = c; disegnaColori(); });
+  };
   $('f-et-mod').onclick = () => { _etMod = !_etMod; disegnaColori(); };
 }
 
