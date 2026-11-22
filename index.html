@@ -8495,7 +8495,7 @@ function aggiornaTotalePrev() {
 
 function prevAggiungiVoce() { _prevBozzaVoci.push({ descrizione: '', importo: 0 }); disegnaPrevVoci(); }
 
-function salvaPrevBozza() {
+function salvaPrevBozza(stato = 'bozza') {
   const anno = new Date().getFullYear();
   const p = {
     id: Date.now(),
@@ -8505,7 +8505,7 @@ function salvaPrevBozza() {
     voci: _prevBozzaVoci.map(v => ({ ...v })),
     note: _prevBozzaNote,
     totale: prevTotale(_prevBozzaVoci),
-    iva: datiAttivita.iva, stato: 'bozza',
+    iva: datiAttivita.iva, stato,
   };
   if (_prevEditId !== null) {
     const idx = preventivi.findIndex(x => x.id === _prevEditId);
@@ -8527,7 +8527,7 @@ function tornaIndietroConBozza() {
 }
 function salvaPrevESaltiAPDF() {
   const wasEditId = _prevEditId;
-  salvaPrevBozza(); // resetta _prevVista a 'lista' e _prevEditId a null
+  salvaPrevBozza('inviato'); // resetta _prevVista a 'lista' e _prevEditId a null
   const targetId = wasEditId !== null ? wasEditId : preventivi[preventivi.length - 1]?.id;
   if (!targetId) return;
   _prevCompletoId = targetId; _prevVista = 'completo'; disegnaPreventivi();
