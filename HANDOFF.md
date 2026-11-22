@@ -714,6 +714,137 @@ Funzioni: `nuovaRicorrente()`, `avanzaRicorrente(id)`, `eliminaRicorrente(id)`.
 
 ---
 
+## App Lv.2 — Cose da fare
+
+Funzionalità future da implementare con agenti. Ogni sezione è scritta per essere consegnata a un agente con il contesto sufficiente per partire senza domande. Ordine = priorità di impatto.
+
+---
+
+### 1. Preventivo rapido → PDF → WhatsApp (priorità massima)
+
+**Perché:** il titolare usa un gestionale esterno *solo* per creare e mandare preventivi. Se l'app lo fa meglio, il gestionale diventa inutile. I dati del cliente e del lavoro sono già nell'app — il gestionale li reinserisce a mano.
+
+**Flusso da costruire:**
+1. Pulsante "Nuovo preventivo" nella scheda cliente (o da calendario)
+2. Form con righe: descrizione lavoro + importo. Aggiunta riga con "+" . Pre-compilato dai lavori recenti del cliente se esistono.
+3. Anteprima documento: logo titolare, dati cliente, righe, totale, note, data
+4. Pulsante "Manda su WhatsApp" → Web Share API con il file allegato
+5. Preventivo salvato nello storico del cliente
+
+**Generazione documento:** usare `html2canvas` (immagine PNG, visivamente migliore su WhatsApp) oppure `jsPDF` (PDF, più formale). Valutare entrambe al prototipo. Tutto client-side, zero server, funziona offline.
+
+**Dati titolare (prerequisito):** aggiungere in Impostazioni un form "I tuoi dati" con: nome/ragione sociale, indirizzo, P.IVA / codice fiscale, telefono, logo (immagine). Salvato in Dexie come `{ chiave: 'datiTitolare', valore: JSON.stringify({...}) }`. Necessario per il documento.
+
+**Struttura dati preventivo:**
+```js
+{
+  id: String,
+  clienteNome: String,
+  data: 'YYYY-MM-DD',
+  voci: [{ descrizione: String, importo: Number }],
+  note: String,
+  stato: 'bozza' | 'inviato' | 'accettato' | 'rifiutato',
+  totale: Number   // calcolato
+}
+```
+Salvato in Dexie come `preventivi` (array, come `lavori`).
+
+**Cosa NON fare in v1:** IVA, bollo, codice fiscale del cliente, firma digitale, invio email, numerazione fiscale progressiva. Queste cose vanno nel gestionale. Il preventivo v1 è: *un documento bello che si manda su WhatsApp in un minuto.*
+
+**Codice esistente utile:**
+- `prevDati` e la scheda Preventivi esistente sono per la stima dei prezzi (slider), non per creare un documento. Sono due cose diverse — non confonderle.
+- `conto(nome).dovuto` — per pre-compilare l'importo dal debito esistente
+- `Web Share API`: `navigator.share({ files: [file] })` — controllare `navigator.canShare` come fallback
+
+---
+
+### 2. Foto per lavoro
+
+**Perché:** il giardiniere scatta foto prima/dopo ogni lavoro. Ora le tiene nella galleria del telefono senza contesto. Collegarle al lavoro le rende utili (prova per il cliente, documentazione danni, include nel preventivo/fattura).
+
+**Flusso:**
+- Dentro la scheda di un lavoro: pulsante "📷 Aggiungi foto"
+- Apre `<input type="file" accept="image/*" capture="environment">` (fotocamera diretta su mobile)
+- La foto viene compressa (max 800px lato lungo, qualità 0.7) e salvata in Dexie come Blob collegata all'id del lavoro
+- Visualizzazione: griglia di miniature nella scheda lavoro, tap per ingrandire
+- Opzionale in v1: includere una foto nella prima pagina del preventivo PDF
+
+**Struttura dati:**
+```js
+// In Dexie, tabella separata 'foto'
+{ id: String, lavoriId: String, blob: Blob, data: 'YYYY-MM-DD', note: String }
+```
+
+**Attenzione storage:** le foto occupano spazio. Avvisare l'utente se supera 500 MB totali (IndexedDB quota). Aggiungere "Gestione foto" in Impostazioni con possibilità di eliminare le più vecchie.
+
+---
+
+### 3. Fattura (dopo che il preventivo funziona)
+
+**Perché:** il preventivo accettato diventa fattura. Se l'app genera anche quella, il gestionale è definitivamente sostituito.
+
+**Flusso:**
+- Preventivo con stato `accettato` → pulsante "Converti in fattura"
+- Aggiunge: numero progressivo (es. 2024/001), data emissione, eventuale IVA (chip: esente / 10% / 22%)
+- Genera PDF con gli stessi dati del preventivo + numero fattura
+- Manda su WhatsApp o salva
+
+**Struttura dati fattura:**
+```js
+{
+  id: String,
+  preventivoId: String,   // collegamento
+  numero: String,         // es. '2024/001'
+  dataEmissione: 'YYYY-MM-DD',
+  iva: 0 | 10 | 22,
+  totaleIvato: Number,
+  stato: 'emessa' | 'pagata'
+}
+```
+
+**Numerazione:** contatore salvato in Dexie `{ chiave: 'contatoreFatture', valore: N }`. Formato: `${anno}/${String(N).padStart(3, '0')}`.
+
+**Cosa NON fare:** SDI (Sistema di Interscambio) e fattura elettronica XML. Rimane nel gestionale. Questa è solo una fattura PDF per il cliente privato — tecnicamente non è una fattura fiscale, è una ricevuta professionale.
+
+---
+
+### 4. Backend minimo (push notification + sync due dispositivi)
+
+**Perché:** senza server l'app non può avvisare il titolare quando il telefono è chiuso. E non può condividere i dati con un secondo dispositivo (moglie, socio).
+
+**Cosa serve esattamente:**
+- Push notification: "domani hai 3 lavori", "scadenza assicurazione tra 3 giorni"
+- Sync passiva: i dati si salvano anche su un piccolo server, così un secondo telefono li vede
+
+**Stack consigliato per semplicità:**
+- **Cloudflare Workers + Durable Objects** — serverless, zero infrastruttura da gestire, free tier generoso
+- Oppure **Supabase** (Postgres + API REST + auth) — più immediato per chi non conosce Workers
+- Oppure **Fly.io + SQLite** — il più semplice da capire, costa ~$3/mese
+
+**Cosa NON costruire subito:** account utente con email/password, billing, dashboard admin. Prima: funziona solo con un codice di accesso (PIN a 6 cifre che il titolare sceglie). La privacy rimane: i dati sono solo suoi.
+
+**Prerequisiti prima di iniziare il backend:**
+- Il titolare deve accettare che i dati escano dal telefono (privacy policy aggiornata)
+- Decidere se il sync è automatico o manuale ("Salva sul cloud" a mano)
+
+---
+
+### 5. WhatsApp come canale nativo (contact import)
+
+Già documentato al punto 9 di "Prossimi passi": condivisione contatto `.vcf` da WhatsApp → app via share target del manifest PWA. Funziona solo con l'app installata (non dal browser). Da progettare insieme prima di scrivere codice.
+
+---
+
+### Note per gli agenti che implementeranno
+
+- Tutto in `index.html` finché non arriva il backend. Zero nuove dipendenze senza valutare prima.
+- Prima di aggiungere una libreria (jsPDF, html2canvas): verificare dimensione bundle — l'app è già 550 KB.
+- Il titolare testa sul telefono Android reale. Ogni funzione va provata lì, non solo nel browser.
+- Le funzionalità 1-3 sono offline-first per design. La 4 è l'unica che richiede connessione.
+- `dbSalva()` e `dbCarica()` sono il contratto di storage — ogni nuovo dato deve passare da lì.
+
+---
+
 ## Regole di lavoro
 
 - Spiegazioni in italiano semplice (il titolare non sa programmare)
