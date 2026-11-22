@@ -779,6 +779,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-validita-riga { display: flex; align-items: center; gap: 8px; padding: 8px 4px 2px; font-size: 14px; font-weight: 600; color: var(--testo-2); }
 .prev-validita-num { width: 52px; text-align: center; border: 1.5px solid var(--linea); border-radius: 8px; padding: 4px 6px; font-size: 14px; font-weight: 700; font-family: var(--font-testo); background: var(--sfondo); color: var(--testo); }
 .prev-validita-num:focus { outline: none; border-color: var(--foglia); }
+.prev-extra-toggle { display: flex; align-items: center; gap: 8px; padding: 7px 4px 2px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--testo-2); user-select: none; }
+.prev-extra-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--foglia); cursor: pointer; flex-shrink: 0; }
 .prev-tot-riga span { font-size: 15px; font-weight: 700; color: var(--testo-2); }
 .prev-tot-riga b { font-family: var(--font-titoli); font-size: 24px; color: var(--foglia); }
 .prev-azioni-ant { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
@@ -6556,6 +6558,8 @@ let _prevCompletoId = null;
 let _prevBozzaCliente = '';
 let _prevBozzaIndirizzo = '';
 let _prevBozzaValidita = 30;
+let _prevBozzaCondPag = null;   // null = disabilitato, stringa = attivo
+let _prevBozzaInizio = null;    // null = disabilitato, stringa = attivo
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -8453,7 +8457,8 @@ function salvaPrevBozza() {
   const p = {
     id: Date.now(),
     numero: `${anno}/${String(_prevContatore).padStart(3, '0')}`,
-    data: tra(0), clienteNome: _prevBozzaCliente, clienteIndirizzo: _prevBozzaIndirizzo, validita: _prevBozzaValidita,
+    data: tra(0), clienteNome: _prevBozzaCliente, clienteIndirizzo: _prevBozzaIndirizzo,
+    validita: _prevBozzaValidita, condPagamento: _prevBozzaCondPag, inizioLavori: _prevBozzaInizio,
     voci: _prevBozzaVoci.map(v => ({ ...v })),
     note: _prevBozzaNote,
     totale: prevTotale(_prevBozzaVoci),
@@ -8463,7 +8468,7 @@ function salvaPrevBozza() {
     const idx = preventivi.findIndex(x => x.id === _prevEditId);
     if (idx >= 0) { p.id = preventivi[idx].id; p.numero = preventivi[idx].numero; preventivi[idx] = p; }
   } else { preventivi.push(p); _prevContatore++; }
-  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevBozzaValidita = 30; _prevVista = 'lista';
+  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevBozzaValidita = 30; _prevBozzaCondPag = null; _prevBozzaInizio = null; _prevVista = 'lista';
   dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
 }
 
@@ -8479,6 +8484,7 @@ function modificaPrev(id) {
   const p = preventivi.find(x => x.id === id); if (!p) return;
   _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || '';
   _prevBozzaCliente = p.clienteNome || ''; _prevBozzaIndirizzo = p.clienteIndirizzo || ''; _prevBozzaValidita = p.validita || 30;
+  _prevBozzaCondPag = p.condPagamento ?? null; _prevBozzaInizio = p.inizioLavori ?? null;
   _prevEditId = id; _prevVista = 'anteprima'; disegnaPreventivi();
 }
 
@@ -8522,10 +8528,12 @@ function cercaClientePrev(input) {
       _prevBozzaCliente = nome;
       input.value = nome;
       lista.hidden = true;
-      // Pre-compila indirizzo: cerca nell'ultimo preventivo fatto a questo cliente
+      // Pre-compila indirizzo: prima dai lavori (campo dove), poi dai preventivi passati
       if (!_prevBozzaIndirizzo) {
-        const ultimoConInd = preventivi.slice().reverse().find(p => normalizza(p.clienteNome) === normalizza(nome) && p.clienteIndirizzo);
-        if (ultimoConInd) { _prevBozzaIndirizzo = ultimoConInd.clienteIndirizzo; const ind = $('prev-ind-input'); if (ind) ind.value = _prevBozzaIndirizzo; }
+        const ultimoLav = lavori.slice().reverse().find(l => normalizza(l.nome) === normalizza(nome) && l.dove);
+        const ultimoPrev = !ultimoLav && preventivi.slice().reverse().find(p => normalizza(p.clienteNome) === normalizza(nome) && p.clienteIndirizzo);
+        const indir = ultimoLav?.dove || ultimoPrev?.clienteIndirizzo || '';
+        if (indir) { _prevBozzaIndirizzo = indir; const ind = $('prev-ind-input'); if (ind) ind.value = indir; }
       }
       // Aggiungi come nuovo cliente in extra se non c'è
       if (b.classList.contains('prev-cli-nuovo') && !extra[nome]) { extra[nome] = { tel: '', colore: '', ripeti: false, note: '', mesiSemestrale: [] }; dbSalva(); }
@@ -8600,7 +8608,11 @@ function disegnaPreventivi() {
         ${ivaPerc ? `<div class="prev-doc-tot-riga"><span>Imponibile</span><span>${euro(p.totale)}</span></div>
         <div class="prev-doc-tot-riga"><span>IVA ${ivaPerc}%</span><span>${euro(ivaImporto)}</span></div>` : ''}
         <div class="prev-doc-tot-riga prev-doc-tot-finale"><span>Totale</span><span>${euro(totaleFinale)}</span></div>
-        ${p.note ? `<div class="prev-doc-note">Note: ${sicuro(p.note)}</div>` : ''}
+        ${(p.note || p.condPagamento || p.inizioLavori) ? `<div class="prev-doc-note">${[
+          p.note ? `Note: ${sicuro(p.note)}` : '',
+          p.condPagamento ? `Pagamento: ${sicuro(p.condPagamento)}` : '',
+          p.inizioLavori ? `Tempi: ${sicuro(p.inizioLavori)}` : '',
+        ].filter(Boolean).join('<br>')}</div>` : ''}
       </div>
       <div class="prev-azioni-pdf">
         <button class="prev-stampa" onclick="window.print()">Stampa / Salva PDF</button>
@@ -8660,15 +8672,35 @@ function disegnaPreventivi() {
           <input id="prev-validita-input" class="prev-validita-num" type="number" min="1" max="365" value="${_prevBozzaValidita}" inputmode="numeric">
           <span>giorni</span>
         </div>
+        <label class="prev-extra-toggle">
+          <input type="checkbox" id="prev-condpag-check" ${_prevBozzaCondPag !== null ? 'checked' : ''}>
+          <span>Condizioni di pagamento</span>
+        </label>
+        ${_prevBozzaCondPag !== null ? `<input id="prev-condpag-txt" class="imp-input" style="margin:4px 0 6px" value="${sicuro(_prevBozzaCondPag)}" placeholder="Es. 30% acconto, saldo a lavori ultimati">` : ''}
+        <label class="prev-extra-toggle">
+          <input type="checkbox" id="prev-inizio-check" ${_prevBozzaInizio !== null ? 'checked' : ''}>
+          <span>Inizio e durata dei lavori</span>
+        </label>
+        ${_prevBozzaInizio !== null ? `<input id="prev-inizio-txt" class="imp-input" style="margin:4px 0 2px" value="${sicuro(_prevBozzaInizio)}" placeholder="Es. Inizio entro 7 giorni, durata 2 giorni">` : ''}
       </div>
       <div class="prev-azioni-ant">
         <button class="salva" onclick="salvaPrevBozza()">Salva bozza</button>
         <button class="prev-stampa" onclick="salvaPrevESaltiAPDF()">Salva e genera PDF</button>
-        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';_prevBozzaCliente='';_prevBozzaIndirizzo='';_prevBozzaValidita=30;disegnaPreventivi()">Scarta</button>
+        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';_prevBozzaCliente='';_prevBozzaIndirizzo='';_prevBozzaValidita=30;_prevBozzaCondPag=null;_prevBozzaInizio=null;disegnaPreventivi()">Scarta</button>
       </div>`;
     disegnaPrevVoci();
     $('prev-cli-input')?.addEventListener('blur', () => { setTimeout(() => { const r = $('prev-cli-lista'); if (r) r.hidden = true; }, 200); });
     $('prev-validita-input')?.addEventListener('input', e => { _prevBozzaValidita = Math.max(1, parseInt(e.target.value) || 30); });
+    $('prev-condpag-check')?.addEventListener('change', e => {
+      _prevBozzaCondPag = e.target.checked ? '30% acconto all\'accettazione, saldo a lavori ultimati' : null;
+      disegnaPreventivi();
+    });
+    $('prev-condpag-txt')?.addEventListener('input', e => { _prevBozzaCondPag = e.target.value; });
+    $('prev-inizio-check')?.addEventListener('change', e => {
+      _prevBozzaInizio = e.target.checked ? '' : null;
+      disegnaPreventivi();
+    });
+    $('prev-inizio-txt')?.addEventListener('input', e => { _prevBozzaInizio = e.target.value; });
     return;
   }
 
