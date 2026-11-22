@@ -8526,11 +8526,7 @@ function tornaIndietroConBozza() {
   else { scartaPrev(); }
 }
 function salvaPrevESaltiAPDF() {
-  const wasEditId = _prevEditId;
-  salvaPrevBozza('inviato'); // resetta _prevVista a 'lista' e _prevEditId a null
-  const targetId = wasEditId !== null ? wasEditId : preventivi[preventivi.length - 1]?.id;
-  if (!targetId) return;
-  _prevCompletoId = targetId; _prevVista = 'completo'; disegnaPreventivi();
+  salvaPrevBozza('inviato'); // salva e torna alla lista
 }
 
 function modificaPrev(id) {
