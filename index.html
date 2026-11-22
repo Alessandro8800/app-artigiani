@@ -896,6 +896,11 @@ button.s-riga:first-child { border-top: 0; }
 .imp-voce button { min-width: 44px; border-radius: 11px; border: 0; background: var(--sfondo); color: var(--testo-2); font-weight: 800; font-size: 15px; padding: 0 12px; }
 .imp-voce button.aggiungi { background: var(--foglia-chiara); color: var(--foglia); }
 .imp-voce button:disabled { opacity: .35; }
+.imp-voce button.stella { color: var(--testo-2); font-size: 18px; }
+.imp-voce button.stella.on { color: #f59e0b; }
+.chip-espandi { background: var(--sfondo) !important; color: var(--testo-2); border: 1.5px solid var(--linea) !important; font-size: 16px; letter-spacing: 1px; min-width: 44px; }
+.chip-espandi.aperto { color: var(--foglia); border-color: var(--foglia) !important; }
+.comuni-extra { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 
 /* Avviso in basso, con eventuale "Annulla" */
 .avviso { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--barra) + 90px + env(safe-area-inset-bottom, 0px)); background: var(--testo); color: var(--sfondo); padding: 8px 8px 8px 18px; min-height: 52px; border-radius: 14px; font-weight: 700; font-size: 15px; width: min(448px, calc(100% - 32px)); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -4727,10 +4732,11 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle']);
     if (r[12] && r[12].valore) cronometro = JSON.parse(r[12].valore);
     if (r[6]) inizioChiuso = !!r[6].valore;
     if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' }; zonaScelta = true; }
+    if (r[13] && r[13].valore) LAVORI_STELLE.splice(0, Infinity, ...JSON.parse(r[13].valore));
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
     if (r[7]) { const ib = JSON.parse(r[7].valore); for (const k of Object.keys(INBOX_ESEMPI)) INBOX_ESEMPI[k].voci.splice(0, Infinity, ...(ib[k] || [])); }
     if (r[8]) { const st = JSON.parse(r[8].valore); for (const k of Object.keys(STORICO_ESEMPI)) STORICO_ESEMPI[k].splice(0, Infinity, ...(st[k] || [])); }
@@ -4772,6 +4778,7 @@ function dbSalva() {
       { chiave: '_nrId',      valore: _nrId },
       { chiave: 'prevDati',   valore: prevDati },
       { chiave: 'inizioChiuso', valore: inizioChiuso },
+      { chiave: 'lavoriStelle', valore: JSON.stringify(LAVORI_STELLE) },
       { chiave: 'inbox',      valore: JSON.stringify(Object.fromEntries(Object.entries(INBOX_ESEMPI).map(([k, c]) => [k, c.voci]))) },
       { chiave: 'storico',    valore: JSON.stringify(STORICO_ESEMPI) },
       { chiave: 'spese',      valore: JSON.stringify(spese) },
@@ -5709,14 +5716,25 @@ let costoOrario = 15;   // costo all'ora del personale, già proposto
 // Lavori più comuni: un tocco li aggiunge a "Cosa c'è da fare", un altro tocco li toglie.
 // In futuro si potranno cambiare dalle Impostazioni.
 const LAVORI_COMUNI = ['Taglio erba', 'Potatura', 'Taglio siepe', 'Irrigazione', 'Raccolta foglie', 'Pulizia giardino', 'Vigneto', 'Manutenzione verde'];
+const LAVORI_STELLE = []; // nomi stellati (max 3); vuoto = usa le prime 3 della lista
+const lavoriPrincipali = () => { const s = LAVORI_STELLE.filter(n => LAVORI_COMUNI.includes(n)).slice(0, 3); return s.length ? s : LAVORI_COMUNI.slice(0, 3); };
 const pezziCosa = () => $('f-cosa').value.split(',').map(s => s.trim()).filter(Boolean);
+let _comuniEspansi = false;
 function disegnaComuni() {
   const pezzi = pezziCosa().map(normalizza);
-  $('f-comuni').innerHTML = LAVORI_COMUNI.map(l => {
+  const principali = lavoriPrincipali();
+  const altri = LAVORI_COMUNI.filter(l => !principali.includes(l));
+  const chipHtml = l => {
     const lungo = l.length > 11, attivo = pezzi.includes(normalizza(l));
-    return `<button type="button" class="chip${attivo ? ' attivo' : ''}${lungo ? ' scorri' : ''}" data-l="${l}"><span class="cht">${l}</span></button>`;
-  }).join('');
-  $('f-comuni').querySelectorAll('.chip').forEach(b => {
+    return `<button type="button" class="chip${attivo ? ' attivo' : ''}${lungo ? ' scorri' : ''}" data-l="${sicuro(l)}"><span class="cht">${sicuro(l)}</span></button>`;
+  };
+  const espandiBtn = altri.length
+    ? `<button type="button" class="chip chip-espandi${_comuniEspansi ? ' aperto' : ''}" id="f-comuni-espandi" aria-label="${_comuniEspansi ? 'Comprimi' : 'Mostra tutti'}">···</button>`
+    : '';
+  $('f-comuni').innerHTML =
+    principali.map(chipHtml).join('') + espandiBtn +
+    (_comuniEspansi && altri.length ? `<div class="comuni-extra">${altri.map(chipHtml).join('')}</div>` : '');
+  $('f-comuni').querySelectorAll('.chip[data-l]').forEach(b => {
     b.onclick = e => {
       e.preventDefault();
       const l = b.dataset.l, pezzi = pezziCosa();
@@ -5727,6 +5745,8 @@ function disegnaComuni() {
       disegnaComuni();
     };
   });
+  const eb = $('f-comuni-espandi');
+  if (eb) eb.onclick = () => { _comuniEspansi = !_comuniEspansi; disegnaComuni(); };
 }
 $('f-cosa').addEventListener('input', disegnaComuni);
 function aggiornaPlusTel() {
@@ -6955,10 +6975,11 @@ function segmenti(el, voci, attiva, scegli) {
 }
 
 // Elenco modificabile: ogni voce si riscrive o si toglie, in fondo se ne aggiunge una
-function listaModificabile(el, elenco, { rinomina, puoiTogliere, segnaposto }) {
+function listaModificabile(el, elenco, { rinomina, puoiTogliere, segnaposto, extraBtn }) {
   el.innerHTML = '<div class="imp-lista">' + elenco.map((v, i) => {
     const motivo = puoiTogliere(v, i);
-    return `<div class="imp-voce"><input value="${sicuro(v)}" data-i="${i}" aria-label="Modifica ${sicuro(v)}"><button type="button" data-i="${i}" aria-label="Togli ${sicuro(v)}"${motivo === true ? '' : ` disabled title="${sicuro(motivo)}"`}>✕</button></div>`;
+    const extra = extraBtn ? extraBtn(v, i) : '';
+    return `<div class="imp-voce">${extra}<input value="${sicuro(v)}" data-i="${i}" aria-label="Modifica ${sicuro(v)}"><button type="button" data-i="${i}" aria-label="Togli ${sicuro(v)}"${motivo === true ? '' : ` disabled title="${sicuro(motivo)}"`}>✕</button></div>`;
   }).join('') + `<div class="imp-voce"><input placeholder="${segnaposto}" data-nuovo="1" aria-label="${segnaposto}"><button type="button" class="aggiungi">Aggiungi</button></div></div>`;
   el.querySelectorAll('input[data-i]').forEach(inp => {
     inp.onchange = () => {
@@ -7235,8 +7256,27 @@ const GRUPPI_IMP = [
       el.insertAdjacentHTML('beforeend', '<p class="imp-testo">Il primo è quello già scelto. Un tipo usato da qualche cliente non si può togliere.</p>');
     } },
     { id: 'comuni', nome: 'Lavori più comuni', valore: () => LAVORI_COMUNI.join(', ') || 'Nessuno', corpo: el => {
-      listaModificabile(el, LAVORI_COMUNI, { segnaposto: 'Nuovo lavoro, es. Semina prato', rinomina: () => {}, puoiTogliere: () => true });
-      el.insertAdjacentHTML('beforeend', '<p class="imp-testo">Sono le scelte rapide sopra "Cosa c\'è da fare".</p>');
+      listaModificabile(el, LAVORI_COMUNI, {
+        segnaposto: 'Nuovo lavoro, es. Semina prato',
+        rinomina: (vecchio, nuovo) => { const i = LAVORI_STELLE.indexOf(vecchio); if (i >= 0) LAVORI_STELLE[i] = nuovo; },
+        puoiTogliere: () => true,
+        extraBtn: v => {
+          const on = LAVORI_STELLE.includes(v);
+          return `<button type="button" class="stella${on ? ' on' : ''}" data-stella="${sicuro(v)}" aria-label="${on ? 'Togli principale' : 'Imposta principale'}">★</button>`;
+        },
+      });
+      el.querySelectorAll('.stella[data-stella]').forEach(b => {
+        b.onclick = () => {
+          const v = b.dataset.stella, i = LAVORI_STELLE.indexOf(v);
+          if (i >= 0) { LAVORI_STELLE.splice(i, 1); }
+          else {
+            if (LAVORI_STELLE.length >= 3) avvisa('Puoi stellare al massimo 3 lavori');
+            else LAVORI_STELLE.push(v);
+          }
+          disegnaImpostazioni();
+        };
+      });
+      el.insertAdjacentHTML('beforeend', '<p class="imp-testo">★ = compare subito nel form (max 3). Gli altri si vedono con ···.</p>');
     } },
     { id: 'costirapidi', nome: 'Costi rapidi', valore: () => `Personale ${costoOrario} €/ora, ${COSTI_RAPIDI.join(', ')}`, corpo: el => {
       el.innerHTML = contatore('orario', 'Personale: costo all\'ora', `${costoOrario} €`) + '<div id="i-rapidi"></div>';
@@ -7394,7 +7434,7 @@ function disegnaImpostazioni() {
 
 // Copia dei dati: un file da salvare o mandare a sé stessi
 function esportaCopia() {
-  const dati = { versione: 1, salvato: new Date().toISOString(), lavori, pagamenti, extra, spese, impostazioni: { TIPI, TIPI_SPESA, COSTI_RAPIDI, costoOrario, LAVORI_COMUNI, giorniLavoro, soglie, durataSolita, coloriMiei, DURATE, oreGiornata } };
+  const dati = { versione: 1, salvato: new Date().toISOString(), lavori, pagamenti, extra, spese, impostazioni: { TIPI, TIPI_SPESA, COSTI_RAPIDI, costoOrario, LAVORI_COMUNI, LAVORI_STELLE, giorniLavoro, soglie, durataSolita, coloriMiei, DURATE, oreGiornata } };
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(dati, null, 2)], { type: 'application/json' }));
   a.download = `lavori-copia-${tra(0)}.json`;
@@ -7419,6 +7459,7 @@ $('i-ripristina').onchange = async e => {
       if (im.COSTI_RAPIDI) COSTI_RAPIDI.splice(0, COSTI_RAPIDI.length, ...im.COSTI_RAPIDI);
       if (im.costoOrario) costoOrario = im.costoOrario;
       if (im.LAVORI_COMUNI) LAVORI_COMUNI.splice(0, LAVORI_COMUNI.length, ...im.LAVORI_COMUNI);
+      if (im.LAVORI_STELLE) LAVORI_STELLE.splice(0, LAVORI_STELLE.length, ...im.LAVORI_STELLE);
       im.giorniLavoro.forEach((v, i) => (giorniLavoro[i] = v));
       if (im.soglie) Object.assign(soglie, im.soglie);
       if (im.DURATE) DURATE.splice(0, DURATE.length, ...im.DURATE);
