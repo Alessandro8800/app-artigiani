@@ -1097,6 +1097,20 @@ button.s-riga:first-child { border-top: 0; }
 .prezzo-edit-panel input[type=number] { flex: 1; border: none; background: none; font-size: 22px; font-weight: 800; color: var(--testo); outline: none; min-width: 0; }
 .prezzo-edit-panel input[type=number]::-webkit-inner-spin-button, .prezzo-edit-panel input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .prezzo-edit-panel span { font-size: 22px; font-weight: 800; color: var(--ambra); }
+/* Rotella delle cifre: scritta + icona tastiera sopra, rotella sotto, casella per scrivere a mano */
+.rot { display: flex; flex-direction: column; gap: 6px; }
+.rot-testa { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rot-testa > span { font-size: 12px; font-weight: 700; color: var(--testo-2); }
+.rot-testa > span small { font-weight: 600; }
+.rot-grande .rot-testa > span { font-size: 15px; font-weight: 800; color: var(--testo); }
+.rot-grande .rot-testa > span small { color: var(--testo-2); }
+.rot-tastiera { width: 40px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); padding: 0; }
+.rot-tastiera.attivo { background: var(--ambra-chiara); border-color: var(--ambra); color: var(--ambra); }
+.rot .prezzo-edit-panel { margin-top: 0; }
+.rot-sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+.rot-sugg .chip small { font-weight: 600; opacity: .75; margin-left: 2px; }
+.rot .prezzo-edit-panel { cursor: text; min-height: 52px; }
+.prezzo-edit-panel .rot-scrivi { flex: 1; min-width: 0; min-height: 0; height: auto; border: none; background: none; padding: 0; font-size: 22px; font-weight: 800; color: var(--testo); outline: none; }
 .q-giorno strong { font-size: 16px; }
 .q-giorno small { font-size: 13px; }
 .avanzate { border-top: 1px solid var(--linea); padding-top: 4px; }
@@ -1457,13 +1471,12 @@ button.s-riga:first-child { border-top: 0; }
 
         <!-- 4. Quanto -->
         <div class="campo">
-          <span>Prezzo <small>· tieni premuto per il dettaglio</small></span>
-          <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="f-prezzo-drum" aria-label="Prezzo del lavoro"></div></div>
-          <div class="prezzo-edit-panel" id="prezzo-edit-panel" hidden>
-            <input type="number" id="prezzo-edit-input" inputmode="decimal" min="1" step="1" placeholder="Es. 125">
-            <span>€</span>
+          <div class="rot rot-grande" id="rot-lavoro" data-senza="1" data-sugg="foglio">
+            <div class="rot-testa"><span>Prezzo <small>· tieni premuto per il dettaglio</small></span><button type="button" class="rot-tastiera" aria-label="Scrivi la cifra con la tastiera"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M8 16h8"/></svg></button></div>
+            <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="f-prezzo-drum" aria-label="Prezzo del lavoro"></div></div>
+            <div class="prezzo-edit-panel" hidden><input type="text" class="rot-scrivi" inputmode="decimal" autocomplete="off" placeholder="Scrivi la cifra"><span>€</span></div>
+            <input type="hidden" class="rot-valore" id="f-prezzo">
           </div>
-          <input type="hidden" id="f-prezzo">
         </div>
 
         <!-- 5. Quando -->
@@ -1638,13 +1651,12 @@ button.s-riga:first-child { border-top: 0; }
         <div class="inbox-cerca-risultati" hidden></div>
       </div>
     </label>
-    <label>Importo (€)
-      <div class="inbox-stepper">
-        <button type="button" onclick="stepperCambia(this,-1); aggiornaNuovoPagamento()">−</button>
-        <input type="number" id="np-importo" inputmode="decimal" min="0" oninput="aggiornaNuovoPagamento()">
-        <button type="button" onclick="stepperCambia(this,1); aggiornaNuovoPagamento()">+</button>
-      </div>
-    </label>
+    <div class="rot" id="rot-pagamento" data-riempi="1" data-sugg="np">
+      <div class="rot-testa"><span>Importo <small>· tieni premuto per il dettaglio</small></span><button type="button" class="rot-tastiera" aria-label="Scrivi la cifra con la tastiera"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M8 16h8"/></svg></button></div>
+      <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" aria-label="Importo ricevuto"></div></div>
+      <div class="prezzo-edit-panel" hidden><input type="text" class="rot-scrivi" inputmode="decimal" autocomplete="off" placeholder="Scrivi la cifra"><span>€</span></div>
+      <input type="hidden" class="rot-valore" id="np-importo">
+    </div>
     <p class="errore" id="np-errore" hidden></p>
     <button class="salva" id="np-salva" type="button" onclick="salvaNuovoPagamento()" disabled>Salva</button>
   </div>
@@ -1669,19 +1681,16 @@ button.s-riga:first-child { border-top: 0; }
     </div>
     <label>Testo<input type="text" id="ns-testo" oninput="nsTestoScritto()"></label>
     <div class="chips piccoli" id="ns-chips"></div>
-    <div id="ns-importo-wrap">
-      <div class="nn-etichetta">Importo <small>· tieni premuto per il dettaglio</small></div>
-      <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" id="ns-drum" aria-label="Importo della spesa"></div></div>
-      <div class="prezzo-edit-panel" id="ns-edit-panel" hidden>
-        <input type="number" id="ns-edit-input" inputmode="decimal" min="0" step="0.1" placeholder="Es. 35">
-        <span>€</span>
-      </div>
-      <input type="hidden" id="ns-importo">
+    <div class="rot" id="ns-importo-wrap" data-riempi="1" data-sugg="ns">
+      <div class="rot-testa"><span>Importo <small>· tieni premuto per il dettaglio</small></span><button type="button" class="rot-tastiera" aria-label="Scrivi la cifra con la tastiera"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M8 16h8"/></svg></button></div>
+      <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" aria-label="Importo della spesa"></div></div>
+      <div class="prezzo-edit-panel" hidden><input type="text" class="rot-scrivi" inputmode="decimal" autocomplete="off" placeholder="Scrivi la cifra"><span>€</span></div>
+      <input type="hidden" class="rot-valore" id="ns-importo">
     </div>
     <div id="ns-lavoratore" hidden>
       <div class="ns-lav-riga">
-        <label>Ore<div class="inbox-stepper"><button type="button" onclick="nsLav('ore',-0.5)">−</button><input type="number" id="ns-ore" inputmode="decimal" min="0" step="0.5" oninput="aggiornaNuovaSpesa()"><button type="button" onclick="nsLav('ore',0.5)">+</button></div></label>
-        <label>€ all'ora<div class="inbox-stepper"><button type="button" onclick="nsLav('tariffa',-1)">−</button><input type="number" id="ns-tariffa" inputmode="decimal" min="0" step="1" oninput="aggiornaNuovaSpesa()"><button type="button" onclick="nsLav('tariffa',1)">+</button></div></label>
+        <label>Ore<input type="number" id="ns-ore" inputmode="decimal" min="0" step="0.5" oninput="aggiornaNuovaSpesa()"></label>
+        <label>€ all'ora<input type="number" id="ns-tariffa" inputmode="decimal" min="0" step="1" oninput="aggiornaNuovaSpesa()"></label>
       </div>
       <div class="ns-totale" id="ns-totale"></div>
     </div>
@@ -1781,7 +1790,12 @@ button.s-riga:first-child { border-top: 0; }
   <div class="q-pop-box pal-box" role="dialog" aria-modal="true" aria-labelledby="pp-titolo">
     <strong class="pal-titolo" id="pp-titolo">Quanto ti deve?</strong>
     <p class="imp-testo" id="pp-chi"></p>
-    <span class="con-euro"><input id="pp-importo" class="pp-importo" inputmode="decimal" autocomplete="off" placeholder="Es. 80" aria-label="Prezzo del lavoro"></span>
+    <div class="rot" id="rot-pp" data-riempi="1" data-sugg="lavoro-fatto">
+      <div class="rot-testa"><span>Prezzo <small>· tieni premuto per il dettaglio</small></span><button type="button" class="rot-tastiera" aria-label="Scrivi la cifra con la tastiera"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M8 16h8"/></svg></button></div>
+      <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" aria-label="Prezzo del lavoro"></div></div>
+      <div class="prezzo-edit-panel" hidden><input type="text" class="rot-scrivi" inputmode="decimal" autocomplete="off" placeholder="Scrivi la cifra"><span>€</span></div>
+      <input type="hidden" class="rot-valore" id="pp-importo">
+    </div>
     <div class="s-azioni"><button type="button" class="secondario" id="pp-senza">Senza prezzo</button><button type="button" class="salva" id="pp-salva">Fatto</button></div>
   </div>
 </div>
@@ -2801,10 +2815,12 @@ const PREZZO_DEFAULT_IDX = 4; // 100€: edit(0) —(1) 20(2) 50(3) 100(4)
 
 const SVG_MATITA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const SVG_INDIETRO_P = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`;
-// Rotella del prezzo, la stessa per il nuovo lavoro e per le spese.
-// Tenendo premuto su una cifra si scende di livello: passi da 5 € (25 € sopra i 1000), poi da 1 €, poi da 0,10 €.
-// "Tutti" riporta ai valori normali; la matita apre la casella per scrivere la cifra.
+// ---- Rotella delle cifre (prezzi, importi, spese, pagamenti): la stessa ovunque ----
+// Si gira a destra e sinistra. Tenendo premuto su una cifra si scende di livello:
+// passi da 5 € (25 € sopra i 1000), poi da 1 €, poi da 0,10 €. "Tutti" riporta ai valori normali.
+// L'icona della tastiera accanto alla scritta apre la casella per scrivere la cifra a mano.
 const PASSI_ROTELLA = [null, c => c >= 1000 ? 25 : 5, () => 1, () => 0.1];
+const SVG_TASTIERA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M8 16h8"/></svg>`;
 function valoriPrezzoFine(centro, livello) {
   const passo = PASSI_ROTELLA[livello](centro);
   const vals = new Set();
@@ -2815,95 +2831,182 @@ function valoriPrezzoFine(centro, livello) {
   return ['torna', ...[...vals].sort((a, b) => a - b)];
 }
 const cifraRotella = v => Number.isInteger(v) ? String(v) : String(v).replace('.', ',');
-function creaRotellaPrezzo({ drumId, campoId, pannelloId, inputId, dopo, riempi }) {
-  const r = { livello: 0, centro: null };
-  const valoriOra = () => r.livello ? valoriPrezzoFine(r.centro, r.livello) : ['edit', ...PREZZO_COARSE];
-  const leggi = () => { const t = $(campoId).value.trim(); return t === '' ? null : Number(t.replace(',', '.')); };
-  const metti = v => { $(campoId).value = v == null ? '' : String(v); if (dopo) dopo(); };
-  // Dove posizionare la rotella: la cifra scelta, o la più vicina tra quelle normali
+// Il livello in cui una cifra c'è esattamente (100 → normale, 135 → passi da 5, 137 → da 1, 12,4 → da 0,10)
+const livelloPer = v => PREZZO_COARSE.includes(v) ? 0 : v % 5 === 0 ? (v >= 1000 && v % 25 ? 2 : 1) : Number.isInteger(v) ? 2 : 3;
+// Il pezzo di pagina di una rotella. idValore = id della casella nascosta con la cifra (la leggono le altre funzioni).
+function htmlRotella({ idValore, etichetta, valore = null, senza = false, riempi = false, grande = false, sugg = '' }) {
+  return `<div class="rot${grande ? ' rot-grande' : ''}"${senza ? ' data-senza="1" data-vuoto="senza"' : ''}${riempi ? ' data-riempi="1"' : ''}${sugg ? ` data-sugg="${sugg}"` : ''}>
+    <div class="rot-testa"><span>${etichetta} <small>· tieni premuto per il dettaglio</small></span><button type="button" class="rot-tastiera" aria-label="Scrivi la cifra con la tastiera">${SVG_TASTIERA}</button></div>
+    <div class="drum-contenitore drum-prezzo-contenitore"><div class="drum-scorribile" aria-label="${sicuro(etichetta)}"></div></div>
+    <div class="prezzo-edit-panel" hidden><input type="text" class="rot-scrivi" inputmode="decimal" autocomplete="off" placeholder="Scrivi la cifra"><span>€</span></div>
+    <input type="hidden" class="rot-valore"${idValore ? ` id="${idValore}"` : ''} value="${valore == null ? '' : valore}">
+  </div>`;
+}
+// Accende una cifra (una volta sola per elemento). dopo(v) = cosa fare quando la cifra cambia.
+// Di partenza c'è la casella: toccandola si apre la tastiera (mai da sola). Sotto, le cifre pronte da toccare.
+// L'icona accanto alla scritta passa alla rotella (e la rotella ripassa alla casella).
+const SVG_ROTELLA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="3"/><path d="M8 7v10M16 7v10M5 12h.01M12 12h.01M19 12h.01"/></svg>`;
+function creaRotella(el, { dopo } = {}) {
+  if (el._rot) return el._rot;
+  const drum = el.querySelector('.drum-scorribile'), campo = el.querySelector('.rot-valore');
+  const drumBox = drum.closest('.drum-contenitore');
+  const pannello = el.querySelector('.prezzo-edit-panel'), scrivi = el.querySelector('.rot-scrivi');
+  const tasto = el.querySelector('.rot-tastiera'), aiuto = el.querySelector('.rot-testa small');
+  const senza = !!el.dataset.senza, riempi = !!el.dataset.riempi;
+  const sugg = document.createElement('div'); sugg.className = 'rot-sugg'; pannello.after(sugg);
+  scrivi.placeholder = senza ? 'Senza prezzo' : 'Tocca e scrivi';
+  const r = { livello: 0, centro: null, el, modo: 'tastiera', suggerimenti: el.dataset.sugg ? () => (CIFRE_PRONTE[el.dataset.sugg] || (() => []))(el) : null };
+  pannello.addEventListener('click', e => { if (e.target !== scrivi) scrivi.focus(); }); // tutta la casella apre la tastiera
+  const base = () => senza ? PREZZO_COARSE : PREZZO_COARSE.filter(v => v != null);
+  const valoriOra = () => r.livello ? valoriPrezzoFine(r.centro, r.livello) : base();
+  const leggi = () => { const t = campo.value.trim().replace(',', '.'); return t === '' || Number.isNaN(Number(t)) ? null : Number(t); };
+  // avvisa = true: la cifra è decisa (rotella ferma, fine scrittura, cifra pronta) → le altre parti della pagina si aggiornano
+  // auto = cifra messa dall'app (non scelta dall'utente): chi la usa può cambiarla (es. il debito del cliente scelto)
+  const metti = (v, avvisa = true, auto = false) => {
+    const s = v == null ? '' : String(v);
+    if (campo.value === s) return;
+    campo.value = s;
+    campo.dataset.auto = auto ? '1' : '';
+    if (dopo) dopo(v);
+    if (avvisa) campo.dispatchEvent(new Event('change', { bubbles: true }));
+  };
   const indice = valori => {
     const v = leggi();
-    if (r.livello) { const fi = valori.indexOf(v); return fi > 0 ? fi : Math.floor(valori.length / 2); }
-    if (v == null) return PREZZO_DEFAULT_IDX;
-    let idx = valori.indexOf(v);
-    if (idx <= 0) {
-      const nums = PREZZO_COARSE.filter(x => x != null);
-      idx = valori.indexOf(nums.reduce((b, x) => Math.abs(x - v) < Math.abs(b - v) ? x : b, nums[0]));
-    }
-    return idx > 0 ? idx : PREZZO_DEFAULT_IDX;
+    if (r.livello) { const fi = valori.indexOf(v); return fi >= 0 ? fi : Math.floor(valori.length / 2); }
+    const def = valori.indexOf(100);
+    if (v == null) return el.dataset.vuoto === 'senza' ? valori.indexOf(null) : def; // lavoro già senza prezzo: resta "senza"
+    const i = valori.indexOf(v);
+    return i >= 0 ? i : def;
   };
-  r.reset = () => { r.livello = 0; r.centro = null; };
+  const mostraModo = () => {
+    const rot = r.modo === 'rotella';
+    drumBox.hidden = !rot; pannello.hidden = rot;
+    if (aiuto) aiuto.hidden = !rot; // "tieni premuto per il dettaglio" serve solo con la rotella
+    tasto.innerHTML = rot ? SVG_TASTIERA : SVG_ROTELLA;
+    tasto.setAttribute('aria-label', rot ? 'Scrivi la cifra con la tastiera' : 'Scegli la cifra con la rotella');
+  };
+  // Cifre pronte: [{ v, testo }] (es. quanto deve, metà, l'ultimo prezzo). Un tocco e la cifra è scelta.
+  const disegnaSugg = () => {
+    let lista = [];
+    try { lista = (r.suggerimenti ? r.suggerimenti() : []) || []; } catch (e) {}
+    const visti = new Set();
+    lista = lista.filter(s => s && s.v > 0 && !visti.has(s.v) && visti.add(s.v)).slice(0, 3);
+    const ora = leggi();
+    sugg.innerHTML = lista.map(s => `<button type="button" class="chip${s.v === ora ? ' attivo' : ''}" data-v="${s.v}">${euro(s.v)}${s.testo ? ` <small>${sicuro(s.testo)}</small>` : ''}</button>`).join('');
+    sugg.hidden = !lista.length;
+    sugg.querySelectorAll('.chip').forEach(b => {
+      b.onmousedown = e => e.preventDefault();
+      b.onclick = () => { const v = Number(b.dataset.v); r.livello = 0; metti(v); r.disegna(); };
+    });
+  };
+  r.reset = () => { r.livello = 0; r.centro = null; r.modo = 'tastiera'; };
+  r.vaiA = v => { r.livello = livelloPer(v); r.centro = r.livello ? v : null; metti(v); r.disegna(); };
   r.disegna = () => {
-    const drum = $(drumId);
-    if (!drum) return;
+    mostraModo();
+    const v0 = leggi();
+    if (document.activeElement !== scrivi) scrivi.value = v0 == null ? '' : cifraRotella(v0);
+    disegnaSugg();
+    if (r.modo !== 'rotella') return;
+    // Una cifra che tra quelle normali non c'è (es. 137 €): la rotella si apre già al livello giusto
+    if (!r.livello && v0 != null && v0 > 0 && !PREZZO_COARSE.includes(v0)) { r.livello = livelloPer(v0); r.centro = v0; }
     const valori = valoriOra();
     drum.innerHTML = valori.map(v => {
-      if (v === 'edit') return `<div class="drum-voce drum-spec" data-v="edit">${SVG_MATITA}<small>Importo</small></div>`;
       if (v === 'torna') return `<div class="drum-voce drum-spec" data-v="torna">${SVG_INDIETRO_P}<small>Tutti</small></div>`;
       if (v === null) return `<div class="drum-voce" data-v="null"><b>—</b><small>senza</small></div>`;
       return `<div class="drum-voce" data-v="${v}"><b>${cifraRotella(v)}</b><small>€</small></div>`;
     }).join('');
-    drum.dataset.init = '1';
     const idx = indice(valori);
-    // Quello che si vede al centro è anche il valore scelto (prima serviva muovere la rotella)
-    if (riempi && leggi() == null && typeof valori[idx] === 'number') metti(valori[idx]); // solo spese: un lavoro può restare "senza" prezzo
-    const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
-    imposta(); requestAnimationFrame(imposta);
-    if (drum.dataset.events) return;
-    drum.dataset.events = '1';
-    $(inputId).oninput = () => {
-      const v = parseFloat($(inputId).value.replace(',', '.'));
-      if (v > 0) metti(Math.round(v * 100) / 100);
-    };
-    const aggiornaSuFermo = () => {
-      const cell = drum.querySelectorAll('.drum-voce')[Math.round(drum.scrollLeft / PREZZO_W)];
-      if (!cell) return;
-      const v = cell.dataset.v;
-      if (v === 'edit') {
-        $(pannelloId).hidden = false;
-        metti(null);
-        setTimeout(() => $(inputId).focus(), 80);
-      } else if (v === 'torna') {
-        r.reset();
-        $(pannelloId).hidden = true;
-        r.disegna();
-      } else {
-        $(pannelloId).hidden = true;
-        metti(v === 'null' ? null : Number(v));
-      }
-    };
-    drum.addEventListener('scrollend', aggiornaSuFermo);
-    let st; drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiornaSuFermo, 160); clearTimeout(lp); }, { passive: true });
-    // Tieni premuto su una cifra → livello più fine (fino a 0,10 €)
-    let lp = null;
-    const ferma = () => { clearTimeout(lp); lp = null; };
-    drum.addEventListener('pointerdown', e => {
-      const cell = e.target.closest('.drum-voce');
-      if (!cell || ['edit', 'torna', 'null'].includes(cell.dataset.v) || r.livello >= 3) return;
-      lp = setTimeout(() => {
-        lp = null;
-        const v = Number(cell.dataset.v);
-        if (navigator.vibrate) navigator.vibrate(30);
-        r.livello++; r.centro = v;
-        $(pannelloId).hidden = true;
-        metti(v);
-        r.disegna();
-      }, 900);
-    });
-    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) drum.addEventListener(ev, ferma);
-  };
-  r.scorri = () => {
-    const drum = $(drumId);
-    if (!drum || !drum.dataset.init || r.livello) return;
-    const idx = indice(valoriOra());
+    // Con la rotella, quello che si vede al centro è anche la cifra scelta (dove una cifra serve per forza)
+    if (riempi && v0 == null && typeof valori[idx] === 'number') metti(valori[idx], false, true);
     const imposta = () => { drum.scrollLeft = idx * PREZZO_W; };
     imposta(); requestAnimationFrame(imposta);
   };
+  const aggiornaSuFermo = () => {
+    if (r.modo !== 'rotella') return;
+    const cell = drum.querySelectorAll('.drum-voce')[Math.round(drum.scrollLeft / PREZZO_W)];
+    if (!cell) return;
+    const v = cell.dataset.v;
+    if (v === 'torna') { r.livello = 0; r.centro = null; r.disegna(); return; }
+    metti(v === 'null' ? null : Number(v));
+    disegnaSugg();
+  };
+  drum.addEventListener('scrollend', aggiornaSuFermo);
+  let st, lp = null;
+  const ferma = () => { clearTimeout(lp); lp = null; };
+  drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiornaSuFermo, 160); ferma(); }, { passive: true });
+  // Tieni premuto su una cifra della rotella → passi più fini (5 €, 1 €, 0,10 €)
+  drum.addEventListener('pointerdown', e => {
+    const cell = e.target.closest('.drum-voce');
+    if (!cell || ['torna', 'null'].includes(cell.dataset.v) || r.livello >= 3) return;
+    lp = setTimeout(() => {
+      lp = null;
+      const v = Number(cell.dataset.v);
+      if (navigator.vibrate) navigator.vibrate(30);
+      r.livello++; r.centro = v;
+      metti(v, false); // senza avvisare: una pagina che si ridisegna perderebbe il livello appena scelto
+      r.disegna();
+    }, 900);
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) drum.addEventListener(ev, ferma);
+  // Icona: casella ⇄ rotella
+  tasto.onclick = () => {
+    r.modo = r.modo === 'rotella' ? 'tastiera' : 'rotella';
+    if (r.modo === 'rotella') { r.livello = 0; r.centro = null; }
+    r.disegna();
+    if (r.modo === 'tastiera') setTimeout(() => { scrivi.focus(); scrivi.select(); }, 60); // chi torna alla casella vuole scrivere
+  };
+  scrivi.oninput = () => {
+    const t = scrivi.value.trim().replace(',', '.');
+    const v = t === '' ? null : Number(t);
+    if (v == null || (v >= 0 && !Number.isNaN(v))) metti(v == null ? null : Math.round(v * 100) / 100, false);
+    sugg.querySelectorAll('.chip').forEach(b => b.classList.toggle('attivo', Number(b.dataset.v) === v));
+  };
+  scrivi.onchange = () => campo.dispatchEvent(new Event('change', { bubbles: true }));
+  scrivi.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); scrivi.blur(); } };
+  r.scorri = () => { r.livello = 0; r.disegna(); };
+  r.aggiornaSugg = disegnaSugg;
+  el._rot = r;
   return r;
 }
-const rotellaLavoro = creaRotellaPrezzo({ drumId: 'f-prezzo-drum', campoId: 'f-prezzo', pannelloId: 'prezzo-edit-panel', inputId: 'prezzo-edit-input' });
-function disegnaPrezzoDrum() { rotellaLavoro.disegna(); }
-function scorriPrezzoDrum() { rotellaLavoro.scorri(); }
+// Cifre pronte da toccare, per ogni posto (data-sugg sulla cifra). Ognuna dà [{ v, testo }].
+const _metaDebito = nome => { let d = 0; try { d = conto(nome).dovuto || 0; } catch (e) {} return d > 0 ? [{ v: d, testo: 'tutto' }, { v: arrotonda(d / 2), testo: 'metà' }] : []; };
+function prezziPronti(nome, cosa, escludi) {
+  const validi = lavori.filter(l => !l.memo && l !== escludi && l.prezzo > 0);
+  const out = [];
+  const delCliente = nome ? validi.filter(l => normalizza(l.nome) === normalizza(nome)).sort((a, b) => b.data.localeCompare(a.data))[0] : null;
+  if (delCliente) out.push({ v: delCliente.prezzo, testo: 'ultima volta' });
+  // Il prezzo più usato per quel lavoro (es. Taglio erba → 80 €)
+  const piuUsato = lista => { const n = {}; lista.forEach(l => { n[l.prezzo] = (n[l.prezzo] || 0) + 1; }); return Object.entries(n).sort((a, b) => b[1] - a[1]).map(([p]) => Number(p)); };
+  if (cosa) piuUsato(validi.filter(l => normalizza(l.cosa || '') === normalizza(cosa))).slice(0, 1).forEach(v => out.push({ v, testo: 'solito' }));
+  if (out.length < 2) piuUsato(validi).slice(0, 3 - out.length).forEach(v => out.push({ v, testo: '' }));
+  return out;
+}
+function spesePronte(tipo, diCliente) {
+  if (!tipo) return [];
+  const t = normalizza(tipo);
+  const cifre = diCliente
+    ? lavori.flatMap(l => (l.costi?.voci || []).filter(v => normalizza(v.tipo || '') === t && v.importo > 0).map(v => ({ v: v.importo, d: l.data })))
+    : spese.filter(s => normalizza(s.tipo) === t || normalizza(s.nota || '') === t).map(s => ({ v: s.importo, d: s.data }));
+  return cifre.sort((a, b) => (b.d || '').localeCompare(a.d || '')).slice(0, 3).map((c, i) => ({ v: c.v, testo: i ? '' : 'ultima volta' }));
+}
+const CIFRE_PRONTE = {
+  np: () => _metaDebito($('np-cliente').value.trim()),
+  scheda: () => _metaDebito(schedaNome),
+  'card-paga': el => _metaDebito(el.closest('.inbox-edit-panel')?.querySelector('.inbox-cerca-cliente input')?.value.trim() || ''),
+  'card-costo': el => spesePronte(el.closest('.inbox-edit-panel')?.querySelector('input[type=text]')?.value.trim(), true),
+  foglio: () => prezziPronti(clienteScelto ? clienteScelto.nome : $('f-nome').value.trim(), $('f-cosa').value.trim()),
+  'lavoro-aperto': () => lavoroAperto ? prezziPronti(lavoroAperto.nome, lavoroAperto.cosa, lavoroAperto) : [],
+  'lavoro-fatto': () => { const l = fattoInAttesa && lavori[fattoInAttesa.dataset.id]; return l ? prezziPronti(l.nome, l.cosa, l) : []; },
+  ns: () => spesePronte($('ns-testo').value.trim(), _ns.modo === 'cliente'),
+  conti: () => spesaBozza ? spesePronte(spesaBozza.tipo, false) : [],
+};
+// Accende e disegna tutte le rotelle dentro un pezzo di pagina (dopo che è visibile)
+function montaRotelle(radice, opzioni) {
+  radice.querySelectorAll('.rot').forEach(el => { creaRotella(el, opzioni).disegna(); });
+}
+const rotellaLavoro = { get r() { return creaRotella($('rot-lavoro')); }, reset() { this.r.reset(); } };
+function disegnaPrezzoDrum() { rotellaLavoro.r.disegna(); }
+function scorriPrezzoDrum() { rotellaLavoro.r.scorri(); }
 const DRUM_W = 80;
 function disegnaDurata() {
   const drum = $('f-durata');
@@ -3398,6 +3501,10 @@ $('prova-frase').addEventListener('focus', fermaSimulazione);
 $('prova-usa').onclick = () => compila($('prova-frase').value);
 
 $('f-nome').addEventListener('input', aggiornaCliente);
+// Cifre pronte del prezzo: cambiano con il cliente e con il lavoro scelto (anche toccando i lavori comuni)
+{ let t; const rinfresca = () => { clearTimeout(t); t = setTimeout(() => $('rot-lavoro')._rot?.aggiornaSugg(), 50); };
+  $('foglio').addEventListener('input', e => { if (e.target.id === 'f-nome' || e.target.id === 'f-cosa') rinfresca(); });
+  $('foglio').addEventListener('click', e => { if (!e.target.closest('.rot')) rinfresca(); }); }
 
 // ---- Barra AI: icone categoria ----
 // ---- Inbox AI ----
@@ -3429,13 +3536,7 @@ function inboxCampiHtml(item, cat) {
     const cliCosto = (item.campi.find(([l]) => l === 'Cliente') || [])[1] || ''; // spesa detta "per Luca Bianchi"
     return `<div class="inbox-edit-panel" hidden>
       <label>Descrizione<input type="text" value="${sicuro(desc)}"></label>
-      <label>Importo (€)
-        <div class="inbox-stepper">
-          <button type="button" onclick="stepperCambia(this,-1)">−</button>
-          <input type="number" value="${imp}" inputmode="decimal" min="0">
-          <button type="button" onclick="stepperCambia(this,1)">+</button>
-        </div>
-      </label>
+      ${htmlRotella({ etichetta: 'Importo', valore: parseFloat(imp) > 0 ? parseFloat(imp) : null, riempi: true, sugg: 'card-costo' })}
       <label>Tipo
         <div class="inbox-tipo-row">
           <button type="button" class="inbox-tipo-btn${cliCosto ? '' : ' attivo'}" onclick="tipoCostoScegli(this,'personale')">Personale</button>
@@ -3460,13 +3561,7 @@ function inboxCampiHtml(item, cat) {
           <div class="inbox-cerca-risultati" hidden></div>
         </div>
       </label>
-      <label>Importo (€)
-        <div class="inbox-stepper">
-          <button type="button" onclick="stepperCambia(this,-1)">−</button>
-          <input type="number" value="${imp}" inputmode="decimal" min="0">
-          <button type="button" onclick="stepperCambia(this,1)">+</button>
-        </div>
-      </label>
+      ${htmlRotella({ etichetta: 'Importo', valore: parseFloat(imp) > 0 ? parseFloat(imp) : null, riempi: true, sugg: 'card-paga' })}
     </div>`;
   }
   return '';
@@ -3483,7 +3578,7 @@ function inbox_cardHtml(item, cat) {
   } else if (cat === 'riprogramma') {
     editOnclick = `apriRiprogrammaInbox(this.closest('.inbox-card'),${ic})`;
   } else if (campiHtml) {
-    editOnclick = `const p=this.closest('.inbox-card').querySelector('.inbox-edit-panel');p.hidden=!p.hidden;`;
+    editOnclick = `const p=this.closest('.inbox-card').querySelector('.inbox-edit-panel');p.hidden=!p.hidden;if(!p.hidden)montaRotelle(p);`;
   }
   const SVG_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
   const editBtn = editOnclick ? `<button class="inbox-card-edit-btn" onclick="${editOnclick}" aria-label="Modifica">${SVG_EDIT}</button>` : '';
@@ -3894,12 +3989,15 @@ function confermaCarta(card, item, cat) {
     const panel = card.querySelector('.inbox-edit-panel');
     const inputs = panel ? panel.querySelectorAll('input') : [];
     const nome = (inputs[0]?.value || getCampo('Cliente')).trim();
-    let importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    const rotVal = panel?.querySelector('.rot-valore');
+    // La cifra della rotella vale solo se il pannello è stato aperto; se no, quella detta a voce
+    let importo = parseFloat(((panel && !panel.hidden && rotVal?.value) || getCampo('Importo')) || '0');
     // Pagamento dalla voce senza cliente o senza cifra: niente registrazione automatica.
     // Apro il pannello (con il dovuto già scritto) e chiedo di controllare.
     if (item.stato === 'da_verificare' && panel && panel.hidden && (!nome || importo <= 0)) {
-      if (nome && inputs[1]) inputs[1].value = arrotonda(dovutoDi(nome) * (item.parte || 1)); // "metà" → metà del dovuto
       panel.hidden = false;
+      montaRotelle(panel);
+      if (nome) creaRotella(panel.querySelector('.rot')).vaiA(arrotonda(dovutoDi(nome) * (item.parte || 1))); // "metà" → metà del dovuto
       avvisa(nome ? 'Controlla l\'importo e premi di nuovo Ricevuto' : 'Scrivi il cliente e l\'importo');
       return;
     }
@@ -3919,7 +4017,8 @@ function confermaCarta(card, item, cat) {
     const panel = card.querySelector('.inbox-edit-panel');
     const inputs = panel ? panel.querySelectorAll('input') : [];
     const desc = (inputs[0]?.value || getCampo('Descrizione')).trim() || 'Costo';
-    const importo = parseFloat((inputs[1]?.value || getCampo('Importo')) || '0');
+    const rotVal = panel?.querySelector('.rot-valore');
+    const importo = parseFloat(((panel && !panel.hidden && rotVal?.value) || getCampo('Importo')) || '0');
     // Di chi è la spesa: dal pannello se è stato aperto, altrimenti da quello che è stato detto
     const perCliente = panel && !panel.hidden ? !!panel.querySelector('.inbox-tipo-btn.attivo[data-cliente]') : !!getCampo('Cliente');
     const cliente = perCliente ? ((panel && !panel.hidden && panel.querySelector('.costo-cliente')?.value.trim()) || getCampo('Cliente')).trim() : '';
@@ -4092,7 +4191,7 @@ function aggiungiVoceVuota(cat, item) {
   apriInbox(cat);
   const card = $('ai-inbox-lista').querySelector('.inbox-card');
   const pannello = card && card.querySelector('.inbox-edit-panel');
-  if (pannello) { pannello.hidden = false; setTimeout(() => (pannello.querySelector('textarea') || pannello.querySelector('input'))?.focus(), 100); } // nota: dritto sul testo
+  if (pannello) { pannello.hidden = false; montaRotelle(pannello); setTimeout(() => (pannello.querySelector('textarea') || pannello.querySelector('input'))?.focus(), 100); } // nota: dritto sul testo
 }
 const INBOX_AGGIUNGI = {
   cliente: { nome: 'Nuovo lavoro', emoji: '👤', spiega: 'Apre il foglio nuovo cliente', fai: () => { _ritornaInboxKey = _inboxCatCorrente || 'cliente'; chiudiInbox(); apriFoglio(); } }, // chiudendo si torna dove eri ("tutte" o "Nuovi lavori")
@@ -4104,7 +4203,7 @@ const INBOX_AGGIUNGI = {
 // Attività → nelle spese della pagina Conti. Cliente → nei costi del suo lavoro più vicino a oggi.
 // "Lavoratore" (solo per un cliente): ore × € all'ora invece della rotella.
 let _ns = { modo: 'attivita', chip: '' };
-const rotellaSpesa = creaRotellaPrezzo({ drumId: 'ns-drum', campoId: 'ns-importo', pannelloId: 'ns-edit-panel', inputId: 'ns-edit-input', dopo: () => aggiornaNuovaSpesa(), riempi: true });
+const rotellaSpesa = () => creaRotella($('ns-importo-wrap'), { dopo: () => aggiornaNuovaSpesa() });
 const LAVORATORE = '👷 Lavoratore';
 function lavoroVicinoDi(cliente) {
   const oggiMs = daIso(tra(0)).getTime();
@@ -4114,14 +4213,14 @@ function lavoroVicinoDi(cliente) {
 function apriNuovaSpesa() {
   _ns = { modo: 'attivita', chip: '' };
   $('ns-cliente').dataset.tutti = '';
-  for (const id of ['ns-cliente', 'ns-testo', 'ns-importo', 'ns-edit-input', 'ns-ore']) $(id).value = '';
+  for (const id of ['ns-cliente', 'ns-testo', 'ns-importo', 'ns-ore']) $(id).value = '';
   $('ns-tariffa').value = costoOrario;
-  $('ns-errore').hidden = true; $('ns-edit-panel').hidden = true;
+  $('ns-errore').hidden = true;
   $('ns-pop').querySelector('.inbox-cerca-risultati').hidden = true;
-  rotellaSpesa.reset();
+  rotellaSpesa().reset();
   $('ns-pop').hidden = false;
   disegnaNuovaSpesa();
-  rotellaSpesa.disegna(); // dopo che la scheda è visibile, così la rotella sa dove posizionarsi
+  rotellaSpesa().disegna(); // dopo che la scheda è visibile, così la rotella sa dove posizionarsi
 }
 function chiudiNuovaSpesa() { $('ns-pop').hidden = true; }
 function nsScegli(modo) {
@@ -4138,6 +4237,7 @@ function nsClienteScelto() {
 }
 function nsTestoScritto() {
   if (_ns.chip && $('ns-testo').value.trim() !== _ns.chip.replace('👷 ', '')) { _ns.chip = ''; disegnaNuovaSpesa(); return; }
+  $('ns-importo-wrap')._rot?.aggiornaSugg(); // le cifre pronte dipendono da che spesa è
   aggiornaNuovaSpesa();
 }
 function nsLav(campo, d) {
@@ -4162,6 +4262,7 @@ function disegnaNuovaSpesa() {
   const lav = _ns.chip === LAVORATORE;
   $('ns-importo-wrap').hidden = lav;
   $('ns-lavoratore').hidden = !lav;
+  $('ns-importo-wrap')._rot?.aggiornaSugg();
   aggiornaNuovaSpesa();
 }
 function importoNuovaSpesa() {
@@ -4338,9 +4439,12 @@ function pagaClienteScelto(input) {
   const num = pannello?.querySelector('input[type="number"]');
   let deve = 0; try { deve = conto(input.value.trim()).dovuto || 0; } catch (e) {}
   const parte = parseFloat(pannello?.dataset.parte) || 1;
-  if (num && !(parseFloat(num.value) > 0) && deve > 0) num.value = arrotonda(deve * parte);
-  if (input.id === 'np-cliente') aggiornaNuovoPagamento();
+  if (input.id === 'np-cliente') { if (deve > 0) rotellaPagamento().vaiA(Math.round(deve * 10) / 10); aggiornaNuovoPagamento(); return; }
+  // Card: la rotella va su quanto deve (o la parte detta), se la cifra non l'ha già scelta l'utente
+  const rot = pannello?.querySelector('.rot'), val = rot?.querySelector('.rot-valore');
+  if (rot && deve > 0 && (!(parseFloat(val.value) > 0) || val.dataset.auto === '1')) creaRotella(rot).vaiA(Math.round(deve * parte * 10) / 10);
 }
+const rotellaPagamento = () => creaRotella($('rot-pagamento'), { dopo: () => aggiornaNuovoPagamento() });
 
 // --- Nuovo pagamento dal "+": stessa forma di Nota e Spesa; la X torna a tutte le notifiche senza lasciare card ---
 function apriNuovoPagamento() {
@@ -4348,8 +4452,10 @@ function apriNuovoPagamento() {
   $('np-importo').value = '';
   $('np-errore').hidden = true;
   $('np-pop').querySelector('.inbox-cerca-risultati').hidden = true;
-  aggiornaNuovoPagamento();
+  rotellaPagamento().reset();
   $('np-pop').hidden = false;
+  rotellaPagamento().disegna();
+  aggiornaNuovoPagamento();
   setTimeout(() => { $('np-cliente').focus(); cercaClienteNota($('np-cliente')); }, 100);
 }
 function chiudiNuovoPagamento() { $('np-pop').hidden = true; }
@@ -5736,11 +5842,8 @@ function disegnaScheda() {
         ${classe ? `<div class="s-sollecito"><span>${k.giorni > soglie.rosso ? 'È ora di telefonare' : 'È ora di mandare un messaggio'}</span>${tastiSollecito(c, k)}</div>` : ''}
         <div class="s-parte" id="s-parte" hidden>
           ${k.daPagare.length > 1 ? `<span>Per quale lavoro?</span><div class="chips piccoli" id="s-per"><button type="button" class="chip attivo" data-l="">Dal più vecchio</button>${k.daPagare.map(l => `<button type="button" class="chip" data-l="${l.id}">${sicuro(l.cosa || 'Lavoro')} · ${dataBreve(l.data)}</button>`).join('')}</div>` : ''}
-          <span>Quanto ti ha dato?</span>
-          <div class="s-parte-riga">
-            <span class="con-euro"><input id="s-importo" class="campo-input" inputmode="decimal" autocomplete="off" placeholder="Es. 100" aria-label="Quanto ti ha dato"></span>
-            <button class="salva" id="s-segna">Segna</button>
-          </div>
+          ${htmlRotella({ idValore: 's-importo', etichetta: 'Quanto ti ha dato?', riempi: true, grande: true, sugg: 'scheda' })}
+          <button class="salva" id="s-segna">Segna</button>
           <p class="errore" id="s-errore" hidden></p>
         </div>
       </div>`
@@ -5794,12 +5897,11 @@ function disegnaScheda() {
   $('s-tutto').onclick = () => pagaTutto($('s-tutto'));
   $('s-apri-parte').onclick = () => {
     $('s-parte').hidden = false; $('s-apri-parte').hidden = true;
-    setTimeout(() => $('s-importo').focus(), 50);
+    montaRotelle($('s-parte')); // la rotella parte da quanto deve: si gira verso il basso
   };
   $('s-segna').onclick = pagaParte;
   pagaPer = null;
   if ($('s-per')) $('s-per').querySelectorAll('.chip').forEach(b => { b.onclick = () => { pagaPer = b.dataset.l === '' ? null : +b.dataset.l; $('s-per').querySelectorAll('.chip').forEach(x => x.classList.toggle('attivo', x === b)); }; });
-  $('s-importo').onkeydown = e => { if (e.key === 'Enter') pagaParte(); };
 }
 
 function pagaTutto(b) {
@@ -5909,6 +6011,9 @@ function disegnaLavoro() {
         <div class="personale"><span>Ore</span>${numero(i + ':ore', v.ore, 'h')}<span>Costo all'ora</span>${numero(i + ':tariffa', v.tariffa, '€')}</div></div>`
     : `<div class="costo-voce riga-unica"><span class="etichetta">${sicuro(v.tipo)}</span><span class="con-euro"><input data-i="${i}" inputmode="decimal" value="${virgola(v.importo)}" placeholder="0" aria-label="Importo ${sicuro(v.tipo)}"></span><button type="button" class="togli" data-i="${i}" aria-label="Togli">✕</button></div>`;
 
+  // Ridisegnando (es. dopo aver girato la rotella del prezzo) le tendine aperte restano aperte e la pagina non salta
+  const tendineAperte = [...$('l-corpo').querySelectorAll('details[open] > summary')].map(s => s.textContent);
+  const scorrevole = $('l-corpo').closest('.f-corpo') || $('l-corpo'), scrollPrima = scorrevole.scrollTop;
   $('l-corpo').innerHTML = `
     <button type="button" class="l-cliente" id="l-cliente">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
 
@@ -5937,7 +6042,7 @@ function disegnaLavoro() {
     <details class="l-tendina">
       <summary>Prezzo e orario</summary>
       <div class="tendina-corpo">
-        <label class="campo"><span>Prezzo</span><span class="con-euro"><input id="l-prezzo" inputmode="decimal" value="${virgola(l.prezzo)}" placeholder="Es. 80"></span></label>
+        <div class="campo">${htmlRotella({ idValore: 'l-prezzo', etichetta: 'Prezzo', valore: l.prezzo, senza: true, grande: true, sugg: 'lavoro-aperto' })}</div>
         <label class="campo"><span>Giorno</span><input id="l-data" type="date" value="${l.data}"></label>
         ${!l.fatto ? `<div class="sposta l-sposta"><small>Sposta a</small><button type="button" class="chip" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-a="${tra(1)}">Domani</button><button type="button" class="chip" data-a="${prossimoLavorativo(l.data)}">Giorno di lavoro dopo</button></div>` : ''}
         <div class="campo"><span>Ora</span><div class="chips piccoli" id="l-ora">${[['', 'Qualsiasi'], ['mattina', 'Mattina'], ['pomeriggio', 'Pomeriggio']].map(([k, n]) => `<button type="button" class="chip${(l.ora || '') === k ? ' attivo' : ''}" data-o="${k}">${n}</button>`).join('')}<label class="chip${l.ora && l.ora.includes(':') ? ' attivo' : ''}">${l.ora && l.ora.includes(':') ? l.ora : 'Alle…'}<input type="time" id="l-ora-precisa" value="${l.ora && l.ora.includes(':') ? l.ora : '08:00'}" aria-label="Ora precisa"></label></div></div>
@@ -5950,7 +6055,7 @@ function disegnaLavoro() {
     <details class="l-tendina" id="l-costi">
       <summary>Costi</summary>
       <div class="tendina-corpo">
-        <label class="costo-generale"><span>Costi del lavoro</span><span class="con-euro"><input id="l-generale" inputmode="decimal" autocomplete="off" placeholder="Es. 300" value="${virgola(l.costi.generale)}"></span></label>
+        ${htmlRotella({ idValore: 'l-generale', etichetta: 'Costi del lavoro', valore: l.costi.generale, senza: true, grande: true })}
         <small class="nota-campo">Aggiungi con un tocco:</small>
         <div class="chips piccoli" id="l-rapidi">
           <button type="button" class="chip rapido" data-t="Personale">+ Personale</button>
@@ -5960,8 +6065,14 @@ function disegnaLavoro() {
         ${costi != null ? `<div class="l-totale-voci"><span>Totale costi</span><b>${euro(costi)}</b></div>` : ''}
       </div>
     </details>`;
+  $('l-corpo').querySelectorAll('details.l-tendina').forEach(d => {
+    if (tendineAperte.includes(d.querySelector('summary').textContent)) d.open = true;
+    d.addEventListener('toggle', () => { if (d.open) montaRotelle(d); }); // la rotella si posiziona quando si vede
+    if (d.open) montaRotelle(d);
+  });
+  scorrevole.scrollTop = scrollPrima;
 
-  $('l-cliente').onclick = () => { const nome = l.nome; $('lavoro').hidden = true; tutto(); if ($('scheda').hidden || schedaNome !== nome) apriScheda(nome); else disegnaScheda(); };
+  $('l-cliente').onclick =() => { const nome = l.nome; $('lavoro').hidden = true; tutto(); if ($('scheda').hidden || schedaNome !== nome) apriScheda(nome); else disegnaScheda(); };
   $('l-btn-ripr').onclick = () => { const id = l.id; chiudiLavoro(); apriCalSposta(id); };
   $('l-btn-annulla').onclick = () => {
     $('l-annulla-conto').hidden = false;
@@ -6214,19 +6325,21 @@ function apriSpesa(sp) {
   spesaAperta = sp;
   spesaBozza = sp ? { ...sp } : { tipo: TIPI_SPESA[0], nota: '', importo: null, data: tra(0), modo: 'una', mesi: 12 };
   disegnaSpesa(); $('spesa-pop').hidden = false;
+  montaRotelle($('sp-corpo')); // dopo che la finestra si vede, così la rotella si posiziona
 }
 function disegnaSpesa() {
   const b = spesaBozza;
   $('sp-titolo').textContent = spesaAperta ? 'Cambia spesa' : 'Nuova spesa';
   $('sp-corpo').innerHTML = `
     <div class="chips piccoli" id="sp-tipi">${TIPI_SPESA.map(t => `<button type="button" class="chip${t === b.tipo ? ' attivo' : ''}" data-t="${sicuro(t)}">${sicuro(t)}</button>`).join('')}</div>
-    <label class="campo"><span>Quanto</span><span class="con-euro"><input id="sp-importo" inputmode="decimal" value="${virgola(b.importo)}" placeholder="Es. 120"></span></label>
+    <div class="campo">${htmlRotella({ idValore: 'sp-importo', etichetta: 'Quanto', valore: b.importo, riempi: true, grande: true, sugg: 'conti' })}</div>
     <label class="campo"><span>Nota <small>· facoltativa</small></span><input id="sp-nota" value="${sicuro(b.nota || '')}" placeholder="Es. Tosaerba nuovo"></label>
     <label class="campo"><span>Giorno</span><input id="sp-data" type="date" value="${b.data}"></label>
     <div class="campo"><span>Come la conto</span><div class="q-quattro" id="sp-modi">${Object.entries(MODI_SPESA).map(([k, n]) => `<button type="button" class="q-giorno${k === b.modo ? ' attivo' : ''}" data-m="${k}"><span><strong>${n}</strong></span></button>`).join('')}</div></div>
     ${b.modo === 'divisa' ? contatore('mesi', 'In quanti mesi', `${b.mesi} mesi`) + `<small class="nota-campo">${b.importo ? `${euro(arrotonda(b.importo / b.mesi))} al mese, per ${b.mesi} mesi` : 'Es. un attrezzo da 1.200 € in 24 mesi = 50 € al mese'}</small>` : ''}
     <p class="errore" id="sp-errore" hidden></p>
     <div class="s-azioni">${spesaAperta ? '<button type="button" class="pericolo" id="sp-togli">Togli</button>' : '<button type="button" class="secondario" id="sp-annulla">Annulla</button>'}<button type="button" class="salva" id="sp-salva">Salva</button></div>`;
+  if (!$('spesa-pop').hidden) montaRotelle($('sp-corpo'));
   const leggi = () => { b.importo = leggiImporto($('sp-importo').value); b.nota = $('sp-nota').value.trim(); b.data = $('sp-data').value || b.data; };
   $('sp-tipi').querySelectorAll('.chip').forEach(x => { x.onclick = () => { leggi(); b.tipo = x.dataset.t; disegnaSpesa(); }; });
   $('sp-modi').querySelectorAll('.q-giorno').forEach(x => { x.onclick = () => { leggi(); b.modo = x.dataset.m; disegnaSpesa(); }; });
@@ -6662,16 +6775,16 @@ function chiediPrezzo(carta) {
   fattoInAttesa = carta;
   $('pp-chi').textContent = `${l.nome} · ${l.cosa || 'Lavoro'}. Senza prezzo non risulta da pagare.`;
   $('pp-importo').value = '';
-  $('prezzo-pop').hidden = false; setTimeout(() => $('pp-importo').focus(), 50);
+  $('prezzo-pop').hidden = false;
+  const r = creaRotella($('rot-pp')); r.reset(); r.disegna();
 }
 $('pp-salva').onclick = () => {
   const p = leggiImporto($('pp-importo').value);
-  if (!p) return $('pp-importo').focus();
+  if (!p) return;
   lavori[fattoInAttesa.dataset.id].prezzo = p;
   $('prezzo-pop').hidden = true; segnaFatto(fattoInAttesa, true);
 };
 $('pp-senza').onclick = () => { $('prezzo-pop').hidden = true; segnaFatto(fattoInAttesa, true); };
-$('pp-importo').onkeydown = e => { if (e.key === 'Enter') $('pp-salva').click(); };
 
 // ---- Impostazioni ----
 // Pagina a righe: ogni riga mostra il nome e il valore attuale; un tocco la apre e sotto si cambia.
