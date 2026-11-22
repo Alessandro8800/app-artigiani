@@ -6622,6 +6622,29 @@ function disegnaConti() {
       <div class="kpi-card"><span class="kpi-etichetta">Margine netto</span><span class="kpi-valore${margine > 0 ? ' verde' : margine < 0 ? ' rosso' : ''}">${euro(margine)}</span></div>
     </div>
 
+    <div class="k-blocco">
+      <div class="k-titolo"><h2>Risultato</h2></div>
+      <div class="k-eroe riepilogo">
+        <span>Utile${k.stima ? ' (stimato)' : ''}${tasse ? ' prima delle tasse' : ''}</span>
+        <strong class="${k.utile < 0 ? 'perdita' : ''}">${euro(k.utile)}</strong>
+        <small>Lavori ${euro(k.ricavi)} − costi dei lavori ${euro(k.costi)} − spese ${euro(k.speseAtt)}</small>
+        ${tasse && k.utile > 0 ? `<div class="k-tasse"><span>Da mettere da parte per le tasse (${tasse}%)</span><b>− ${euro(arrotonda(k.utile * tasse / 100))}</b><span>Ti restano</span><b class="utile">${euro(arrotonda(k.utile * (1 - tasse / 100)))}</b></div>` : ''}
+      </div>
+      ${k.stima ? `<p class="s-nota-costi k-avviso">${nLavori(k.fatti.length - k.conCosti)} senza costi segnati: stimati con la media (${Math.round(k.quota * 100)}% del prezzo) = ${euro(k.stima)}.</p>` : ''}
+      <div class="k-tessere" style="margin-top:10px">
+        <div><span>Lavori fatti</span><b>${k.fatti.length}</b></div>
+        <div><span>Ore di lavoro</span><b>${k.ore} h</b></div>
+        <div><span>Utile all'ora</span><b>${allOra != null ? euro(allOra) : '—'}</b></div>
+        <div class="larga"><span>Tempo medio di pagamento</span><b>${k.mediaPagamento != null ? nGiorni(k.mediaPagamento) : '—'}</b>
+          <small>${gruppi.map((g, i) => attesaGruppo[i] != null ? `${g.nome} ${nGiorni(attesaGruppo[i])}` : '').filter(Boolean).join(' · ') || 'nessun lavoro del periodo ancora pagato'}</small></div>
+      </div>
+    </div>
+
+    ${migliori.length ? `<div class="k-blocco">
+      <div class="k-titolo"><h2>Clienti che rendono di più</h2><span>utile</span></div>
+      <div class="s-righe">${migliori.map(([n, v], i) => `<button type="button" class="s-riga" data-n="${sicuro(n)}"><span class="cosa">${i + 1}. ${sicuro(n)}</span><small>${nLavori(k.fatti.filter(l => l.nome === n).length)}</small><span class="importo ${v < 0 ? 'perdita' : 'utile'}">${euro(arrotonda(v))}</span></button>`).join('')}</div>
+    </div>` : ''}
+
     <div class="k-blocco" id="conti-grafico-wrap">
       <div class="k-titolo"><h2>Ultimi 6 mesi</h2></div>
       ${disegnaGraficoConti()}
@@ -6677,30 +6700,6 @@ function disegnaConti() {
     <div class="k-blocco">
       <div class="k-titolo"><h2>Costi dei lavori</h2><span>${euro(k.costi)}</span></div>
       ${tipi.length ? `<div class="k-righe">${tipi.map(([t, v]) => `<div class="k-riga"><span>${sicuro(t)}</span><span class="k-traccia"><i style="width:${Math.round(v / maxT * 100)}%"></i></span><b>${euro(arrotonda(v))}</b></div>`).join('')}</div>` : '<p class="imp-testo">Nessun costo segnato nel periodo.</p>'}
-    </div>
-
-    ${migliori.length ? `<div class="k-blocco">
-      <div class="k-titolo"><h2>Clienti che rendono di più</h2><span>utile</span></div>
-      <div class="s-righe">${migliori.map(([n, v], i) => `<button type="button" class="s-riga" data-n="${sicuro(n)}"><span class="cosa">${i + 1}. ${sicuro(n)}</span><small>${nLavori(k.fatti.filter(l => l.nome === n).length)}</small><span class="importo ${v < 0 ? 'perdita' : 'utile'}">${euro(arrotonda(v))}</span></button>`).join('')}</div>
-    </div>` : ''}
-
-    <div class="k-blocco">
-      <div class="k-titolo"><h2>Riepilogo dettagliato</h2></div>
-      <div class="k-eroe riepilogo">
-        <span>Utile${k.stima ? ' (stimato)' : ''}${tasse ? ' prima delle tasse' : ''}</span>
-        <strong class="${k.utile < 0 ? 'perdita' : ''}">${euro(k.utile)}</strong>
-        <small>Lavori ${euro(k.ricavi)} − costi dei lavori ${euro(k.costi)} − spese ${euro(k.speseAtt)}</small>
-        ${tasse && k.utile > 0 ? `<div class="k-tasse"><span>Da mettere da parte per le tasse (${tasse}%)</span><b>− ${euro(arrotonda(k.utile * tasse / 100))}</b><span>Ti restano</span><b class="utile">${euro(arrotonda(k.utile * (1 - tasse / 100)))}</b></div>` : ''}
-      </div>
-      ${k.stima ? `<p class="s-nota-costi k-avviso">${nLavori(k.fatti.length - k.conCosti)} senza costi segnati: stimati con la media (${Math.round(k.quota * 100)}% del prezzo) = ${euro(k.stima)}.</p>` : ''}
-      <div class="k-tessere" style="margin-top:10px">
-        <div><span>Lavori fatti</span><b>${k.fatti.length}</b></div>
-        <div><span>Ore di lavoro</span><b>${k.ore} h</b></div>
-        <div><span>Utile all'ora</span><b>${allOra != null ? euro(allOra) : '—'}</b></div>
-        <div><span>Incassato</span><b>${euro(k.incassato)}</b></div>
-        <div class="larga"><span>Tempo medio di pagamento</span><b>${k.mediaPagamento != null ? nGiorni(k.mediaPagamento) : '—'}</b>
-          <small>${gruppi.map((g, i) => attesaGruppo[i] != null ? `${g.nome} ${nGiorni(attesaGruppo[i])}` : '').filter(Boolean).join(' · ') || 'nessun lavoro del periodo ancora pagato'}</small></div>
-      </div>
     </div>
 
     <div class="k-blocco">
