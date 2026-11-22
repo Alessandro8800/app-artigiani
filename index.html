@@ -166,8 +166,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .av-btn svg { filter: none; }
 .av-btn.ci-sono { color: var(--ambra); }
 .av-btn.urgenti { color: var(--rosso); }
-.av-btn .av-badge { background: var(--ambra); }
-.av-btn.urgenti .av-badge { background: var(--rosso); }
+.av-btn .ai-badge { background: var(--ambra); }
+.av-btn.urgenti .ai-badge { background: var(--rosso); }
 .av-gruppo { margin: 4px 0 2px; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--testo-2); }
 .av-voce { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 12px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); }
 .av-voce .av-pallino { width: 10px; height: 10px; border-radius: 50%; background: var(--ambra); flex-shrink: 0; }
@@ -430,31 +430,28 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .avanzate-sotto[open] > summary::after { transform: rotate(90deg); }
 .avanzate-sotto .campo { padding-bottom: 12px; }
 /* Barra AI e microfono */
-.ai-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 0; padding: 8px 10px; background: var(--carta); border-radius: 16px; border: 1px solid var(--linea); }
-/* Notifiche aperte: icone sopra, tasto Parla sotto a tutta larghezza (sempre visibile) */
-.ai-barra.espansa .ai-microfono { order: 10; flex-basis: 100%; }
-.ai-barra-cat { flex: 1; display: flex; gap: 2px; }
-.ai-ic { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50px; border-radius: 10px; background: none; border: none; cursor: pointer; color: var(--testo-2); padding: 4px 2px; transition: background .12s; }
-.ai-ic:active, .ai-ic.attivo { background: var(--foglia-chiara); color: var(--foglia); }
-.ai-ic svg { width: 22px; height: 22px; }
-.ai-badge { position: absolute; top: 3px; right: 3px; background: var(--rosso); color: #fff; font-size: 10px; font-weight: 800; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; line-height: 1; }
-.ai-ic-tutto { width: 46px; min-height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: var(--foglia-chiara); border-radius: 12px; border: 1.5px solid var(--foglia); cursor: pointer; color: var(--foglia); flex-shrink: 0; position: relative; transition: background .15s, color .15s; }
-.ai-ic-tutto:active { background: var(--foglia); color: var(--sul-foglia); }
-.ai-ic-tutto svg { width: 22px; height: 22px; }
-.ai-ic-tutto.espanso { background: var(--foglia); color: var(--sul-foglia); border-color: var(--foglia); }
-.ai-ic-tutto.espanso:active { opacity: .85; }
-.ai-ic-tutto .ai-tutto-label { font-size: 9px; font-weight: 800; display: none; letter-spacing: .02em; }
-.ai-ic-tutto.espanso .ai-tutto-label { display: block; }
-.ai-microfono { flex: 1; min-height: 44px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform .1s, background .15s, color .15s, border-color .15s; }
+/* Barra AI — nuova versione */
+.ai-barra { display: flex; flex-direction: column; gap: 12px; margin: 12px 0 0; }
+.ai-barra-top { display: flex; align-items: center; gap: 8px; }
+.ai-microfono { flex: 1; height: 52px; border-radius: 26px; border: none; background: var(--foglia); color: var(--sul-foglia); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform .1s, opacity .15s; }
 .ai-microfono:active { transform: scale(.97); }
-.ai-microfono svg { width: 24px; height: 24px; }
-.ai-microfono.ascolta { background: var(--rosso); color: #fff; border-color: var(--rosso); animation: ai-pulsa 1.1s ease-in-out infinite; box-shadow: 0 4px 18px rgba(180,35,24,.22); }
-/* Badge numerici sulle icone AI */
-.ai-badge { position: absolute; top: 3px; right: 3px; min-width: 17px; height: 17px; border-radius: 9px; background: var(--rosso); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 3px; pointer-events: none; }
-.ai-ic span { font-size: 10px; font-weight: 700; margin-top: 2px; }
-.ai-ic-chiudi { width: 36px; min-height: 44px; display: flex; align-items: center; justify-content: center; background: none; border-radius: 10px; border: 1.5px solid var(--linea); cursor: pointer; color: var(--testo-2); flex-shrink: 0; }
-.ai-ic-chiudi:active { background: var(--linea); }
-.ai-ic-chiudi svg { width: 18px; height: 18px; }
+.ai-microfono svg { width: 22px; height: 22px; }
+.ai-microfono.ascolta { background: var(--rosso); animation: ai-pulsa 1.1s ease-in-out infinite; box-shadow: 0 4px 18px rgba(180,35,24,.22); }
+.ai-scrivi-btn { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--linea); background: var(--carta); color: var(--testo-2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s; }
+.ai-scrivi-btn:active { background: var(--linea); }
+.ai-scrivi-btn svg { width: 18px; height: 18px; }
+.ai-testo-riga { display: flex; align-items: center; gap: 8px; }
+.ai-testo-input { flex: 1; height: 44px; border: 1.5px solid var(--linea); border-radius: 14px; padding: 0 14px; font-size: 15px; font-weight: 600; font-family: var(--font-testo); background: var(--carta); color: var(--testo); }
+.ai-testo-input:focus { outline: none; border-color: var(--foglia); }
+.ai-testo-invia { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--foglia); color: var(--sul-foglia); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ai-testo-invia svg { width: 18px; height: 18px; }
+.ai-ic-row { display: flex; justify-content: center; gap: 32px; }
+.ai-ic-row-btn { width: 44px; height: 44px; border-radius: 50%; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--testo-2); position: relative; transition: background .15s; }
+.ai-ic-row-btn:active { background: var(--foglia-chiara); color: var(--foglia); }
+.ai-ic-row-btn svg { width: 22px; height: 22px; }
+.ai-badge { position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; border-radius: 9px; background: var(--rosso); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 3px; pointer-events: none; }
+.ai-ic-row-btn.av-attivo { color: var(--rosso); }
+.ai-ic-row-btn.av-attivo .ai-badge { background: var(--rosso); }
 /* Pannello giorno calendario */
 .gp-card { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--linea); }
 .gp-card:first-child { border-top: none; }
@@ -1328,14 +1325,6 @@ button.s-riga:first-child { border-top: 0; }
       <h1 id="t-data"></h1>
       <div class="testata-destra">
         <p id="t-riassunto"></p>
-        <button class="nr-btn av-btn" id="av-btn" onclick="apriAvvisi()" aria-label="Avvisi">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span class="nr-badge av-badge" id="av-badge" hidden>0</span>
-        </button>
-        <button class="nr-btn" id="nr-btn" onclick="apriNoteRapide()" aria-label="Note rapide">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8z"/><polyline points="16 3 16 8 21 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-          <span class="nr-badge" id="nr-badge" hidden>0</span>
-        </button>
       </div>
     </header>
     <div class="gutter">
@@ -1350,17 +1339,37 @@ button.s-riga:first-child { border-top: 0; }
         </div>
         <div class="griglia" id="griglia"></div>
       </div>
-      <!-- Barra AI: Parla + campanella (apre l'inbox con tutte le voci da confermare) -->
+      <!-- Barra AI: mic grande + matita + 3 icone notifiche sotto -->
       <div class="ai-barra">
-        <button class="ai-microfono" id="ai-mic" aria-label="Parla con l'assistente">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
-          Parla
-        </button>
-        <button class="ai-ic-tutto" id="ai-tutto" aria-label="Da confermare">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 004-3V9a8 8 0 1116 0v5a3 3 0 004 3"/><path d="M9 17v1a3 3 0 006 0v-1"/></svg>
-          <span class="ai-badge" id="ai-b-tutto" hidden>0</span>
-          <span class="ai-tutto-label">Tutte</span>
-        </button>
+        <div class="ai-barra-top">
+          <button class="ai-microfono" id="ai-mic" aria-label="Parla con l'assistente">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+            Parla
+          </button>
+          <button class="ai-scrivi-btn" id="ai-scrivi" onclick="toggleAiScrivi()" aria-label="Scrivi un messaggio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+        <div class="ai-testo-riga" id="ai-testo-riga" hidden>
+          <input class="ai-testo-input" id="ai-testo-input" placeholder="Scrivi un messaggio…" onkeydown="if(event.key==='Enter')inviaTestoAI()">
+          <button class="ai-testo-invia" onclick="inviaTestoAI()" aria-label="Invia">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
+        <div class="ai-ic-row">
+          <button class="ai-ic-row-btn av-btn" id="av-btn" onclick="apriAvvisi()" aria-label="Avvisi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="ai-badge" id="av-badge" hidden>0</span>
+          </button>
+          <button class="ai-ic-row-btn" id="ai-tutto" onclick="apriInbox('tutto')" aria-label="Da confermare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 004-3V9a8 8 0 1116 0v5a3 3 0 004 3"/><path d="M9 17v1a3 3 0 006 0v-1"/></svg>
+            <span class="ai-badge" id="ai-b-tutto" hidden>0</span>
+          </button>
+          <button class="ai-ic-row-btn" id="nr-btn" onclick="apriNoteRapide()" aria-label="Note rapide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8z"/><polyline points="16 3 16 8 21 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+            <span class="ai-badge" id="nr-badge" hidden>0</span>
+          </button>
+        </div>
       </div>
 
       <!-- BARRA DI TEST — nascosta in produzione -->
@@ -5903,6 +5912,35 @@ function avviaMicrofono(sorgente) {
 }
 
 $('ai-mic').onclick = () => avviaMicrofono('globale');
+
+function toggleAiScrivi() {
+  const riga = $('ai-testo-riga'); if (!riga) return;
+  const nascosta = riga.hidden;
+  riga.hidden = !nascosta;
+  if (nascosta) { const inp = $('ai-testo-input'); if (inp) inp.focus(); }
+}
+
+function inviaTestoAI() {
+  const inp = $('ai-testo-input'); if (!inp) return;
+  const testo = inp.value.trim(); if (!testo) return;
+  if (!ANTHROPIC_KEY) { apriChiaveAI('globale'); return; }
+  inp.value = '';
+  $('ai-testo-riga').hidden = true;
+  const box = $('mic-box');
+  $('mic-box-testo').textContent = testo;
+  $('mic-box-cat-wrap').hidden = false;
+  const catEl = $('mic-box-cat');
+  catEl.className = 'mic-box-cat';
+  catEl.innerHTML = '<span class=\'mic-box-elabora\'><span></span><span></span><span></span></span> Elaboro…';
+  box.hidden = false;
+  const mostraCat = ris => {
+    const et = etichettaRisultato(ris);
+    catEl.className = 'mic-box-cat cat-' + et.cat;
+    catEl.textContent = et.testo;
+    setTimeout(() => { aggiungiVoceInbox(testo, ris); box.hidden = true; }, 1200);
+  };
+  categorizzaVoceAI(testo).then(mostraCat).catch(() => mostraCat({ operations: [{ tipo: 'nota', testo }], _fallback: true }));
+}
 $('mic-box-chiudi').onclick = chiudiMicBox;
 
 // Costi rapidi: con un tocco si aggiunge la voce e si scrive l'importo. Si cambiano dalle Impostazioni.
