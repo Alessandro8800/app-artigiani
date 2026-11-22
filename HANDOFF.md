@@ -27,16 +27,36 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
 ┌──────────────────────────────┐
 │  Calendario settimana        │  ← giorno selezionato evidenziato
 │  Agenda (lavori del giorno)  │  ← lista lavori, giorni liberi, 2 mesi avanti
-│  Barra AI                    │  ← SOLO "Parla" + campanella (21/11)
+│  Barra AI                    │  ← mic grande + matita + 3 icone (22/11)
 └──────────────────────────────┘
 ```
-In testata, accanto alla data: icona **Avvisi** (`av-btn`, `apriAvvisi`) e **Note rapide** (`nr-btn`). In cima (`#avvisi-home`): barretta del cronometro e banner "Inizia da qui".
+In testata, accanto alla data: solo `#t-riassunto`. av-btn e nr-btn sono stati spostati nella barra AI (22/11). In cima (`#avvisi-home`): barretta del cronometro e banner "Inizia da qui".
+
+**Barra AI — struttura (22/11):**
+```
+┌─────────────────────────────────────┐
+│  [  🎤  Parla  (verde pill)  ] [🖊] │  ← ai-barra-top
+│  (oppure: [ campo testo  ] [↑] [🎤])│  ← stessa riga, si scambiano
+│      [⚠️]        [🔔]       [📝]    │  ← ai-ic-row (3 icone centrate)
+└─────────────────────────────────────┘
+```
 
 **Barra AI — id degli elementi:**
 | Element | id | Ruolo |
 |---|---|---|
-| Campanella | `ai-tutto` | Badge: `ai-b-tutto` — apre l'inbox "tutto" (`apriInbox('tutto')`) |
-| Microfono globale | `ai-mic` | `avviaMicrofono('globale')`; classe `ascolta` = sta registrando |
+| Mic grande (pill verde) | `ai-mic` | `avviaMicrofono('globale')`; classe `ascolta` = sta registrando |
+| Bottone toggle | `ai-scrivi` | Clicca → scambia mic con campo testo; icona cambia matita↔mic |
+| Icona nel bottone — matita | `ai-scrivi-ic-matita` | Visibile quando è in modalità mic |
+| Icona nel bottone — mic | `ai-scrivi-ic-mic` | Visibile quando è in modalità testo |
+| Campo testo | `ai-testo-input` | Stesso canale AI del mic; Enter o freccia → `inviaTestoAI()` |
+| Freccia invia | `ai-testo-invia` | `inviaTestoAI()` |
+| Avvisi | `av-btn` | Badge: `av-badge` — `apriAvvisi()`; classi `ci-sono` (ambra) / `urgenti` (rosso) |
+| Campanella inbox | `ai-tutto` | Badge: `ai-b-tutto` — `apriInbox('tutto')` |
+| Note rapide | `nr-btn` | Badge: `nr-badge` — `apriNoteRapide()` |
+
+**Toggle mic/testo (`toggleAiScrivi`):** mic e campo testo stanno entrambi dentro `ai-barra-top`. Quando il campo testo è nascosto (`inp.hidden`), il clic mostra input+freccia e nasconde mic; viceversa. L'icona del bottone toggle si scambia di conseguenza.
+
+**`inviaTestoAI()`:** legge `ai-testo-input`, chiama `categorizzaVoceAI` → stesso pipeline del mic. Se manca la chiave AI apre `apriChiaveAI('globale')`.
 
 Le 5 icone categoria e la X sono state tolte (21/11). I badge per categoria (`ai-b-cliente` ecc.) non esistono più nel DOM: `aggiornaBadge()` li ignora.
 
