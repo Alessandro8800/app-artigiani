@@ -681,6 +681,203 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 
 ---
 
+## Conti v2 — Scaletta completa (22/11)
+
+**Obiettivo:** trasformare la scheda Conti da lista grezza a cruscotto professionale, degno del Play Store. Niente export, tutto dentro l'app. Grafico SVG inline (zero dipendenze, funziona offline).
+
+Ogni step si completa, si testa e si committa prima di passare al successivo.
+
+---
+
+### Step 1 — Modello dati: spese ricorrenti
+
+Aggiungere la struttura `speseRicorrenti[]` allo stato dell'app e salvarla in Dexie.
+
+**Struttura di ogni voce:**
+```js
+{
+  id: String,          // nanoid()
+  nome: String,        // es. "Assicurazione furgone"
+  importo: Number,     // es. 480
+  frequenza: 'mensile' | 'trimestrale' | 'annuale',
+  prossima: 'YYYY-MM-DD',  // prossima scadenza
+  categoria: String    // es. "Mezzi", "Ufficio", "Personale"
+}
+```
+
+**Da fare:**
+1. Dichiarare `const speseRicorrenti = []` vicino alle altre variabili di stato
+2. Aggiungere `'speseRicorrenti'` alla `bulkGet` in `carica()` (chiave 15)
+3. Salvare `JSON.stringify(speseRicorrenti)` in `dbSalva()` insieme agli altri
+4. Funzione `nuovaRicorrente({nome, importo, frequenza, prossima, categoria})` → push + salva
+5. Funzione `avanzaRicorrente(id)` → calcola la prossima data in base alla frequenza e aggiorna
+6. Funzione `eliminaRicorrente(id)` → splice + salva
+
+**Calcolo prossima data:**
+- mensile: +1 mese
+- trimestrale: +3 mesi
+- annuale: +1 anno
+Usare `Date` puro, niente librerie.
+
+---
+
+### Step 2 — Avvisi ricorrenti in `calcolaAvvisi()`
+
+Integrare le scadenze ricorrenti nel sistema avvisi esistente (già usato per pagamenti in ritardo).
+
+**Logica:**
+- Scadenza tra 1–30 giorni → avviso arancione "X tra N giorni (Y €)"
+- Scadenza oggi o passata → avviso rosso "X scaduta (Y €)"
+
+**UI della card avviso:**
+```
+[🔴] Assicurazione furgone — scaduta (480 €)
+     [Pagata]  [Riprogramma]
+```
+- **Pagata** → crea una voce in `spese[]` con la data odierna e l'importo della ricorrente, poi chiama `avanzaRicorrente(id)` per spostare la prossima scadenza
+- **Riprogramma** → apre il popup calendario (quello già esistente `#q-pop`) per scegliere la nuova `prossima`; niente cambio importo né conferma lunga
+
+**Dove inserire:** dentro `calcolaAvvisi()`, dopo gli avvisi pagamenti, prima della fine. Restituisce un array di oggetti `{tipo:'ricorrente', id, testo, importo, urgenza:'oggi'|'presto'}`.
+
+---
+
+### Step 3 — UI gestione ricorrenti nella scheda Conti
+
+Sezione "Costi fissi" nella pagina Conti per aggiungere, vedere e modificare le spese ricorrenti.
+
+**Layout sezione:**
+```
+── Costi fissi ──────────────────────
+  [+ Aggiungi costo fisso]
+
+  Assicurazione furgone   480 €/anno   📅 15 gen
+  Telefono               35 €/mese    📅 1 dic
+  Commercialista        200 €/trim    📅 20 dic
+```
+
+**Form aggiunta (card inline, non popup separato):**
+- Campo nome (testo libero)
+- Importo (cifra pronta + rotella, come il resto dell'app)
+- Frequenza (3 chip: Mensile / Trimestrale / Annuale)
+- Data prima scadenza (apre popup calendario)
+- Categoria (chip: Mezzi / Ufficio / Personale / Altro)
+- [Salva] [Annulla]
+
+**Modifica:** tocca la riga → apre la stessa card pre-compilata con [Salva] [Elimina].
+
+---
+
+### Step 4 — KPI top e riorganizzazione pagina Conti
+
+Sostituire la struttura attuale della pagina Conti con un layout a sezioni chiare.
+
+**Nuovo ordine della pagina:**
+1. Barra KPI (4 card)
+2. Grafico (Step 5)
+3. Sezione "Costi fissi" (Step 3)
+4. Sezione "Spese una tantum" (raggruppate per categoria)
+5. Sezione "Costi lavori" (aggregato da lavori[], sola lettura)
+6. Sezione "Incassi" (già esistente, eventualmente ridotta)
+
+**Le 4 card KPI:**
+
+| Card | Valore |
+|---|---|
+| Incassato | somma `pagamenti[]` nel periodo |
+| Da incassare | somma `conto(nome).dovuto` per tutti i clienti |
+| Spese | somma `spese[]` + ricorrenti pagate nel periodo |
+| Margine netto | Incassato − Spese |
+
+**Toggle periodo:** due chip sopra i KPI → `Questo mese` / `Quest'anno`. Default: mese corrente.
+
+**CSS KPI:**
+```css
+.kpi-griglia { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.kpi-card { background: var(--carta); border-radius: 12px; padding: 14px 12px; }
+.kpi-etichetta { font-size: 12px; color: var(--testo-2); margin-bottom: 4px; }
+.kpi-valore { font-size: 22px; font-weight: 700; }
+.kpi-valore.verde { color: var(--foglia); }
+.kpi-valore.rosso { color: var(--rosso); }
+```
+
+---
+
+### Step 5 — Grafico SVG inline (6 mesi)
+
+Grafico a barre doppio: entrate (verde) vs uscite (rosso), ultimi 6 mesi. Niente Chart.js, SVG puro.
+
+**Dati:**
+- Entrate per mese: somma `pagamenti[]` filtrati per mese
+- Uscite per mese: somma `spese[]` + ricorrenti pagate, filtrati per mese
+
+**Layout SVG:**
+```
+Altezza totale: 180px (barre) + 24px (etichette mesi) + 20px (legenda)
+Larghezza: 100% del contenitore (viewBox 0 0 320 224, preserveAspectRatio xMidYMid meet)
+```
+
+**Meccanica barre:**
+- Scala: altezza massima barra = 150px; calcolare `maxValore = max di tutti i valori`
+- Ogni mese: 2 barre affiancate (entrate sx, uscite dx), gap 2px tra le due, gap 8px tra i mesi
+- Se entrambi zero: barra placeholder di 4px
+- Etichette mesi sotto: "Nov", "Dic", "Gen"… (3 lettere, italiano)
+
+**Responsive:** il grafico è `width: 100%; overflow-x: auto` — su schermi stretti scorre orizzontalmente se necessario (raro, 6 mesi stanno tutti).
+
+**Nessuna interazione** (niente tooltip, niente click) — semplicità per la v1.
+
+**Funzione:** `disegnaGraficoConti()` → restituisce la stringa SVG da inserire in `innerHTML` di `#conti-grafico`.
+
+---
+
+### Step 6 — Analytics lavori
+
+Sezione "Come lavoro" in fondo alla pagina Conti (o in una sotto-scheda separata).
+
+**Tre blocchi:**
+
+**A — Lavori più frequenti (ultimi 12 mesi)**
+Lista ordinata per conteggio, top 5:
+```
+1. Taglio erba      ████████  32 volte
+2. Potatura siepe   █████     18 volte
+3. Pulizia giardino ███       11 volte
+```
+Barra proporzionale in SVG inline (semplice, stessa tecnica del grafico).
+
+**B — Lavori più redditizi**
+Top 5 per margine medio (prezzo − costi del lavoro), solo lavori con almeno 3 occorrenze:
+```
+Vigneto          avg 180 €/lavoro   (8 volte)
+Irrigazione      avg 95 €/lavoro    (12 volte)
+```
+
+**C — Stagionalità**
+12 rettangoli (gen–dic), intensità di colore proporzionale al numero di lavori in quel mese:
+```
+Gen  Feb  Mar  Apr  Mag  Giu  Lug  Ago  Set  Ott  Nov  Dic
+ ░░   ░░   ▒▒   ▒▒   ██   ██   ██   ▓▓   ▓▓   ▒▒   ░░   ░░
+```
+Colore: `var(--foglia)` con `opacity` proporzionale (da 0.15 a 1.0).
+
+**Dati:** solo `lavori[]` con `l.fatto === true` (lavori completati). Raggruppare per `normalizza(l.cosa)`.
+
+---
+
+### Step 7 — Pulizia finale e build
+
+Prima di considerare il lavoro completato:
+
+1. Rimuovere la struttura HTML vecchia della pagina Conti (tutto ciò che viene sostituito)
+2. Verificare che il toggle mese/anno aggiorni in tempo reale KPI + grafico
+3. Verificare che le card avvisi ricorrenti appaiano nella home (dove già appaiono gli altri avvisi)
+4. `npm run build` → 0 errori, 0 warning nuovi
+5. `npm test` → tutti i test passano
+6. Aprire sul browser su `127.0.0.1:5173` e navigare tutta la scheda Conti a mano
+7. Commit con messaggio descrittivo
+
+---
+
 ## Regole di lavoro
 
 - Spiegazioni in italiano semplice (il titolare non sa programmare)
