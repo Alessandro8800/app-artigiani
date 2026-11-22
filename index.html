@@ -730,8 +730,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-placeholder .prev-azioni { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 8px; }
 .prev-azioni .salva { width: 100%; }
 .prev-annulla { background: var(--rosso-chiaro); border: 1.5px solid var(--rosso); color: var(--rosso); font-size: 16px; font-weight: 800; padding: 14px; border-radius: 16px; cursor: pointer; font-family: var(--font-testo); width: 100%; }
-/* Barra input preventivo (fisso sopra la nav) */
-#prev-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--barra) + env(safe-area-inset-bottom, 0px)); z-index: 5; background: var(--carta); border-top: 1px solid var(--linea); padding: 8px max(16px, env(safe-area-inset-left,0px)); display: flex; justify-content: center; }
+/* Barra input preventivo (inline, sopra alla lista) */
+#prev-bar { padding: 4px 0 16px; }
+.prev-crea-label { font-size: 13px; font-weight: 800; color: var(--testo-2); text-transform: uppercase; letter-spacing: .06em; margin: 0 2px 8px; }
 .prev-bar-inner { width: 100%; max-width: 448px; display: flex; align-items: flex-end; gap: 6px; background: var(--sfondo); border-radius: 22px; border: 1.5px solid var(--linea); padding: 6px 6px 6px 14px; }
 .prev-bar-txt { flex: 1; background: none; border: none; font-size: 15px; font-weight: 600; color: var(--testo); font-family: var(--font-testo); resize: none; overflow: hidden; min-height: 26px; max-height: 120px; line-height: 1.4; padding: 4px 0; field-sizing: content; }
 .prev-bar-txt:focus { outline: none; }
@@ -806,6 +807,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-card-btn button { flex: 1; height: 40px; border-radius: 12px; border: none; font-size: 14px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
 .prev-modifica { background: var(--sfondo); border: 1.5px solid var(--linea) !important; color: var(--testo); }
 .prev-elimina { background: var(--rosso-chiaro); color: var(--rosso); }
+.prev-wa-card { background: #25d366; color: #fff; }
+.prev-card--bozza { border-color: #f59e0b; border-style: dashed; }
+.prev-bozza-badge { display: inline-block; background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; border-radius: 6px; font-size: 11px; font-weight: 800; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 .prev-lista-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 16px; }
 .prev-lista-header h2 { font-family: var(--font-titoli); font-size: 20px; margin: 0; }
 .prev-lista-header button { height: 40px; padding: 0 20px; border-radius: 12px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 15px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
@@ -1447,17 +1451,18 @@ button.s-riga:first-child { border-top: 0; }
 
   <section id="vista-preventivi" class="gutter" hidden>
     <header class="testata"><h1>Preventivi</h1></header>
+    <div id="prev-bar" hidden>
+      <p class="prev-crea-label">Crea preventivo</p>
+      <div class="prev-bar-inner">
+        <textarea id="prev-bar-txt" class="prev-bar-txt" placeholder="Descrivi il lavoro da preventivare…" rows="1"></textarea>
+        <button id="prev-bar-mic" class="prev-bar-btn" onclick="avviaMicPrevBar()" title="Parla con il microfono"></button>
+        <button id="prev-bar-invia" class="prev-bar-btn prev-bar-invia" onclick="avviaGeneraPreventivo()" title="Genera preventivo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+    </div>
     <div id="prev-corpo"></div>
   </section>
-  <div id="prev-bar" hidden>
-    <div class="prev-bar-inner">
-      <textarea id="prev-bar-txt" class="prev-bar-txt" placeholder="Descrivi il lavoro da preventivare…" rows="1"></textarea>
-      <button id="prev-bar-mic" class="prev-bar-btn" onclick="avviaMicPrevBar()" title="Parla con il microfono"></button>
-      <button id="prev-bar-invia" class="prev-bar-btn prev-bar-invia" onclick="avviaGeneraPreventivo()" title="Genera preventivo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-      </button>
-    </div>
-  </div>
 
   <!-- Form calibrazione prezzi -->
   <div class="foglio-sfondo" id="prev-form" hidden>
@@ -8545,12 +8550,13 @@ function eliminaPrev(id) {
 
 function condividiPrevWhatsApp(id) {
   const p = preventivi.find(x => x.id === id); if (!p) return;
+  if (!p.clienteNome) { avvisa('Aggiungi il nome del cliente prima di inviare'); return; }
   const ivaPerc = +p.iva || 0;
   const totale = p.totale + (ivaPerc ? arrotonda(p.totale * ivaPerc / 100) : 0);
   const righe = [
     datiAttivita.nome ? `*${datiAttivita.nome}*` : '',
     `Preventivo N° ${p.numero} — ${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-    p.clienteNome ? `Cliente: ${p.clienteNome}` : '',
+    `Cliente: ${p.clienteNome}`,
     '',
     ...p.voci.map(v => `• ${maiuscola(v.descrizione)}: ${euro(v.importo)}`),
     '',
@@ -8558,7 +8564,9 @@ function condividiPrevWhatsApp(id) {
     `*Totale: ${euro(totale)}*`,
     p.note ? `\n_${p.note}_` : '',
   ].filter(r => r !== '');
-  window.open(`https://wa.me/?text=${encodeURIComponent(righe.join('\n'))}`);
+  const tel = (extra[p.clienteNome]?.tel || '').replace(/\s+/g, '');
+  const testo = encodeURIComponent(righe.join('\n'));
+  window.open(tel ? `https://wa.me/${tel}?text=${testo}` : `https://wa.me/?text=${testo}`);
 }
 
 function cercaClientePrev(input) {
@@ -8752,8 +8760,7 @@ function disegnaPreventivi() {
     return;
   }
 
-  // Vista lista (con barra in basso: aggiunge padding per non coprire le card)
-  corpo.style.paddingBottom = '72px';
+  // Vista lista
   if (!preventivi.length) {
     corpo.innerHTML = `
       <div class="prev-placeholder" style="padding-top:60px">
@@ -8773,10 +8780,10 @@ function disegnaPreventivi() {
       <h2>${preventivi.length} preventiv${preventivi.length === 1 ? 'o' : 'i'}</h2>
     </div>
     ${preventivi.slice().reverse().map(p => `
-      <div class="prev-card">
+      <div class="prev-card${p.stato === 'bozza' ? ' prev-card--bozza' : ''}">
         <div class="prev-card-testa">
           <div>
-            <div class="prev-card-num">N° ${sicuro(p.numero)} · ${dataBreve(p.data)}</div>
+            <div class="prev-card-num">N° ${sicuro(p.numero)} · ${dataBreve(p.data)}${p.stato === 'bozza' ? '<span class="prev-bozza-badge">Bozza</span>' : ''}</div>
             ${p.clienteNome ? `<div style="font-size:14px;font-weight:700;margin-top:2px">${sicuro(p.clienteNome)}</div>` : ''}
           </div>
           <div class="prev-card-tot">${euro(p.totale)}</div>
@@ -8784,7 +8791,7 @@ function disegnaPreventivi() {
         <div class="prev-card-voci">${p.voci.slice(0, 3).map(v => sicuro(maiuscola(v.descrizione))).join(' · ')}${p.voci.length > 3 ? ` · +${p.voci.length - 3}` : ''}</div>
         <div class="prev-card-btn">
           <button class="prev-modifica" onclick="modificaPrev(${p.id})">Modifica</button>
-          <button class="prev-pdf" onclick="_prevCompletoId=${p.id};_prevVista='completo';disegnaPreventivi()">PDF</button>
+          <button class="prev-wa-card" onclick="condividiPrevWhatsApp(${p.id})">WhatsApp</button>
           <button class="prev-elimina" onclick="eliminaPrev(${p.id})">Elimina</button>
         </div>
       </div>`).join('')}`;
