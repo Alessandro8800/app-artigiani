@@ -783,6 +783,36 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-lista-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 16px; }
 .prev-lista-header h2 { font-family: var(--font-titoli); font-size: 20px; margin: 0; }
 .prev-lista-header button { height: 40px; padding: 0 20px; border-radius: 12px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 15px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
+.prev-doc { background: white; color: #1a1a1a; border-radius: 16px; padding: 24px; margin: 0 0 16px; border: 1px solid var(--linea); }
+.prev-doc-header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #1a1a1a; }
+.prev-doc-azienda { font-size: 20px; font-weight: 800; color: #1a1a1a; margin: 0 0 4px; }
+.prev-doc-info { font-size: 13px; color: #555; }
+.prev-doc-titolo { font-size: 18px; font-weight: 800; color: #1a1a1a; margin: 0 0 2px; }
+.prev-doc-data { font-size: 13px; color: #555; }
+.prev-doc-cliente { font-size: 14px; font-weight: 700; margin: 14px 0 0; color: #1a1a1a; }
+.prev-doc-cliente input { border: none; border-bottom: 1.5px dashed #bbb; background: none; font-size: 14px; font-weight: 700; color: #1a1a1a; padding: 2px 4px; width: 200px; font-family: inherit; }
+.prev-doc-cliente input:focus { outline: none; border-color: var(--foglia); }
+.prev-doc-voci { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.prev-doc-voci th { text-align: left; padding: 6px 0; border-bottom: 1.5px solid #1a1a1a; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #555; }
+.prev-doc-voci th:last-child { text-align: right; }
+.prev-doc-voci td { padding: 8px 0; border-bottom: 1px solid #e5e5e5; vertical-align: top; line-height: 1.4; }
+.prev-doc-voci td:last-child { text-align: right; white-space: nowrap; font-weight: 700; padding-left: 12px; }
+.prev-doc-tot-riga { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #555; }
+.prev-doc-tot-finale { font-size: 18px; font-weight: 800; border-top: 2px solid #1a1a1a; margin-top: 6px; padding-top: 8px; color: #1a1a1a; }
+.prev-doc-note { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e5e5e5; font-size: 13px; color: #555; line-height: 1.5; }
+.prev-doc-warn { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 12px; }
+.prev-azioni-pdf { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.prev-stampa { width: 100%; height: 56px; border-radius: 16px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 17px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
+.prev-wa { width: 100%; height: 48px; border-radius: 14px; border: none; background: #25d366; color: white; font-size: 15px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
+.prev-card-btn .prev-pdf { background: var(--foglia-chiara); color: var(--foglia); }
+@media print {
+  body > *:not(#vista-preventivi) { display: none !important; }
+  #vista-preventivi > header, .prev-torna, .prev-azioni-pdf, .prev-doc-warn, .barra, #prev-corpo > :not(.prev-doc) { display: none !important; }
+  #vista-preventivi { padding: 0 !important; }
+  .prev-doc { border: none !important; border-radius: 0 !important; padding: 8px 0 !important; box-shadow: none !important; }
+  .prev-doc-cliente input { border-bottom: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 
 /* Impostazioni */
 .imp-gruppo { background: var(--carta); border: 1px solid var(--linea); border-radius: 18px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -6505,11 +6535,12 @@ let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Imposta
 let datiAttivita = { nome: '', piva: '', telefono: '', iva: '0' };
 let preventivi = [];
 let _prevContatore = 1;
-let _prevVista = 'lista'; // 'lista' | 'nuovo' | 'anteprima'
+let _prevVista = 'lista'; // 'lista' | 'nuovo' | 'anteprima' | 'completo'
 let _prevBozzaVoci = [];
 let _prevBozzaNote = '';
 let _prevBozzaInput = '';
 let _prevEditId = null;
+let _prevCompletoId = null;
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -8414,6 +8445,14 @@ function salvaPrevBozza() {
   dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
 }
 
+function salvaPrevESaltiAPDF() {
+  const wasEditId = _prevEditId;
+  salvaPrevBozza(); // resetta _prevVista a 'lista' e _prevEditId a null
+  const targetId = wasEditId !== null ? wasEditId : preventivi[preventivi.length - 1]?.id;
+  if (!targetId) return;
+  _prevCompletoId = targetId; _prevVista = 'completo'; disegnaPreventivi();
+}
+
 function modificaPrev(id) {
   const p = preventivi.find(x => x.id === id); if (!p) return;
   _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || ''; _prevEditId = id;
@@ -8427,8 +8466,64 @@ function eliminaPrev(id) {
   avvisa('Preventivo eliminato', { etichetta: 'Annulla', fai: () => { preventivi.splice(idx, 0, copia); dbSalva(); disegnaPreventivi(); } });
 }
 
+function condividiPrevWhatsApp(id) {
+  const p = preventivi.find(x => x.id === id); if (!p) return;
+  const ivaPerc = +p.iva || 0;
+  const totale = p.totale + (ivaPerc ? arrotonda(p.totale * ivaPerc / 100) : 0);
+  const righe = [
+    datiAttivita.nome ? `*${datiAttivita.nome}*` : '',
+    `Preventivo N° ${p.numero} — ${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+    p.clienteNome ? `Cliente: ${p.clienteNome}` : '',
+    '',
+    ...p.voci.map(v => `• ${maiuscola(v.descrizione)}: ${euro(v.importo)}`),
+    '',
+    ivaPerc ? `IVA ${ivaPerc}%: ${euro(arrotonda(p.totale * ivaPerc / 100))}` : '',
+    `*Totale: ${euro(totale)}*`,
+    p.note ? `\n_${p.note}_` : '',
+  ].filter(r => r !== '');
+  window.open(`https://wa.me/?text=${encodeURIComponent(righe.join('\n'))}`);
+}
+
 function disegnaPreventivi() {
   const corpo = $('prev-corpo');
+
+  if (_prevVista === 'completo') {
+    const p = preventivi.find(x => x.id === _prevCompletoId);
+    if (!p) { _prevVista = 'lista'; disegnaPreventivi(); return; }
+    const ivaPerc = +p.iva || 0;
+    const ivaImporto = ivaPerc ? arrotonda(p.totale * ivaPerc / 100) : 0;
+    const totaleFinale = p.totale + ivaImporto;
+    const datiOk = datiAttivita.nome && datiAttivita.piva;
+    corpo.innerHTML = `
+      <button class="prev-torna" onclick="_prevVista='lista';disegnaPreventivi()">← Tutti i preventivi</button>
+      ${!datiOk ? `<div class="prev-doc-warn">⚠ Aggiungi nome e P.IVA in Impostazioni → La tua attività per completare il documento.</div>` : ''}
+      <div class="prev-doc">
+        <div class="prev-doc-header">
+          <div class="prev-doc-azienda">${sicuro(datiAttivita.nome || 'La tua attività')}</div>
+          <div class="prev-doc-info">${[datiAttivita.piva ? `P.IVA ${sicuro(datiAttivita.piva)}` : '', datiAttivita.telefono ? sicuro(datiAttivita.telefono) : ''].filter(Boolean).join(' · ')}</div>
+        </div>
+        <div class="prev-doc-titolo">PREVENTIVO N° ${sicuro(p.numero)}</div>
+        <div class="prev-doc-data">${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+        <div class="prev-doc-cliente">Cliente: <input id="prev-cliente-input" value="${sicuro(p.clienteNome || '')}" placeholder="Nome cliente"></div>
+        <table class="prev-doc-voci">
+          <thead><tr><th>Descrizione</th><th>Importo</th></tr></thead>
+          <tbody>${p.voci.map(v => `<tr><td>${sicuro(maiuscola(v.descrizione))}</td><td>${euro(v.importo)}</td></tr>`).join('')}</tbody>
+        </table>
+        ${ivaPerc ? `<div class="prev-doc-tot-riga"><span>Imponibile</span><span>${euro(p.totale)}</span></div>
+        <div class="prev-doc-tot-riga"><span>IVA ${ivaPerc}%</span><span>${euro(ivaImporto)}</span></div>` : ''}
+        <div class="prev-doc-tot-riga prev-doc-tot-finale"><span>Totale</span><span>${euro(totaleFinale)}</span></div>
+        ${p.note ? `<div class="prev-doc-note">Note: ${sicuro(p.note)}</div>` : ''}
+      </div>
+      <div class="prev-azioni-pdf">
+        <button class="prev-stampa" onclick="window.print()">Stampa / Salva PDF</button>
+        <button class="prev-wa" onclick="condividiPrevWhatsApp(${p.id})">Manda su WhatsApp</button>
+      </div>`;
+    $('prev-cliente-input').onchange = e => {
+      const idx = preventivi.findIndex(x => x.id === _prevCompletoId);
+      if (idx >= 0) { preventivi[idx].clienteNome = e.target.value.trim(); dbSalva(); }
+    };
+    return;
+  }
 
   if (_prevVista === 'nuovo') {
     corpo.innerHTML = `
@@ -8462,6 +8557,7 @@ function disegnaPreventivi() {
       </div>
       <div class="prev-azioni-ant">
         <button class="salva" onclick="salvaPrevBozza()">Salva bozza</button>
+        <button class="prev-stampa" onclick="salvaPrevESaltiAPDF()">Salva e genera PDF</button>
         <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';disegnaPreventivi()">Scarta</button>
       </div>`;
     disegnaPrevVoci();
@@ -8503,6 +8599,7 @@ function disegnaPreventivi() {
         <div class="prev-card-voci">${p.voci.slice(0, 3).map(v => sicuro(maiuscola(v.descrizione))).join(' · ')}${p.voci.length > 3 ? ` · +${p.voci.length - 3}` : ''}</div>
         <div class="prev-card-btn">
           <button class="prev-modifica" onclick="modificaPrev(${p.id})">Modifica</button>
+          <button class="prev-pdf" onclick="_prevCompletoId=${p.id};_prevVista='completo';disegnaPreventivi()">PDF</button>
           <button class="prev-elimina" onclick="eliminaPrev(${p.id})">Elimina</button>
         </div>
       </div>`).join('')}`;
