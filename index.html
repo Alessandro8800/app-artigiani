@@ -761,10 +761,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-genera:disabled { opacity: .5; cursor: not-allowed; }
 .prev-torna { background: none; border: 0; color: var(--testo-2); font-size: 15px; font-weight: 700; padding: 4px 0 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 .prev-ant-voci { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
-.prev-voce { display: grid; grid-template-columns: 1fr 80px 28px; align-items: center; gap: 8px; background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 10px 12px; }
-.prev-voce input { background: none; border: none; font-size: 15px; font-weight: 600; color: var(--testo); width: 100%; min-width: 0; font-family: var(--font-testo); }
-.prev-voce input:focus { outline: none; }
-.prev-voce-imp { text-align: right; }
+.prev-voce { display: flex; flex-direction: column; gap: 6px; background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 10px 12px; }
+.prev-voce-desc { background: none; border: none; font-size: 15px; font-weight: 600; color: var(--testo); width: 100%; min-width: 0; font-family: var(--font-testo); resize: none; overflow: hidden; min-height: 24px; line-height: 1.4; display: block; padding: 0; field-sizing: content; }
+.prev-voce-desc:focus { outline: none; }
+.prev-voce-fondo { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.prev-voce-imp { background: none; border: none; font-size: 14px; font-weight: 700; color: var(--testo-2); width: 80px; text-align: right; font-family: var(--font-testo); }
+.prev-voce-imp:focus { outline: none; }
 .prev-voce-togli { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--rosso-chiaro); color: var(--rosso); font-size: 16px; font-weight: 800; cursor: pointer; display: grid; place-items: center; line-height: 1; }
 .prev-ant-azioni { display: flex; gap: 8px; align-items: stretch; }
 .prev-ant-azioni .prev-aggiungi { flex: 1; }
@@ -8417,11 +8419,18 @@ function disegnaPrevVoci() {
   const el = $('prev-ant-voci'); if (!el) return;
   el.innerHTML = _prevBozzaVoci.map((v, i) => `
     <div class="prev-voce">
-      <input class="prev-voce-desc" value="${sicuro(v.descrizione)}" placeholder="Descrizione" data-i="${i}">
-      <input class="prev-voce-imp" value="${v.importo}" placeholder="€" data-i="${i}" inputmode="numeric">
-      <button class="prev-voce-togli" data-i="${i}" aria-label="Rimuovi">✕</button>
+      <textarea class="prev-voce-desc" placeholder="Descrizione" data-i="${i}" rows="1">${sicuro(v.descrizione)}</textarea>
+      <div class="prev-voce-fondo">
+        <input class="prev-voce-imp" value="${v.importo || ''}" placeholder="€ importo" data-i="${i}" inputmode="decimal">
+        <button class="prev-voce-togli" data-i="${i}" aria-label="Rimuovi">✕</button>
+      </div>
     </div>`).join('');
-  el.querySelectorAll('.prev-voce-desc').forEach(inp => { inp.oninput = e => { _prevBozzaVoci[+e.target.dataset.i].descrizione = e.target.value; aggiornaTotalePrev(); }; });
+  el.querySelectorAll('.prev-voce-desc').forEach(ta => {
+    // auto-altezza per browser senza field-sizing
+    const resize = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+    resize();
+    ta.oninput = e => { _prevBozzaVoci[+e.target.dataset.i].descrizione = e.target.value; resize(); aggiornaTotalePrev(); };
+  });
   el.querySelectorAll('.prev-voce-imp').forEach(inp => { inp.oninput = e => { _prevBozzaVoci[+e.target.dataset.i].importo = parseFloat(e.target.value.replace(',', '.')) || 0; aggiornaTotalePrev(); }; });
   el.querySelectorAll('.prev-voce-togli').forEach(btn => { btn.onclick = e => { _prevBozzaVoci.splice(+e.currentTarget.dataset.i, 1); disegnaPrevVoci(); aggiornaTotalePrev(); }; });
 }
