@@ -766,7 +766,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-voce input:focus { outline: none; }
 .prev-voce-imp { text-align: right; }
 .prev-voce-togli { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--rosso-chiaro); color: var(--rosso); font-size: 16px; font-weight: 800; cursor: pointer; display: grid; place-items: center; line-height: 1; }
+.prev-ant-azioni { display: flex; gap: 8px; align-items: stretch; }
+.prev-ant-azioni .prev-aggiungi { flex: 1; }
 .prev-aggiungi { background: none; border: 1.5px dashed var(--linea); border-radius: 12px; padding: 10px; width: 100%; font-size: 14px; font-weight: 700; color: var(--testo-2); cursor: pointer; font-family: var(--font-testo); }
+.prev-mic-btn { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; background: none; border: 1.5px dashed var(--linea); border-radius: 12px; cursor: pointer; color: var(--testo-2); padding: 0; }
+.prev-mic-btn svg { width: 20px; height: 20px; }
+.prev-mic-btn.ascolta { border-color: var(--verde); color: var(--verde); background: var(--verde-chiaro, rgba(0,180,100,.08)); }
+.prev-cli-nuovo b { font-weight: 800; }
 .prev-tot-riga { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-top: 1.5px solid var(--linea); margin-top: 4px; }
 .prev-tot-riga span { font-size: 15px; font-weight: 700; color: var(--testo-2); }
 .prev-tot-riga b { font-family: var(--font-titoli); font-size: 24px; color: var(--foglia); }
@@ -792,6 +798,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-doc-cliente { font-size: 14px; font-weight: 700; margin: 14px 0 0; color: #1a1a1a; }
 .prev-doc-cliente input { border: none; border-bottom: 1.5px dashed #bbb; background: none; font-size: 14px; font-weight: 700; color: #1a1a1a; padding: 2px 4px; width: 200px; font-family: inherit; }
 .prev-doc-cliente input:focus { outline: none; border-color: var(--foglia); }
+.prev-doc-indirizzo { font-size: 13px; font-weight: 400; color: #444; margin-top: 2px; }
 .prev-doc-voci { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
 .prev-doc-voci th { text-align: left; padding: 6px 0; border-bottom: 1.5px solid #1a1a1a; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #555; }
 .prev-doc-voci th:last-child { text-align: right; }
@@ -6541,6 +6548,8 @@ let _prevBozzaNote = '';
 let _prevBozzaInput = '';
 let _prevEditId = null;
 let _prevCompletoId = null;
+let _prevBozzaCliente = '';
+let _prevBozzaIndirizzo = '';
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -8431,7 +8440,7 @@ function salvaPrevBozza() {
   const p = {
     id: Date.now(),
     numero: `${anno}/${String(_prevContatore).padStart(3, '0')}`,
-    data: tra(0), clienteNome: '',
+    data: tra(0), clienteNome: _prevBozzaCliente, clienteIndirizzo: _prevBozzaIndirizzo,
     voci: _prevBozzaVoci.map(v => ({ ...v })),
     note: _prevBozzaNote,
     totale: prevTotale(_prevBozzaVoci),
@@ -8441,7 +8450,7 @@ function salvaPrevBozza() {
     const idx = preventivi.findIndex(x => x.id === _prevEditId);
     if (idx >= 0) { p.id = preventivi[idx].id; p.numero = preventivi[idx].numero; preventivi[idx] = p; }
   } else { preventivi.push(p); _prevContatore++; }
-  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevVista = 'lista';
+  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevVista = 'lista';
   dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
 }
 
@@ -8455,8 +8464,9 @@ function salvaPrevESaltiAPDF() {
 
 function modificaPrev(id) {
   const p = preventivi.find(x => x.id === id); if (!p) return;
-  _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || ''; _prevEditId = id;
-  _prevVista = 'anteprima'; disegnaPreventivi();
+  _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || '';
+  _prevBozzaCliente = p.clienteNome || ''; _prevBozzaIndirizzo = p.clienteIndirizzo || '';
+  _prevEditId = id; _prevVista = 'anteprima'; disegnaPreventivi();
 }
 
 function eliminaPrev(id) {
@@ -8484,6 +8494,67 @@ function condividiPrevWhatsApp(id) {
   window.open(`https://wa.me/?text=${encodeURIComponent(righe.join('\n'))}`);
 }
 
+function cercaClientePrev(input) {
+  const q = normalizza(input.value);
+  const lista = $('prev-cli-lista'); if (!lista) return;
+  const nomi = nomiClienti().filter(n => !q || normalizza(n).includes(q));
+  const aggiungi = q && !nomi.some(n => normalizza(n) === q);
+  if (!nomi.length && !aggiungi) { lista.hidden = true; return; }
+  lista.innerHTML = nomi.slice(0, 8).map(n => `<button type="button" class="nn-cli" data-nome="${sicuro(n)}"><span>${sicuro(n)}</span></button>`).join('')
+    + (aggiungi ? `<button type="button" class="nn-cli prev-cli-nuovo" data-nome="${sicuro(input.value.trim())}"><span>+ Aggiungi "<b>${sicuro(input.value.trim())}</b>"</span><small>nuovo cliente</small></button>` : '');
+  lista.querySelectorAll('button').forEach(b => {
+    b.onmousedown = e => e.preventDefault();
+    b.onclick = () => {
+      const nome = b.dataset.nome;
+      _prevBozzaCliente = nome;
+      input.value = nome;
+      lista.hidden = true;
+      // Pre-compila indirizzo se lo conosco già
+      if (!_prevBozzaIndirizzo) {
+        const exExt = extra[nome]; if (exExt?.indirizzo) { _prevBozzaIndirizzo = exExt.indirizzo; const ind = $('prev-ind-input'); if (ind) ind.value = _prevBozzaIndirizzo; }
+      }
+      // Aggiungi come nuovo cliente in extra se non c'è
+      if (b.classList.contains('prev-cli-nuovo') && !extra[nome]) { extra[nome] = { tel: '', colore: '', ripeti: false, note: '', mesiSemestrale: [] }; dbSalva(); }
+    };
+  });
+  lista.hidden = false;
+}
+
+async function avviaMicPrev() {
+  const btn = $('prev-mic-btn'); if (!btn) return;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { avvisa('Il microfono non è supportato su questo browser'); return; }
+  if (!ANTHROPIC_KEY) { apriChiaveAI('prev'); return; }
+  if (btn.classList.contains('ascolta')) return;
+  btn.classList.add('ascolta');
+  btn.innerHTML = '<span class="mic-box-elabora"><span></span><span></span><span></span></span>';
+  const sr = new SpeechRecognition();
+  sr.lang = 'it-IT'; sr.interimResults = false; sr.continuous = false; sr.maxAlternatives = 1;
+  sr.onresult = async (e) => {
+    const testo = e.results[0]?.[0]?.transcript || '';
+    if (!testo) { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC; return; }
+    try {
+      const vociJson = JSON.stringify(_prevBozzaVoci.map(v => ({ descrizione: v.descrizione, importo: v.importo })));
+      const risposta = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({
+          model: 'claude-haiku-5-5', max_tokens: 600,
+          system: 'Sei un assistente per preventivi di artigiani. Rispondi SOLO con JSON valido, nient\'altro.',
+          messages: [{ role: 'user', content: `Voci preventivo attuali: ${vociJson}\n\nL\'artigiano ha detto: "${testo}"\n\nAggiorna le voci di conseguenza (modifica, aggiungi o togli voci). Rispondi SOLO con JSON: {"voci":[{"descrizione":"...","importo":0}]}` }]
+        })
+      });
+      const dati = await risposta.json();
+      const ris = JSON.parse(dati.content[0].text);
+      if (ris?.voci?.length) { _prevBozzaVoci = ris.voci; disegnaPrevVoci(); aggiornaTotalePrev(); avvisa('Voci aggiornate ✓'); }
+    } catch (err) { avvisa('Errore — riprova'); }
+    btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC;
+  };
+  sr.onerror = () => { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC; };
+  sr.onend = () => { if (btn.classList.contains('ascolta')) { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC; } };
+  sr.start();
+}
+
 function disegnaPreventivi() {
   const corpo = $('prev-corpo');
 
@@ -8504,7 +8575,10 @@ function disegnaPreventivi() {
         </div>
         <div class="prev-doc-titolo">PREVENTIVO N° ${sicuro(p.numero)}</div>
         <div class="prev-doc-data">${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-        <div class="prev-doc-cliente">Cliente: <input id="prev-cliente-input" value="${sicuro(p.clienteNome || '')}" placeholder="Nome cliente"></div>
+        <div class="prev-doc-cliente">
+          <div>Cliente: <input id="prev-cliente-input" value="${sicuro(p.clienteNome || '')}" placeholder="Nome cliente"></div>
+          ${p.clienteIndirizzo ? `<div class="prev-doc-indirizzo">${sicuro(p.clienteIndirizzo)}</div>` : ''}
+        </div>
         <table class="prev-doc-voci">
           <thead><tr><th>Descrizione</th><th>Importo</th></tr></thead>
           <tbody>${p.voci.map(v => `<tr><td>${sicuro(maiuscola(v.descrizione))}</td><td>${euro(v.importo)}</td></tr>`).join('')}</tbody>
@@ -8545,10 +8619,23 @@ function disegnaPreventivi() {
     corpo.innerHTML = `
       <button class="prev-torna" onclick="_prevVista='nuovo';disegnaPreventivi()">← Modifica descrizione</button>
       <div class="k-blocco">
+        <div class="k-titolo"><h2>Cliente</h2></div>
+        <div class="prev-cerca-cliente inbox-cerca-cliente">
+          <input id="prev-cli-input" class="imp-input" value="${sicuro(_prevBozzaCliente)}" placeholder="Nome cliente (cerca o aggiungi)" autocomplete="off"
+            oninput="cercaClientePrev(this)" onfocus="cercaClientePrev(this)">
+          <div class="inbox-cerca-risultati" id="prev-cli-lista" hidden></div>
+        </div>
+        <input id="prev-ind-input" class="imp-input" style="margin-top:8px" value="${sicuro(_prevBozzaIndirizzo)}" placeholder="Indirizzo / Via (facoltativo)"
+          oninput="_prevBozzaIndirizzo=this.value.trim()">
+      </div>
+      <div class="k-blocco">
         <div class="k-titolo"><h2>Anteprima preventivo</h2></div>
         <p style="font-size:13px;color:var(--testo-2);margin:0 0 12px">Modifica le voci se vuoi, poi salva o scarta.</p>
         <div class="prev-ant-voci" id="prev-ant-voci"></div>
-        <button class="prev-aggiungi" onclick="prevAggiungiVoce()">+ Aggiungi voce</button>
+        <div class="prev-ant-azioni">
+          <button class="prev-aggiungi" onclick="prevAggiungiVoce()">+ Aggiungi voce</button>
+          <button class="prev-mic-btn" id="prev-mic-btn" onclick="avviaMicPrev()" title="Modifica con il microfono">${SVG_MIC}</button>
+        </div>
         <div class="prev-tot-riga">
           <span>${ivaPerc ? `Totale + IVA ${ivaPerc}%` : 'Totale'}</span>
           <b>${euro(tot + ivaImporto)}</b>
@@ -8558,9 +8645,10 @@ function disegnaPreventivi() {
       <div class="prev-azioni-ant">
         <button class="salva" onclick="salvaPrevBozza()">Salva bozza</button>
         <button class="prev-stampa" onclick="salvaPrevESaltiAPDF()">Salva e genera PDF</button>
-        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';disegnaPreventivi()">Scarta</button>
+        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';_prevBozzaCliente='';_prevBozzaIndirizzo='';disegnaPreventivi()">Scarta</button>
       </div>`;
     disegnaPrevVoci();
+    $('prev-cli-input')?.addEventListener('blur', () => { setTimeout(() => { const r = $('prev-cli-lista'); if (r) r.hidden = true; }, 200); });
     return;
   }
 
