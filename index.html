@@ -755,6 +755,34 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-info-box h4 { margin: 0; font-family: var(--font-titoli); font-size: 18px; }
 .prev-info-box p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--testo-2); }
 .prev-info-box button { align-self: flex-end; padding: 8px 20px; border-radius: 10px; border: 0; background: var(--foglia); color: #fff; font-weight: 800; cursor: pointer; }
+.prev-new-desc { width: 100%; min-height: 120px; border: 1.5px solid var(--linea); border-radius: 16px; padding: 14px 16px; font-size: 17px; font-weight: 600; resize: none; background: var(--carta); color: var(--testo); font-family: var(--font-testo); box-sizing: border-box; }
+.prev-new-desc:focus { outline: none; border-color: var(--foglia); }
+.prev-genera { width: 100%; height: 56px; border-radius: 16px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 17px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
+.prev-genera:disabled { opacity: .5; cursor: not-allowed; }
+.prev-torna { background: none; border: 0; color: var(--testo-2); font-size: 15px; font-weight: 700; padding: 4px 0 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.prev-ant-voci { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.prev-voce { display: grid; grid-template-columns: 1fr 80px 28px; align-items: center; gap: 8px; background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 10px 12px; }
+.prev-voce input { background: none; border: none; font-size: 15px; font-weight: 600; color: var(--testo); width: 100%; min-width: 0; font-family: var(--font-testo); }
+.prev-voce input:focus { outline: none; }
+.prev-voce-imp { text-align: right; }
+.prev-voce-togli { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--rosso-chiaro); color: var(--rosso); font-size: 16px; font-weight: 800; cursor: pointer; display: grid; place-items: center; line-height: 1; }
+.prev-aggiungi { background: none; border: 1.5px dashed var(--linea); border-radius: 12px; padding: 10px; width: 100%; font-size: 14px; font-weight: 700; color: var(--testo-2); cursor: pointer; font-family: var(--font-testo); }
+.prev-tot-riga { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-top: 1.5px solid var(--linea); margin-top: 4px; }
+.prev-tot-riga span { font-size: 15px; font-weight: 700; color: var(--testo-2); }
+.prev-tot-riga b { font-family: var(--font-titoli); font-size: 24px; color: var(--foglia); }
+.prev-azioni-ant { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.prev-card { background: var(--carta); border: 1px solid var(--linea); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.prev-card-testa { display: flex; justify-content: space-between; align-items: flex-start; }
+.prev-card-num { font-size: 13px; font-weight: 800; color: var(--testo-2); }
+.prev-card-tot { font-family: var(--font-titoli); font-size: 22px; color: var(--foglia); }
+.prev-card-voci { font-size: 14px; color: var(--testo-2); line-height: 1.4; }
+.prev-card-btn { display: flex; gap: 8px; margin-top: 4px; }
+.prev-card-btn button { flex: 1; height: 40px; border-radius: 12px; border: none; font-size: 14px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
+.prev-modifica { background: var(--sfondo); border: 1.5px solid var(--linea) !important; color: var(--testo); }
+.prev-elimina { background: var(--rosso-chiaro); color: var(--rosso); }
+.prev-lista-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 16px; }
+.prev-lista-header h2 { font-family: var(--font-titoli); font-size: 20px; margin: 0; }
+.prev-lista-header button { height: 40px; padding: 0 20px; border-radius: 12px; border: none; background: var(--foglia); color: var(--sul-foglia); font-size: 15px; font-weight: 800; cursor: pointer; font-family: var(--font-testo); }
 
 /* Impostazioni */
 .imp-gruppo { background: var(--carta); border: 1px solid var(--linea); border-radius: 18px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -6477,6 +6505,11 @@ let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Imposta
 let datiAttivita = { nome: '', piva: '', telefono: '', iva: '0' };
 let preventivi = [];
 let _prevContatore = 1;
+let _prevVista = 'lista'; // 'lista' | 'nuovo' | 'anteprima'
+let _prevBozzaVoci = [];
+let _prevBozzaNote = '';
+let _prevBozzaInput = '';
+let _prevEditId = null;
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -8283,33 +8316,196 @@ function salvaPrevForm() {
   disegnaPreventivi();
 }
 
+function prevTotale(voci) {
+  return voci.reduce((s, v) => s + (parseFloat(v.importo) || 0), 0);
+}
+
+async function generaPreventivo(descrizione) {
+  if (!ANTHROPIC_KEY) { apriChiaveAI('preventivi'); return null; }
+  const campioni = lavori
+    .filter(l => l.fatto && !l.iniziale && l.prezzo > 0)
+    .slice(-20)
+    .map(l => `- ${l.cosa || 'lavoro'} → ${euro(l.prezzo)}${costiDi(l) ? ` (costi ${euro(costiDi(l))})` : ''}`);
+  const contestoPrezzi = campioni.length ? `Lavori recenti con prezzi:\n${campioni.join('\n')}` : 'Nessun lavoro precedente registrato.';
+  const contestoQ = prevDati && typeof prevDati === 'object' && Object.keys(prevDati).length > 0 ? `Tariffe artigiano: ${JSON.stringify(prevDati)}` : '';
+  const system = `Sei un assistente che genera preventivi per artigiani italiani.
+Rispondi SOLO con un oggetto JSON valido, nessun testo fuori:
+{"voci":[{"descrizione":"...","importo":100}],"note":""}
+Voci dettagliate ma concise. Importi in euro, numeri interi. Nota vuota se non serve.
+${contestoPrezzi}
+${contestoQ}`;
+  const ctrl = new AbortController();
+  const scadenza = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      signal: ctrl.signal, method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-5-5', max_tokens: 800, system, messages: [{ role: 'user', content: descrizione }] })
+    }).finally(() => clearTimeout(scadenza));
+    if (!resp.ok) {
+      const err = new Error('API ' + resp.status); err.stato = resp.status;
+      try { err.dettaglio = (await resp.json())?.error?.message || ''; } catch (_) {}
+      throw err;
+    }
+    const json = await resp.json();
+    const raw = (Array.isArray(json.content) ? json.content : []).filter(b => b?.type === 'text').map(b => b.text || '').join('').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    const dati = JSON.parse(match ? match[0] : raw);
+    return { voci: (dati.voci || []).map(v => ({ descrizione: v.descrizione || '', importo: +(v.importo) || 0 })), note: dati.note || '' };
+  } catch (e) {
+    if (e.stato === 401) { ANTHROPIC_KEY = ''; try { localStorage.removeItem('anthropic_key'); } catch(_){} }
+    return null;
+  }
+}
+
+async function avviaGeneraPreventivo() {
+  const desc = $('prev-desc')?.value?.trim();
+  if (!desc) { avvisa('Scrivi prima il lavoro da fare'); return; }
+  const btn = $('prev-genera-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Genero…'; }
+  const ris = await generaPreventivo(desc);
+  if (!ris) {
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Genera preventivo'; }
+    avvisa('Errore nella generazione — riprova');
+    return;
+  }
+  _prevBozzaVoci = ris.voci; _prevBozzaNote = ris.note; _prevBozzaInput = desc; _prevEditId = null;
+  _prevVista = 'anteprima'; disegnaPreventivi();
+}
+
+function disegnaPrevVoci() {
+  const el = $('prev-ant-voci'); if (!el) return;
+  el.innerHTML = _prevBozzaVoci.map((v, i) => `
+    <div class="prev-voce">
+      <input class="prev-voce-desc" value="${sicuro(v.descrizione)}" placeholder="Descrizione" data-i="${i}">
+      <input class="prev-voce-imp" value="${v.importo}" placeholder="€" data-i="${i}" inputmode="numeric">
+      <button class="prev-voce-togli" data-i="${i}" aria-label="Rimuovi">✕</button>
+    </div>`).join('');
+  el.querySelectorAll('.prev-voce-desc').forEach(inp => { inp.oninput = e => { _prevBozzaVoci[+e.target.dataset.i].descrizione = e.target.value; aggiornaTotalePrev(); }; });
+  el.querySelectorAll('.prev-voce-imp').forEach(inp => { inp.oninput = e => { _prevBozzaVoci[+e.target.dataset.i].importo = parseFloat(e.target.value.replace(',', '.')) || 0; aggiornaTotalePrev(); }; });
+  el.querySelectorAll('.prev-voce-togli').forEach(btn => { btn.onclick = e => { _prevBozzaVoci.splice(+e.currentTarget.dataset.i, 1); disegnaPrevVoci(); aggiornaTotalePrev(); }; });
+}
+
+function aggiornaTotalePrev() {
+  const tot = prevTotale(_prevBozzaVoci);
+  const ivaPerc = +datiAttivita.iva || 0;
+  const totRow = $('prev-corpo')?.querySelector('.prev-tot-riga b');
+  if (totRow) totRow.textContent = euro(tot + (ivaPerc ? arrotonda(tot * ivaPerc / 100) : 0));
+}
+
+function prevAggiungiVoce() { _prevBozzaVoci.push({ descrizione: '', importo: 0 }); disegnaPrevVoci(); }
+
+function salvaPrevBozza() {
+  const anno = new Date().getFullYear();
+  const p = {
+    id: Date.now(),
+    numero: `${anno}/${String(_prevContatore).padStart(3, '0')}`,
+    data: tra(0), clienteNome: '',
+    voci: _prevBozzaVoci.map(v => ({ ...v })),
+    note: _prevBozzaNote,
+    totale: prevTotale(_prevBozzaVoci),
+    iva: datiAttivita.iva, stato: 'bozza',
+  };
+  if (_prevEditId !== null) {
+    const idx = preventivi.findIndex(x => x.id === _prevEditId);
+    if (idx >= 0) { p.id = preventivi[idx].id; p.numero = preventivi[idx].numero; preventivi[idx] = p; }
+  } else { preventivi.push(p); _prevContatore++; }
+  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevVista = 'lista';
+  dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
+}
+
+function modificaPrev(id) {
+  const p = preventivi.find(x => x.id === id); if (!p) return;
+  _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || ''; _prevEditId = id;
+  _prevVista = 'anteprima'; disegnaPreventivi();
+}
+
+function eliminaPrev(id) {
+  const idx = preventivi.findIndex(x => x.id === id); if (idx < 0) return;
+  const copia = preventivi.splice(idx, 1)[0];
+  dbSalva(); disegnaPreventivi();
+  avvisa('Preventivo eliminato', { etichetta: 'Annulla', fai: () => { preventivi.splice(idx, 0, copia); dbSalva(); disegnaPreventivi(); } });
+}
+
 function disegnaPreventivi() {
-  if (!prevDati) {
-    $('prev-corpo').innerHTML = `
+  const corpo = $('prev-corpo');
+
+  if (_prevVista === 'nuovo') {
+    corpo.innerHTML = `
+      <button class="prev-torna" onclick="_prevVista='lista';disegnaPreventivi()">← Tutti i preventivi</button>
+      <div class="k-blocco">
+        <div class="k-titolo"><h2>Nuovo preventivo</h2></div>
+        <p style="font-size:14px;color:var(--testo-2);margin:0 0 10px">Descrivi il lavoro da fare. Puoi essere preciso quanto vuoi.</p>
+        <textarea id="prev-desc" class="prev-new-desc" placeholder="Es. Sostituzione caldaia a condensazione in appartamento 80mq, smontaggio vecchia, installazione nuova, collaudo e certificato"></textarea>
+      </div>
+      <button class="prev-genera" id="prev-genera-btn" onclick="avviaGeneraPreventivo()" style="margin-top:12px">✦ Genera preventivo</button>`;
+    setTimeout(() => $('prev-desc')?.focus(), 100);
+    return;
+  }
+
+  if (_prevVista === 'anteprima') {
+    const tot = prevTotale(_prevBozzaVoci);
+    const ivaPerc = +datiAttivita.iva || 0;
+    const ivaImporto = ivaPerc ? arrotonda(tot * ivaPerc / 100) : 0;
+    corpo.innerHTML = `
+      <button class="prev-torna" onclick="_prevVista='nuovo';disegnaPreventivi()">← Modifica descrizione</button>
+      <div class="k-blocco">
+        <div class="k-titolo"><h2>Anteprima preventivo</h2></div>
+        <p style="font-size:13px;color:var(--testo-2);margin:0 0 12px">Modifica le voci se vuoi, poi salva o scarta.</p>
+        <div class="prev-ant-voci" id="prev-ant-voci"></div>
+        <button class="prev-aggiungi" onclick="prevAggiungiVoce()">+ Aggiungi voce</button>
+        <div class="prev-tot-riga">
+          <span>${ivaPerc ? `Totale + IVA ${ivaPerc}%` : 'Totale'}</span>
+          <b>${euro(tot + ivaImporto)}</b>
+        </div>
+        ${_prevBozzaNote ? `<p style="font-size:14px;color:var(--testo-2);margin:8px 0 0;font-style:italic">${sicuro(_prevBozzaNote)}</p>` : ''}
+      </div>
+      <div class="prev-azioni-ant">
+        <button class="salva" onclick="salvaPrevBozza()">Salva bozza</button>
+        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';disegnaPreventivi()">Scarta</button>
+      </div>`;
+    disegnaPrevVoci();
+    return;
+  }
+
+  // Vista lista
+  if (!preventivi.length) {
+    corpo.innerHTML = `
       <div class="prev-placeholder">
         <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
           <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
         </svg>
-        <h2>Preventivi veloci</h2>
-        <p>Rispondi a qualche domanda sui tuoi prezzi (5 minuti) e poi basterà dirti un lavoro a voce — l'AI ti dà subito una stima.</p>
+        <h2>Nessun preventivo</h2>
+        <p>Descrivi un lavoro — l'AI genera una stima con le voci e i prezzi.</p>
         <div class="prev-azioni">
-          <button class="salva" onclick="apriPrevForm()">Compila ora →</button>
-          <button class="prev-salta" onclick="prevDati={}; dbSalva(); disegnaPreventivi()">Salta per ora</button>
+          <button class="salva" onclick="_prevVista='nuovo';disegnaPreventivi()">Nuovo preventivo →</button>
         </div>
       </div>`;
-  } else {
-    $('prev-corpo').innerHTML = `
-      <div style="padding:24px 0 16px;text-align:center;color:var(--testo-2);font-size:15px;font-weight:600;">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--foglia)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-        I preventivi AI arrivano presto.<br>
-        <span style="font-size:13px">Per ora i tuoi prezzi sono salvati.</span>
-      </div>
-      <div style="text-align:center;margin-top:12px">
-        <button class="prev-salta" onclick="apriPrevForm()">✏️ Modifica i tuoi prezzi</button>
-      </div>`;
+    return;
   }
+
+  corpo.innerHTML = `
+    <div class="prev-lista-header">
+      <h2>${preventivi.length} preventiv${preventivi.length === 1 ? 'o' : 'i'}</h2>
+      <button onclick="_prevVista='nuovo';disegnaPreventivi()">+ Nuovo</button>
+    </div>
+    ${preventivi.slice().reverse().map(p => `
+      <div class="prev-card">
+        <div class="prev-card-testa">
+          <div>
+            <div class="prev-card-num">N° ${sicuro(p.numero)} · ${dataBreve(p.data)}</div>
+            ${p.clienteNome ? `<div style="font-size:14px;font-weight:700;margin-top:2px">${sicuro(p.clienteNome)}</div>` : ''}
+          </div>
+          <div class="prev-card-tot">${euro(p.totale)}</div>
+        </div>
+        <div class="prev-card-voci">${p.voci.slice(0, 3).map(v => sicuro(maiuscola(v.descrizione))).join(' · ')}${p.voci.length > 3 ? ` · +${p.voci.length - 3}` : ''}</div>
+        <div class="prev-card-btn">
+          <button class="prev-modifica" onclick="modificaPrev(${p.id})">Modifica</button>
+          <button class="prev-elimina" onclick="eliminaPrev(${p.id})">Elimina</button>
+        </div>
+      </div>`).join('')}`;
 }
 
 (async () => {
