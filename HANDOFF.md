@@ -712,6 +712,7 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 14. **Provare sul telefono vero la pressione lunga della rotella** (22/11) — i livelli 5 € → 1 € → 0,10 € sono stati provati solo con tocchi simulati nel browser.
 15. **Rotella della durata (ore)** (22/11, da decidere) — ha ancora la casella "scrivi" dentro la rotella; le cifre in euro no. Proposto di renderla uguale alle altre, il titolare non ha ancora risposto.
 16. **Cifre lasciate apposta senza la nuova casella** (22/11) — righe dei costi dentro un lavoro (Terra 30 €…), ore ed €/ora del Personale, numeri delle Impostazioni, debiti di prima nell'importazione. Erano eccezioni (liste di righe piccole / non sono importi); da rivedere solo se il titolare lo chiede.
+17. **Calendario orizzontale a scorrimento con effetto prospettiva** (22/11, template da aggiungere) — tutti i giorni in orizzontale, si scorre a destra e a sinistra. Il giorno centrale (quello selezionato) è leggermente più grande; i giorni via via più lontani dal centro diventano progressivamente più piccoli — l'effetto deve essere sottile, quasi impercettibile, ma dare la sensazione di profondità/rotella. Come il date picker a tamburo di iOS, ma sdraiato. Da usare come variante del selettore settimana attuale.
 
 **Già fatto:**
 - ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)
