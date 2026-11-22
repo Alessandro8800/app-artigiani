@@ -3031,11 +3031,7 @@ const rotellaLavoro = { get r() { return creaRotella($('rot-lavoro')); }, reset(
 function disegnaPrezzoDrum() { rotellaLavoro.r.disegna(); }
 function scorriPrezzoDrum() { rotellaLavoro.r.scorri(); }
 // Picker durata: casella + pill unità (cicla ore→giorni→mesi→ore) + numeri suggeriti
-const DURATA_OPZ = {
-  ore: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8],
-  giorni: [1, 2, 3, 4, 5, 7, 10, 14],
-  mesi: [1, 2, 3, 6, 12],
-};
+const DURATA_OPZ_SUGGERITI = [1, 2, 4, 6, 8];
 const UNITA_CICLO = ['ore', 'giorni', 'mesi'];
 const ORE_MESE = () => oreGiornata * 22;
 const durataAOre = (n, u) => u === 'ore' ? n : u === 'giorni' ? n * oreGiornata : n * ORE_MESE();
@@ -3063,8 +3059,8 @@ function montaDurataPicker(prefix, onChange) {
   if (!input || !pill || !suggeriti) return;
   let unita = pill.textContent.trim() || 'ore';
   const ridisegnaSuggeriti = () => {
-    suggeriti.innerHTML = (DURATA_OPZ[unita] || DURATA_OPZ.ore)
-      .map(v => `<button type="button" class="chip" data-v="${v}">${String(v).replace('.', ',')}</button>`)
+    suggeriti.innerHTML = DURATA_OPZ_SUGGERITI
+      .map(v => `<button type="button" class="chip" data-v="${v}">${v}</button>`)
       .join('');
     suggeriti.querySelectorAll('.chip').forEach(b => {
       b.onclick = () => {
