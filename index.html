@@ -300,6 +300,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .s-testa-azioni { display: flex; align-items: center; gap: 6px; }
 .s-ic { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--carta); color: var(--foglia); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 .s-ic.verde { background: var(--foglia); color: #fff; }
+.s-ic.rosso { color: var(--rosso, #e53e3e); }
 .s-ok-riga { display: flex; align-items: center; gap: 8px; color: var(--foglia); font-weight: 800; font-size: 16px; padding: 8px 2px; }
 .etichetta.arancio { background: rgba(217,119,6,.12); color: #d97706; }
 .l-report-voci { background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
@@ -1877,6 +1878,7 @@ button.s-riga:first-child { border-top: 0; }
       <div class="s-testa-azioni">
         <button class="s-ic verde" id="s-nuovo-job" aria-label="Nuovo lavoro per questo cliente"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <button class="s-ic" id="s-modifica" aria-label="Modifica cliente"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="s-ic rosso" id="s-elimina" aria-label="Elimina cliente"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
     </header>
     <div class="f-corpo gutter" id="s-corpo"></div>
@@ -6036,6 +6038,30 @@ function pagaParte() {
 $('s-chiudi').onclick = chiudiScheda;
 $('s-modifica').onclick = () => apriModifica(schedaNome);
 $('s-nuovo-job').onclick = () => apriFoglio(null, schedaNome);
+$('s-elimina').onclick = eliminaCliente;
+
+function eliminaCliente() {
+  const nome = schedaNome;
+  const nLav = lavori.filter(l => l.nome === nome).length;
+  const jobsSalvati = lavori.filter(l => l.nome === nome);
+  const pagSalvati  = pagamenti.filter(p => p.nome === nome);
+  const extraSalvato = extra[nome] ? { ...extra[nome] } : null;
+
+  lavori.splice(0, Infinity, ...lavori.filter(l => l.nome !== nome));
+  pagamenti.splice(0, Infinity, ...pagamenti.filter(p => p.nome !== nome));
+  delete extra[nome];
+
+  chiudiScheda();
+  avvisa(`${nome} eliminato${nLav ? ` (${nLav === 1 ? '1 lavoro' : nLav + ' lavori'})` : ''}`, {
+    etichetta: 'Annulla',
+    fai: () => {
+      lavori.push(...jobsSalvati);
+      pagamenti.push(...pagSalvati);
+      if (extraSalvato) extra[nome] = extraSalvato;
+      tutto();
+    }
+  });
+}
 $('c-cerca').addEventListener('input', disegnaClienti);
 
 // ---- Scheda del lavoro ----
