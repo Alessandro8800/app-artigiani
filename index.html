@@ -1097,6 +1097,10 @@ button.s-riga:first-child { border-top: 0; }
 .prezzo-edit-panel input[type=number] { flex: 1; border: none; background: none; font-size: 22px; font-weight: 800; color: var(--testo); outline: none; min-width: 0; }
 .prezzo-edit-panel input[type=number]::-webkit-inner-spin-button, .prezzo-edit-panel input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .prezzo-edit-panel span { font-size: 22px; font-weight: 800; color: var(--ambra); }
+.durata-casella-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.durata-casella-wrap input[type=number] { flex: 1; min-width: 0; border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); font-size: 17px; font-weight: 700; color: var(--testo); padding: 8px 12px; outline: none; }
+.durata-casella-wrap input[type=number]:focus { border-color: var(--foglia); }
+.durata-casella-wrap input[type=number]::-webkit-inner-spin-button, .durata-casella-wrap input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 /* Rotella delle cifre: scritta + icona tastiera sopra, rotella sotto, casella per scrivere a mano */
 .rot { display: flex; flex-direction: column; gap: 6px; }
 .rot-testa { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1107,6 +1111,8 @@ button.s-riga:first-child { border-top: 0; }
 .rot-tastiera { width: 40px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; border: 1.5px solid var(--linea); background: none; color: var(--testo-2); padding: 0; }
 .rot-tastiera.attivo { background: var(--ambra-chiara); border-color: var(--ambra); color: var(--ambra); }
 .rot .prezzo-edit-panel { margin-top: 0; }
+/* Rotella spenta (ROTELLA_ATTIVA = false): mai visibile, nemmeno per un attimo prima che la cifra si accenda */
+.rot .drum-contenitore, .rot .rot-tastiera, .rot .rot-testa small { display: none; }
 .rot-sugg { display: flex; flex-wrap: wrap; gap: 6px; }
 .rot-sugg .chip small { font-weight: 600; opacity: .75; margin-left: 2px; }
 .rot .prezzo-edit-panel { cursor: text; min-height: 52px; }
@@ -1501,9 +1507,10 @@ button.s-riga:first-child { border-top: 0; }
           <details class="avanzate-sotto">
             <summary>Durata e orario</summary>
             <div class="campo">
-              <div class="drum-contenitore"><div class="drum-scorribile" id="f-durata" aria-label="Quanto dura il lavoro"></div></div>
-              <div class="prezzo-edit-panel" id="durata-edit-panel" hidden>
-                <input type="number" id="durata-edit-input" inputmode="decimal" min="1" step="0.5" placeholder="Es. 9">
+              <span>Durata</span>
+              <div class="chips piccoli" id="f-durata-chips"></div>
+              <div class="durata-casella-wrap">
+                <input type="number" id="durata-edit-input" inputmode="decimal" min="0.5" step="0.5" placeholder="Altra">
                 <button type="button" id="durata-unita" class="chip attivo">ore</button>
               </div>
               <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
@@ -2845,6 +2852,9 @@ function htmlRotella({ idValore, etichetta, valore = null, senza = false, riempi
 // Accende una cifra (una volta sola per elemento). dopo(v) = cosa fare quando la cifra cambia.
 // Di partenza c'è la casella: toccandola si apre la tastiera (mai da sola). Sotto, le cifre pronte da toccare.
 // L'icona accanto alla scritta passa alla rotella (e la rotella ripassa alla casella).
+// (22/11) Il titolare non vuole più la rotella: si usa SOLO la tastiera. Il codice della rotella resta qui,
+// spento: per riaccenderla mettere ROTELLA_ATTIVA = true e togliere la regola CSS "Rotella spenta" (torna l'icona per passare alla rotella).
+const ROTELLA_ATTIVA = false;
 const SVG_ROTELLA = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="3"/><path d="M8 7v10M16 7v10M5 12h.01M12 12h.01M19 12h.01"/></svg>`;
 function creaRotella(el, { dopo } = {}) {
   if (el._rot) return el._rot;
@@ -2879,6 +2889,8 @@ function creaRotella(el, { dopo } = {}) {
     return i >= 0 ? i : def;
   };
   const mostraModo = () => {
+    if (!ROTELLA_ATTIVA) r.modo = 'tastiera';
+    tasto.hidden = !ROTELLA_ATTIVA;
     const rot = r.modo === 'rotella';
     drumBox.hidden = !rot; pannello.hidden = rot;
     if (aiuto) aiuto.hidden = !rot; // "tieni premuto per il dettaglio" serve solo con la rotella
@@ -3009,56 +3021,46 @@ function disegnaPrezzoDrum() { rotellaLavoro.r.disegna(); }
 function scorriPrezzoDrum() { rotellaLavoro.r.scorri(); }
 const DRUM_W = 80;
 function disegnaDurata() {
-  const drum = $('f-durata');
-  if (drum.dataset.init) { scorriDrum(); return; }
-  drum.dataset.init = '1';
-  drum.innerHTML = `<div class="drum-voce drum-spec" data-v="edit">${SVG_MATITA}<small>Durata</small></div>` +
-    DRUM_VALORI.map(v => {
-      const gg = Math.floor(v / oreGiornata), hh = v % oreGiornata;
-      const num = v < oreGiornata ? v : (hh === 0 ? gg : v);
-      const unit = v < oreGiornata ? (v === 1 ? 'ora' : 'ore') : (hh === 0 ? (gg === 1 ? 'giornata' : 'giorni') : 'ore');
-      return `<div class="drum-voce" data-v="${v}"><b>${num}</b><small>${unit}</small></div>`;
-    }).join('');
-  scorriDrum();
-  $('durata-unita').onclick = () => {
-    const btn = $('durata-unita');
-    btn.textContent = btn.textContent === 'ore' ? 'giorni' : 'ore';
-    const v = parseFloat($('durata-edit-input').value);
-    if (v > 0) {
-      const gg = btn.textContent === 'giorni';
-      durata = Math.round(v * (gg ? oreGiornata : 1));
-      durataSolita = durata; dateScelte = []; allineaDate();
-      if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
-    }
-  };
-  $('durata-edit-input').oninput = () => {
-    const v = parseFloat($('durata-edit-input').value);
-    if (v > 0) {
-      const gg = $('durata-unita').textContent === 'giorni';
-      durata = Math.round(v * (gg ? oreGiornata : 1));
-      durataSolita = durata; dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
-    }
-  };
-  const aggiorna = () => {
-    const i = Math.round(drum.scrollLeft / DRUM_W);
-    if (i === 0) {
-      $('durata-edit-panel').hidden = false;
-      setTimeout(() => $('durata-edit-input').focus(), 80);
-    } else {
-      $('durata-edit-panel').hidden = true;
-      const v = DRUM_VALORI[Math.max(0, Math.min(i - 1, DRUM_VALORI.length - 1))];
-      if (v !== durata) { durata = v; durataSolita = v; dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando(); }
-    }
-  };
-  drum.addEventListener('scrollend', aggiorna);
-  let t; drum.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(aggiorna, 150); });
+  const chips = $('f-durata-chips');
+  chips.innerHTML = DURATE.map(v =>
+    `<button type="button" class="chip${v === durata ? ' attivo' : ''}" data-v="${v}">${nomeDurata(v)}</button>`
+  ).join('');
+  chips.querySelectorAll('.chip').forEach(b => {
+    b.onclick = () => {
+      durata = +b.dataset.v;
+      $('durata-edit-input').value = '';
+      dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando(); disegnaDurata();
+    };
+  });
+  // Se durata è un valore non standard, mostralo nella casella
+  if (!DURATE.includes(durata)) {
+    const isGiorni = durata >= oreGiornata && durata % oreGiornata === 0;
+    $('durata-edit-input').value = isGiorni ? durata / oreGiornata : durata;
+    $('durata-unita').textContent = isGiorni ? 'giorni' : 'ore';
+  }
+  if (!$('f-durata-chips').dataset.init) {
+    $('f-durata-chips').dataset.init = '1';
+    $('durata-unita').onclick = () => {
+      const btn = $('durata-unita');
+      btn.textContent = btn.textContent === 'ore' ? 'giorni' : 'ore';
+      const v = parseFloat($('durata-edit-input').value);
+      if (v > 0) {
+        durata = Math.round(v * (btn.textContent === 'giorni' ? oreGiornata : 1));
+        dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando(); disegnaDurata();
+      }
+    };
+    $('durata-edit-input').oninput = () => {
+      const v = parseFloat($('durata-edit-input').value);
+      if (v > 0) {
+        const gg = $('durata-unita').textContent === 'giorni';
+        durata = Math.round(v * (gg ? oreGiornata : 1));
+        chips.querySelectorAll('.chip').forEach(c => c.classList.remove('attivo'));
+        dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
+      }
+    };
+  }
 }
-function scorriDrum() {
-  const drum = $('f-durata');
-  const idx = DRUM_VALORI.indexOf(durata);
-  const imposta = () => { drum.scrollLeft = (idx < 0 ? 1 : idx + 1) * DRUM_W; };
-  imposta(); requestAnimationFrame(imposta);
-}
+function scorriDrum() { /* non usata: sostituita da disegnaDurata con i chip */ }
 
 // I giorni occupati da un lavoro, con le ore di ciascuno. Un lavoro lungo continua
 // nei giorni di lavoro successivi (es. 2 giorni dal venerdì = venerdì e sabato).
@@ -6008,7 +6010,7 @@ function disegnaLavoro() {
   const voci = l.costi.voci;
   const riga = (v, i) => v.tipo === 'Personale'
     ? `<div class="costo-voce"><div class="costo-testa"><span class="etichetta">Personale</span><b>${euro(importoVoce(v))}</b><button type="button" class="togli" data-i="${i}" aria-label="Togli">✕</button></div>
-        <div class="personale"><span>Ore</span>${numero(i + ':ore', v.ore, 'h')}<span>Costo all'ora</span>${numero(i + ':tariffa', v.tariffa, '€')}</div></div>`
+        <div class="personale"><span>Ore</span><input type="number" class="num-scrivi pers-ore" data-i="${i}" data-k="ore" inputmode="decimal" min="0" step="0.5" value="${virgola(v.ore)}" aria-label="Ore"><span>Costo all'ora</span><input type="number" class="num-scrivi pers-tariffa" data-i="${i}" data-k="tariffa" inputmode="decimal" min="0" step="1" value="${virgola(v.tariffa)}" aria-label="Costo all'ora"></div></div>`
     : `<div class="costo-voce riga-unica"><span class="etichetta">${sicuro(v.tipo)}</span><span class="con-euro"><input data-i="${i}" inputmode="decimal" value="${virgola(v.importo)}" placeholder="0" aria-label="Importo ${sicuro(v.tipo)}"></span><button type="button" class="togli" data-i="${i}" aria-label="Togli">✕</button></div>`;
 
   // Ridisegnando (es. dopo aver girato la rotella del prezzo) le tendine aperte restano aperte e la pagina non salta
@@ -6046,8 +6048,8 @@ function disegnaLavoro() {
         <label class="campo"><span>Giorno</span><input id="l-data" type="date" value="${l.data}"></label>
         ${!l.fatto ? `<div class="sposta l-sposta"><small>Sposta a</small><button type="button" class="chip" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-a="${tra(1)}">Domani</button><button type="button" class="chip" data-a="${prossimoLavorativo(l.data)}">Giorno di lavoro dopo</button></div>` : ''}
         <div class="campo"><span>Ora</span><div class="chips piccoli" id="l-ora">${[['', 'Qualsiasi'], ['mattina', 'Mattina'], ['pomeriggio', 'Pomeriggio']].map(([k, n]) => `<button type="button" class="chip${(l.ora || '') === k ? ' attivo' : ''}" data-o="${k}">${n}</button>`).join('')}<label class="chip${l.ora && l.ora.includes(':') ? ' attivo' : ''}">${l.ora && l.ora.includes(':') ? l.ora : 'Alle…'}<input type="time" id="l-ora-precisa" value="${l.ora && l.ora.includes(':') ? l.ora : '08:00'}" aria-label="Ora precisa"></label></div></div>
-        ${l.fatto ? contatore('orevere', 'Ore vere <small>· quanto ci hai messo</small>', l.oreVere != null ? `${virgola(l.oreVere)} h` : 'come previsto') : ''}
-        <div class="campo"><span>Durata prevista</span><div class="chips piccoli" id="l-durata">${[...new Set([...DURATE, l.durata || 2])].sort((a, b) => a - b).map(o => `<button type="button" class="chip${o === (l.durata || 2) ? ' attivo' : ''}" data-o="${o}">${nomeDurata(o)}</button>`).join('')}</div></div>
+        ${l.fatto ? `<div class="campo"><span>Ore vere <small>· quanto ci hai messo</small></span><div><div class="durata-casella-wrap"><input type="number" id="l-orevere-input" inputmode="decimal" min="0.25" step="0.25" placeholder="${virgola(l.durata || 2)}" value="${l.oreVere != null ? l.oreVere : ''}"><span class="chip" style="pointer-events:none">h</span></div><div class="chips piccoli" style="margin-top:6px"><button type="button" class="chip" id="l-orevere-prev">come previsto (${nomeDurata(l.durata || 2)})</button>${l.cronoOre ? `<button type="button" class="chip" id="l-orevere-crono">cronometro (${virgola(l.cronoOre)} h)</button>` : ''}</div></div></div>` : ''}
+        <div class="campo"><span>Durata prevista</span><div><div class="chips piccoli" id="l-durata">${DURATE.map(o => `<button type="button" class="chip${o === (l.durata || 2) ? ' attivo' : ''}" data-o="${o}">${nomeDurata(o)}</button>`).join('')}</div><div class="durata-casella-wrap" style="margin-top:6px"><input type="number" id="l-durata-input" inputmode="decimal" min="0.5" step="0.5" placeholder="Altra${l.durata && !DURATE.includes(l.durata) ? ` (${virgola(l.durata)})` : ''}" value="${l.durata && !DURATE.includes(l.durata) ? (l.durata >= oreGiornata ? l.durata / oreGiornata : l.durata) : ''}"><button type="button" id="l-durata-unita" class="chip attivo">${l.durata && !DURATE.includes(l.durata) && l.durata >= oreGiornata ? 'giorni' : 'ore'}</button></div></div></div>
         <button type="button" class="secondario" id="l-stato">${l.fatto ? 'Rimetti da fare' : 'Segna come fatto'}</button>
       </div>
     </details>
@@ -6109,20 +6111,10 @@ function disegnaLavoro() {
   $('l-corpo').querySelectorAll('.costo-voce .togli').forEach(b => {
     b.onclick = () => { const i = +b.dataset.i, tolta = voci.splice(i, 1)[0]; disegnaLavoro(); avvisa(`Tolto: ${tolta.tipo}`, { etichetta: 'Annulla', fai: () => { voci.splice(i, 0, tolta); disegnaLavoro(); } }); };
   });
-  // Personale: − e + (ore di 1 in 1, costo all'ora di 1 € in 1 €); tocco sul numero = si scrive
-  $('l-corpo').querySelectorAll('.personale [data-d]').forEach(b => {
-    b.onclick = () => { const [i, k] = b.dataset.n.split(':'), v = voci[+i]; v[k] = Math.max(0, arrotonda((v[k] || 0) + +b.dataset.d)); disegnaLavoro(); };
-  });
-  $('l-corpo').querySelectorAll('.personale .num').forEach(b => {
-    b.onclick = () => {
-      const [i, k] = b.dataset.n.split(':'), v = voci[+i];
-      const inp = document.createElement('input');
-      inp.inputMode = 'decimal'; inp.value = virgola(v[k]); inp.className = 'num-scrivi'; inp.setAttribute('aria-label', k === 'ore' ? 'Ore' : 'Costo all\'ora');
-      b.replaceWith(inp); inp.focus(); inp.select();
-      let finito = false;
-      const fine = () => { if (finito) return; finito = true; const n = leggiImporto(inp.value); if (n != null) v[k] = n; disegnaLavoro(); };
-      inp.onblur = fine; inp.onchange = fine; inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
-    };
+  // Personale: casella diretta per ore e costo all'ora
+  $('l-corpo').querySelectorAll('.personale input').forEach(inp => {
+    inp.onchange = () => { const v = leggiImporto(inp.value); if (v != null) voci[+inp.dataset.i][inp.dataset.k] = v; disegnaLavoro(); };
+    inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
   });
   // Dati del lavoro: si salvano appena cambiano
   $('l-cosa').onchange = e => { l.cosa = e.target.value.trim(); disegnaLavoro(); };
@@ -6136,10 +6128,24 @@ function disegnaLavoro() {
   };
   $('l-data').onchange = e => { if (!e.target.value) return; const d = Math.round((daIso(e.target.value) - daIso(l.data)) / 86400000); l.data = e.target.value; if (l.date) l.date = l.date.map(g => { const x = daIso(g); x.setDate(x.getDate() + d); return iso(x); }); disegnaLavoro(); };
   $('l-durata').querySelectorAll('.chip').forEach(b => { b.onclick = () => { l.durata = +b.dataset.o; delete l.date; disegnaLavoro(); }; });
+  if ($('l-durata-input')) {
+    $('l-durata-input').oninput = () => {
+      const v = parseFloat($('l-durata-input').value);
+      if (v > 0) { const gg = $('l-durata-unita').textContent === 'giorni'; l.durata = Math.round(v * (gg ? oreGiornata : 1)); delete l.date; disegnaLavoro(); }
+    };
+    $('l-durata-unita').onclick = () => {
+      const btn = $('l-durata-unita'); btn.textContent = btn.textContent === 'ore' ? 'giorni' : 'ore';
+      const v = parseFloat($('l-durata-input').value); if (v > 0) { l.durata = Math.round(v * (btn.textContent === 'giorni' ? oreGiornata : 1)); delete l.date; disegnaLavoro(); }
+    };
+  }
+  if ($('l-orevere-input')) {
+    $('l-orevere-input').onchange = e => { const v = parseFloat(e.target.value); if (v > 0) { l.oreVere = v; disegnaLavoro(); } else if (!e.target.value.trim()) { l.oreVere = null; disegnaLavoro(); } };
+    if ($('l-orevere-prev')) $('l-orevere-prev').onclick = () => { l.oreVere = l.durata || 2; disegnaLavoro(); };
+    if ($('l-orevere-crono')) $('l-orevere-crono').onclick = () => { l.oreVere = l.cronoOre; disegnaLavoro(); };
+  }
   $('l-corpo').querySelectorAll('.l-sposta [data-a]').forEach(b => { b.onclick = () => { spostaLavoro(l, b.dataset.a); disegnaLavoro(); }; });
   $('l-ora').querySelectorAll('button').forEach(b => { b.onclick = () => { l.ora = b.dataset.o; disegnaLavoro(); }; });
   $('l-ora-precisa').onchange = e => { l.ora = e.target.value; disegnaLavoro(); };
-  $('l-corpo').querySelectorAll('[data-k=orevere]').forEach(b => { b.onclick = () => { const base = l.oreVere != null ? l.oreVere : (l.durata || 2); l.oreVere = Math.max(0.5, base + +b.dataset.d * (base < 1 ? 0.5 : 1)); disegnaLavoro(); }; });
   $('l-stato').onclick = () => { l.fatto = !l.fatto; disegnaLavoro(); avvisa(l.fatto ? 'Segnato come fatto' : 'Rimesso da fare'); };
 }
 $('l-chiudi').onclick = chiudiLavoro;
