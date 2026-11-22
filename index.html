@@ -4820,13 +4820,16 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle','speseStelle','speseRicorrenti']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle','speseStelle','speseRicorrenti','datiAttivita','preventivi','prevContatore']);
     if (r[12] && r[12].valore) cronometro = JSON.parse(r[12].valore);
     if (r[6]) inizioChiuso = !!r[6].valore;
     if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' }; zonaScelta = true; }
     if (r[13] && r[13].valore) LAVORI_STELLE.splice(0, Infinity, ...JSON.parse(r[13].valore));
     if (r[14] && r[14].valore) SPESE_STELLE.splice(0, Infinity, ...JSON.parse(r[14].valore));
     if (r[15] && r[15].valore) speseRicorrenti.splice(0, Infinity, ...JSON.parse(r[15].valore));
+    if (r[16] && r[16].valore) Object.assign(datiAttivita, JSON.parse(r[16].valore));
+    if (r[17] && r[17].valore) preventivi.splice(0, Infinity, ...JSON.parse(r[17].valore));
+    if (r[18] && r[18].valore) _prevContatore = r[18].valore;
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
     if (r[7]) { const ib = JSON.parse(r[7].valore); for (const k of Object.keys(INBOX_ESEMPI)) INBOX_ESEMPI[k].voci.splice(0, Infinity, ...(ib[k] || [])); }
     if (r[8]) { const st = JSON.parse(r[8].valore); for (const k of Object.keys(STORICO_ESEMPI)) STORICO_ESEMPI[k].splice(0, Infinity, ...(st[k] || [])); }
@@ -4877,6 +4880,9 @@ function dbSalva() {
       { chiave: 'zona',       valore: zonaScelta ? JSON.stringify(zonaMeteo) : '' },
       { chiave: 'cronometro', valore: cronometro ? JSON.stringify(cronometro) : '' },
       { chiave: 'speseRicorrenti', valore: JSON.stringify(speseRicorrenti) },
+      { chiave: 'datiAttivita',   valore: JSON.stringify(datiAttivita) },
+      { chiave: 'preventivi',     valore: JSON.stringify(preventivi) },
+      { chiave: 'prevContatore',  valore: _prevContatore },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -6468,6 +6474,9 @@ function quotaCosti() {
   return (quotaCache = p ? Math.min(c / p, 0.95) : 0);
 }
 let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Impostazioni; 0 = non mostrare)
+let datiAttivita = { nome: '', piva: '', telefono: '', iva: '0' };
+let preventivi = [];
+let _prevContatore = 1;
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -7324,6 +7333,22 @@ const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-labe
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
 const GRUPPI_IMP = [
+  ['La tua attività', [
+    { id: 'dati-attivita', nome: 'Dati per i preventivi', valore: () => datiAttivita.nome || 'Non ancora compilati', corpo: el => {
+      const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
+      el.innerHTML = `
+        <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
+        <label class="campo"><span>Partita IVA</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
+        <label class="campo"><span>Telefono</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
+        <p class="imp-testo" style="margin-top:4px">IVA sui preventivi</p>
+        <div class="segmenti" id="i-att-iva-seg"></div>
+        <p class="imp-testo">Questi dati appaiono nel preventivo completo che dai al cliente. Se non sei sicuro sull'IVA, chiedi al tuo commercialista.</p>`;
+      $('i-att-nome').onchange = e => { datiAttivita.nome = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
+      $('i-att-piva').onchange = e => { datiAttivita.piva = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
+      $('i-att-tel').onchange  = e => { datiAttivita.telefono = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
+      segmenti($('i-att-iva-seg'), Object.fromEntries(ivaOpzioni.map(o => [o.k, o.label])), datiAttivita.iva, k => { datiAttivita.iva = k; dbSalva(); disegnaImpostazioni(); });
+    } },
+  ]],
   ['Abbonamento', [
     { id: 'piano', nome: 'Il tuo piano', valore: () => 'Prova gratuita · in arrivo', corpo: el => {
       el.innerHTML = `<span class="imp-in-arrivo">In arrivo dopo la beta</span>
