@@ -8497,7 +8497,7 @@ function aggiornaTotalePrev() {
 
 function prevAggiungiVoce() { _prevBozzaVoci.push({ descrizione: '', importo: 0 }); disegnaPrevVoci(); }
 
-function salvaPrevBozza(stato = 'bozza') {
+function salvaPrevBozza(stato = 'bozza', mostraAvviso = true) {
   const anno = new Date().getFullYear();
   const p = {
     id: Date.now(),
@@ -8514,7 +8514,7 @@ function salvaPrevBozza(stato = 'bozza') {
     if (idx >= 0) { p.id = preventivi[idx].id; p.numero = preventivi[idx].numero; preventivi[idx] = p; }
   } else { preventivi.push(p); _prevContatore++; }
   _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevBozzaValidita = 30; _prevBozzaCondPag = null; _prevBozzaInizio = null; _prevVista = 'lista';
-  dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
+  dbSalva(); disegnaPreventivi(); if (mostraAvviso) avvisa('Preventivo salvato ✓');
 }
 
 function scartaPrev() {
@@ -8530,8 +8530,7 @@ function tornaIndietroConBozza() {
     const snapNow = JSON.stringify({ voci: _prevBozzaVoci, note: _prevBozzaNote, cliente: _prevBozzaCliente, indirizzo: _prevBozzaIndirizzo, validita: _prevBozzaValidita, condPag: _prevBozzaCondPag, inizio: _prevBozzaInizio });
     const cambiato = !_prevBozzaSnapOrig || snapNow !== _prevBozzaSnapOrig;
     const stato = cambiato ? 'bozza' : _prevBozzaStatoOrig;
-    salvaPrevBozza(stato);
-    avvisa(cambiato ? 'Salvato come bozza' : 'Salvato ✓');
+    salvaPrevBozza(stato, false);
   } else { scartaPrev(); }
 }
 function salvaPrevESaltiAPDF() {
