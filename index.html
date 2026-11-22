@@ -4733,12 +4733,13 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle','speseStelle']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle','speseStelle','speseRicorrenti']);
     if (r[12] && r[12].valore) cronometro = JSON.parse(r[12].valore);
     if (r[6]) inizioChiuso = !!r[6].valore;
     if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' }; zonaScelta = true; }
     if (r[13] && r[13].valore) LAVORI_STELLE.splice(0, Infinity, ...JSON.parse(r[13].valore));
     if (r[14] && r[14].valore) SPESE_STELLE.splice(0, Infinity, ...JSON.parse(r[14].valore));
+    if (r[15] && r[15].valore) speseRicorrenti.splice(0, Infinity, ...JSON.parse(r[15].valore));
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
     if (r[7]) { const ib = JSON.parse(r[7].valore); for (const k of Object.keys(INBOX_ESEMPI)) INBOX_ESEMPI[k].voci.splice(0, Infinity, ...(ib[k] || [])); }
     if (r[8]) { const st = JSON.parse(r[8].valore); for (const k of Object.keys(STORICO_ESEMPI)) STORICO_ESEMPI[k].splice(0, Infinity, ...(st[k] || [])); }
@@ -4788,6 +4789,7 @@ function dbSalva() {
       { chiave: 'daSistemare', valore: JSON.stringify(daSistemare) },
       { chiave: 'zona',       valore: zonaScelta ? JSON.stringify(zonaMeteo) : '' },
       { chiave: 'cronometro', valore: cronometro ? JSON.stringify(cronometro) : '' },
+      { chiave: 'speseRicorrenti', valore: JSON.stringify(speseRicorrenti) },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -6330,6 +6332,33 @@ function spesaNel(sp, da, a) {
 }
 const speseNel = (da, a) => arrotonda(spese.reduce((t, sp) => t + spesaNel(sp, da, a), 0));
 const descriviSpesa = sp => sp.modo === 'divisa' ? `${euro(sp.importo)} in ${sp.mesi} mesi · ${euro(arrotonda(sp.importo / sp.mesi))} al mese` : sp.modo === 'una' ? `${dataBreve(sp.data)}` : `${euro(sp.importo)} ${sp.modo === 'mese' ? 'al mese' : "all'anno"}`;
+
+// Spese ricorrenti (costi fissi): assicurazioni, telefono, commercialista, ecc.
+// { id, nome, importo, frequenza: 'mensile'|'trimestrale'|'annuale', prossima: 'YYYY-MM-DD', categoria }
+const speseRicorrenti = [];
+
+function _avanzaData(isoDate, frequenza) {
+  const d = daIso(isoDate);
+  if (frequenza === 'mensile')    d.setMonth(d.getMonth() + 1);
+  else if (frequenza === 'trimestrale') d.setMonth(d.getMonth() + 3);
+  else                            d.setFullYear(d.getFullYear() + 1);
+  return iso(d);
+}
+
+function nuovaRicorrente({ nome, importo, frequenza, prossima, categoria }) {
+  speseRicorrenti.push({ id: String(Date.now()), nome, importo: +importo, frequenza, prossima, categoria: categoria || 'Altro' });
+  dbSalva();
+}
+
+function avanzaRicorrente(id) {
+  const r = speseRicorrenti.find(x => x.id === id);
+  if (r) { r.prossima = _avanzaData(r.prossima, r.frequenza); dbSalva(); }
+}
+
+function eliminaRicorrente(id) {
+  const i = speseRicorrenti.findIndex(x => x.id === id);
+  if (i >= 0) { speseRicorrenti.splice(i, 1); dbSalva(); }
+}
 
 function periodo(tipo, spost) {
   const d = new Date(OGGI.getFullYear(), tipo === 'mese' ? OGGI.getMonth() + spost : 0, 1);
