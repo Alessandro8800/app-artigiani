@@ -501,6 +501,35 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 
 ---
 
+## Scheda Preventivi — stato attuale (22/11)
+
+**Vista lista:** barra "Crea preventivo" in cima (textarea + mic + freccia ↑ verde), poi lista card.
+**Vista anteprima:** modifica voci/cliente/indirizzo/validità/condizioni/tempi → "Salva e genera PDF" (torna alla lista) o "← Indietro" (torna alla lista).
+**Vista completo/documento:** tasto "← Tutti i preventivi" + "Stampa / Salva PDF" + "Manda su WhatsApp".
+
+**Stati preventivo:**
+- `bozza` — card con bordo arancio tratteggiato e badge "Bozza". Si ottiene con la freccia ← Indietro se qualcosa è cambiato, oppure creando un preventivo nuovo.
+- `inviato` — card normale. Si ottiene con "Salva e genera PDF".
+- Se torni a modificare un `inviato` senza cambiare nulla e premi ← Indietro, resta `inviato`.
+
+**WhatsApp nelle card:** `condividiPrevWhatsApp(id)` — legge `extra[clienteNome].tel` per aprire direttamente la chat del cliente; se non c'è numero, apre WhatsApp senza destinatario. Blocca se il preventivo non ha nome cliente.
+
+**Funzioni chiave preventivi:**
+| Funzione | Cosa fa |
+|---|---|
+| `disegnaPreventivi()` | Ridisegna tutto; gestisce hide/show di `#prev-bar` |
+| `avviaGeneraPreventivo()` | Legge `#prev-bar-txt`, chiama `generaPreventivo(desc)` (Claude Haiku), apre anteprima |
+| `avviaMicPrevBar()` | Mic → riempie `#prev-bar-txt` |
+| `avviaMicPrev()` | Mic nell'anteprima → aggiorna le voci esistenti via Claude Haiku |
+| `salvaPrevBozza(stato, mostraAvviso)` | Salva (o aggiorna se `_prevEditId`) e torna alla lista |
+| `tornaIndietroConBozza()` | Confronta snapshot originale; salva con stato corretto senza toast |
+| `modificaPrev(id)` | Carica preventivo in bozza e salva snapshot originale |
+| `condividiPrevWhatsApp(id)` | Genera testo e apre WhatsApp (con o senza numero) |
+
+**Variabili di stato bozza:** `_prevBozzaVoci`, `_prevBozzaNote`, `_prevBozzaCliente`, `_prevBozzaIndirizzo`, `_prevBozzaValidita`, `_prevBozzaCondPag`, `_prevBozzaInizio`, `_prevEditId`, `_prevBozzaStatoOrig`, `_prevBozzaSnapOrig`.
+
+---
+
 ## Form preventivi — struttura dati
 
 ### Proprietà `dot` sugli slider
@@ -651,7 +680,7 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 3. ✅ **Mic per scheda specifica** — fatto (21/11): i 3 microfoni passano tutti dall'AI, che smista nella categoria giusta.
 4. **Badge arancione "Paga ogni"** — quando arriva il mese indicato e il Condominio non ha pagato, compare un badge arancione nella scheda cliente.
 5. **Scheda conti — grafica** — migliorare aspetto grafico (non bug critici).
-6. **Preventivi AI** — box testo/voce → Claude genera stima usando i dati dei form preventivi (`prevDati`).
+6. ✅ **Preventivi AI** — fatto (22/11): barra chat in cima alla scheda, mic+testo → Claude Haiku genera le voci → anteprima modificabile → salva. Vedi sezione "Scheda Preventivi" sotto.
 7. **Infrastruttura** (dopo beta) — server, account, abbonamento, sync.
 8. ✅ **Cronometro lavori a voce** — fatto (21/11). Decisioni del titolare: (a) avviene SUBITO, non passa dall'inbox; (b) "ho finito" = ore vere + Fatto (con Annulla), "stacco" = solo ore, il lavoro continua; (c) pause sì ("pausa"/"riprendo"); (d) dimenticato acceso: dopo 10 ore dall'ULTIMO ACCESSO all'app, o aprendo l'app un altro giorno → card in alto sopra il calendario "a che ora hai finito?" (ora proposta = ultimo uso dell'app quel giorno). Notifica vera ad app chiusa NON possibile senza server (Step 7).
    Codice: tipo AI `tempo` con `azione` inizio|pausa|riprendo|stacco|fine; `eseguiTempo`, `avviaCronometro`, `pausaCronometro`, `riprendiCronometro`, `fermaCronometro`, `controllaCronometro`, `htmlCronometro` (barretta in `#avvisi-home`). Stato `cronometro` salvato in Dexie. Ore al quarto d'ora in `l.cronoOre` → `l.oreVere` (le usa la pagina Conti); più giorni si sommano. Lavoro: quello di oggi del cliente; se è in un altro giorno viene portato a oggi; se non c'è viene creato. Un cronometro alla volta (partirne un altro fa "stacco" sul primo).
