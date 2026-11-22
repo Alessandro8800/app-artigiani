@@ -2549,7 +2549,8 @@ const $ = id => document.getElementById(id);
 let clienteScelto = null;   // cliente già esistente scelto dall'elenco
 let quando = tra(0);
 let quandoFisso = false;
-let dateScelte = [];       // lavoro di più giorni: le date scelte, nell'ordine in cui le ha toccate   // true se il giorno l'ha scelto lui: allora non lo cambio da solo
+let dateScelte = [];       // lavoro di più giorni: le date scelte
+let rangeStart = null;     // selezione a intervallo: null = aspetta "da", stringa ISO = aspetta "a"
 let salvando = false;
 // Tipi di cliente: in futuro modificabili dalle Impostazioni
 // Tipi di cliente: il primo è quello già scelto. Si cambiano dalle Impostazioni.
@@ -3109,7 +3110,7 @@ function giorniDel(l) {
   let resta = l.durata || 2;
   // Date scelte una per una: una giornata piena ciascuna, l'ultima con le ore che restano
   if (l.date && l.date.length > 1) return l.date.map((g, i) => { const o = i < l.date.length - 1 ? Math.min(resta, oreGiornata) : resta; resta -= o; return [g, Math.max(o, 0)]; });
-  while (resta > 0 && out.length < 60) {
+  while (resta > 0 && out.length < 500) {
     if (!out.length || lavorativo(d)) { const o = Math.min(resta, oreGiornata); out.push([iso(d), o]); resta -= o; }
     d.setDate(d.getDate() + 1);
   }
@@ -3153,16 +3154,25 @@ const dateOrdinate = () => [...dateScelte].sort();
 function allineaDate() {
   const n = quantiGiorni();
   if (n < 2) { dateScelte = []; return; }
-  if (!dateScelte.length) dateScelte = giorniDel({ data: quando, durata }).map(x => x[0]);
-  while (dateScelte.length > n) dateScelte.shift();
+  // Sempre rifill completo: l'utente ha cambiato durata, si ricalcola tutto
+  dateScelte = giorniDel({ data: quando, durata }).map(x => x[0]);
   quando = dateOrdinate()[0];
 }
-// Tocco su un giorno: lo aggiunge o lo toglie. Se sono già tutti scelti, il più vecchio tocco lascia il posto.
+// Tocco su un giorno: selezione a intervallo. 1° clic = da, 2° clic = a (riempie tutto).
 function tocca(s) {
-  const i = dateScelte.indexOf(s);
-  if (i >= 0) { if (dateScelte.length > 1) dateScelte.splice(i, 1); }
-  else { dateScelte.push(s); if (dateScelte.length > quantiGiorni()) dateScelte.shift(); }
-  quandoFisso = true; quando = dateOrdinate()[0];
+  if (rangeStart === null) {
+    rangeStart = s;  // aspetta il "a"
+  } else {
+    const da = rangeStart <= s ? rangeStart : s;
+    const a  = rangeStart <= s ? s : rangeStart;
+    rangeStart = null;
+    const d = daIso(da), fine = daIso(a);
+    while (d <= fine) {
+      if (lavorativo(d)) { const s2 = iso(d); if (!dateScelte.includes(s2)) dateScelte.push(s2); }
+      d.setDate(d.getDate() + 1);
+    }
+    quandoFisso = true; quando = dateOrdinate()[0];
+  }
 }
 // I giorni di lavoro con la giornata tutta libera, per i riquadri
 function giorniTuttiLiberi(m) {
@@ -3273,6 +3283,7 @@ function apriCalFoglio() {
 }
 function chiudiCalFoglio() {
   $('q-pop').hidden = true;
+  rangeStart = null;
   if (calDa === 'indietro') { calDa = null; apriIndietro(); }
   calSposta = null; calRipeti = false;
 }
@@ -3301,17 +3312,23 @@ function disegnaCalFoglio() {
     }, false);
   } else if (vistaCal === 'giorni') {
     const n = quantiGiorni();
-    $('q-titolo').textContent = n > 1 ? `Scegli ${n} giorni (${dateScelte.length} di ${n})` : 'Scegli il giorno';
-    riempiGriglia(g, meseFoglio, n > 1 ? dateScelte : quando, s => {
-      if (n > 1) {
-        const aggiunto = !dateScelte.includes(s);
+    if (n > 1) {
+      $('q-titolo').textContent = rangeStart
+        ? `Fino a… (da ${breveGiorno(rangeStart)})`
+        : 'Da quando?';
+      const evidenziati = rangeStart ? [...dateScelte, rangeStart] : dateScelte;
+      riempiGriglia(g, meseFoglio, evidenziati, s => {
+        const eraRange = rangeStart !== null;
         tocca(s); disegnaCalFoglio(); disegnaQuando();
-        if (aggiunto && dateScelte.length === n) setTimeout(chiudiCalFoglio, 350);   // tutti scelti: si chiude
-        return;
-      }
-      quando = s; quandoFisso = true; disegnaCalFoglio(); disegnaQuando();
-      setTimeout(chiudiCalFoglio, 200);   // si vede il giorno scelto, poi la finestra si chiude
-    }, true);
+        if (eraRange) setTimeout(chiudiCalFoglio, 300);  // range completato: chiudi
+      }, true);
+    } else {
+      $('q-titolo').textContent = 'Scegli il giorno';
+      riempiGriglia(g, meseFoglio, quando, s => {
+        quando = s; quandoFisso = true; disegnaCalFoglio(); disegnaQuando();
+        setTimeout(chiudiCalFoglio, 200);
+      }, true);
+    }
   } else if (vistaCal === 'mesi') {
     g.innerHTML = Array.from({ length: 12 }, (_, i) => {
       const passato = a < OGGI.getFullYear() || (a === OGGI.getFullYear() && i < OGGI.getMonth());
