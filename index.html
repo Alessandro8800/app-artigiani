@@ -861,8 +861,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .costo-voce.riga-unica .etichetta { margin-right: auto; align-self: center; }
 .costo-voce.riga-unica .con-euro { width: 120px; }
 .costo-testa b { margin-left: auto; margin-right: 8px; font-variant-numeric: tabular-nums; }
-.personale { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; font-size: 14px; font-weight: 700; color: var(--testo-2); }
-.personale .contatore-mini { background: var(--sfondo); border-radius: 12px; padding: 3px; display: flex; align-items: center; justify-content: space-between; }
+/* .personale ora definita più in basso (drum section) */
 .contatore-mini .num { width: auto; min-width: 70px; font-size: 16px; font-weight: 800; color: var(--testo); text-decoration: underline dotted; text-underline-offset: 4px; }
 .num-scrivi { width: 90px; min-height: 38px !important; padding: 6px 10px !important; text-align: center; font-size: 16px !important; }
 .chip.rapido { color: var(--foglia); }
@@ -1097,10 +1096,27 @@ button.s-riga:first-child { border-top: 0; }
 .prezzo-edit-panel input[type=number] { flex: 1; border: none; background: none; font-size: 22px; font-weight: 800; color: var(--testo); outline: none; min-width: 0; }
 .prezzo-edit-panel input[type=number]::-webkit-inner-spin-button, .prezzo-edit-panel input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .prezzo-edit-panel span { font-size: 22px; font-weight: 800; color: var(--ambra); }
-.durata-casella-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.durata-casella-wrap input[type=number] { flex: 1; min-width: 0; border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); font-size: 17px; font-weight: 700; color: var(--testo); padding: 8px 12px; outline: none; }
-.durata-casella-wrap input[type=number]:focus { border-color: var(--foglia); }
-.durata-casella-wrap input[type=number]::-webkit-inner-spin-button, .durata-casella-wrap input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+/* Drum verticale per la durata */
+.durata-picker { display: flex; gap: 10px; align-items: flex-start; }
+.durata-drum-wrap { width: 68px; height: 132px; position: relative; overflow: hidden; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); flex-shrink: 0; }
+.durata-drum { overflow-y: auto; scroll-snap-type: y mandatory; height: 100%; scrollbar-width: none; padding: 44px 0; box-sizing: border-box; }
+.durata-drum::-webkit-scrollbar { display: none; }
+.durata-drum-voce { height: 44px; scroll-snap-align: center; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--testo); cursor: pointer; }
+.durata-drum-sel { position: absolute; left: 4px; right: 4px; top: 50%; transform: translateY(-50%); height: 40px; border-radius: 10px; background: var(--foglia-chiara); border: 1.5px solid var(--foglia); pointer-events: none; z-index: 0; }
+.durata-drum-wrap::before, .durata-drum-wrap::after { content: ''; position: absolute; left: 0; right: 0; height: 44px; z-index: 1; pointer-events: none; }
+.durata-drum-wrap::before { top: 0; background: linear-gradient(to bottom, var(--carta) 20%, transparent); }
+.durata-drum-wrap::after { bottom: 0; background: linear-gradient(to top, var(--carta) 20%, transparent); }
+.durata-destra { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.durata-destra input[type=number] { width: 100%; border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); font-size: 20px; font-weight: 800; color: var(--testo); padding: 10px 12px; outline: none; box-sizing: border-box; }
+.durata-destra input[type=number]:focus { border-color: var(--foglia); }
+.durata-destra input[type=number]::-webkit-inner-spin-button, .durata-destra input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.durata-unita { display: flex; gap: 6px; }
+/* Personale: una riga, €/ora prima */
+.personale { display: flex; gap: 8px; }
+.pers-campo { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--sfondo); border-radius: 10px; padding: 7px 10px; }
+.pers-campo > span { font-size: 12px; font-weight: 700; color: var(--testo-2); flex-shrink: 0; }
+.pers-campo input { flex: 1; min-width: 0; border: none; background: none; font-size: 16px; font-weight: 800; color: var(--testo); outline: none; text-align: right; }
+.pers-campo input::-webkit-inner-spin-button, .pers-campo input::-webkit-outer-spin-button { -webkit-appearance: none; }
 /* Rotella delle cifre: scritta + icona tastiera sopra, rotella sotto, casella per scrivere a mano */
 .rot { display: flex; flex-direction: column; gap: 6px; }
 .rot-testa { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1508,10 +1524,16 @@ button.s-riga:first-child { border-top: 0; }
             <summary>Durata e orario</summary>
             <div class="campo">
               <span>Durata</span>
-              <div class="chips piccoli" id="f-durata-chips"></div>
-              <div class="durata-casella-wrap">
-                <input type="number" id="durata-edit-input" inputmode="decimal" min="0.5" step="0.5" placeholder="Altra">
-                <button type="button" id="durata-unita" class="chip attivo">ore</button>
+              <div class="durata-picker" id="f-durata-picker">
+                <div class="durata-drum-wrap"><div class="durata-drum-sel"></div><div class="durata-drum" id="f-durata-drum"></div></div>
+                <div class="durata-destra">
+                  <input type="number" id="f-durata-input" inputmode="decimal" min="0.5" step="0.5">
+                  <div class="durata-unita" id="f-durata-unita">
+                    <button class="chip attivo" data-u="ore">ore</button>
+                    <button class="chip" data-u="giorni">giorni</button>
+                    <button class="chip" data-u="mesi">mesi</button>
+                  </div>
+                </div>
               </div>
               <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
                 <div class="ora-pill" id="ora-pill"></div>
@@ -3019,48 +3041,93 @@ function montaRotelle(radice, opzioni) {
 const rotellaLavoro = { get r() { return creaRotella($('rot-lavoro')); }, reset() { this.r.reset(); } };
 function disegnaPrezzoDrum() { rotellaLavoro.r.disegna(); }
 function scorriPrezzoDrum() { rotellaLavoro.r.scorri(); }
-const DRUM_W = 80;
-function disegnaDurata() {
-  const chips = $('f-durata-chips');
-  chips.innerHTML = DURATE.map(v =>
-    `<button type="button" class="chip${v === durata ? ' attivo' : ''}" data-v="${v}">${nomeDurata(v)}</button>`
-  ).join('');
-  chips.querySelectorAll('.chip').forEach(b => {
+// Drum verticale per la durata: valori per unità, conversione in ore
+const DRUM_H = 44; // px per voce del drum
+const DURATA_OPZ = {
+  ore: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10, 12],
+  giorni: [1, 2, 3, 4, 5, 6, 7, 10, 14, 30],
+  mesi: [1, 2, 3, 4, 5, 6, 12],
+};
+const ORE_MESE = () => oreGiornata * 22;
+const durataAOre = (n, u) => u === 'ore' ? n : u === 'giorni' ? n * oreGiornata : n * ORE_MESE();
+const oreDurata = (v) => {
+  if (!v || v <= 0) return { n: 2, u: 'ore' };
+  const om = ORE_MESE();
+  if (v >= om && v % om === 0) return { n: v / om, u: 'mesi' };
+  if (v >= oreGiornata && v % oreGiornata === 0) return { n: v / oreGiornata, u: 'giorni' };
+  return { n: v, u: 'ore' };
+};
+function htmlDurataPicker(prefix, valOre) {
+  const { n, u } = oreDurata(valOre || 2);
+  return `<div class="durata-picker" id="${prefix}-picker">
+    <div class="durata-drum-wrap"><div class="durata-drum-sel"></div><div class="durata-drum" id="${prefix}-drum"></div></div>
+    <div class="durata-destra">
+      <input type="number" id="${prefix}-input" inputmode="decimal" min="0.5" step="0.5" value="${n}">
+      <div class="durata-unita" id="${prefix}-unita">
+        <button class="chip${u==='ore'?' attivo':''}" data-u="ore">ore</button>
+        <button class="chip${u==='giorni'?' attivo':''}" data-u="giorni">giorni</button>
+        <button class="chip${u==='mesi'?' attivo':''}" data-u="mesi">mesi</button>
+      </div>
+    </div>
+  </div>`;
+}
+function montaDurataPicker(prefix, onChange) {
+  const drum = $(prefix + '-drum');
+  const input = $(prefix + '-input');
+  const unitaEl = $(prefix + '-unita');
+  if (!drum || !input || !unitaEl) return;
+  let unita = unitaEl.querySelector('.chip.attivo')?.dataset.u || 'ore';
+  const valori = () => DURATA_OPZ[unita] || DURATA_OPZ.ore;
+  const scrollAIdx = (idx, smooth) => drum.scrollTo({ top: idx * DRUM_H, behavior: smooth ? 'smooth' : 'instant' });
+  const idxDa = (n) => { const vs = valori(); let i = vs.findIndex(v => v >= n); if (i < 0) i = vs.length - 1; else if (i > 0 && Math.abs(vs[i-1]-n) < Math.abs(vs[i]-n)) i--; return i; };
+  const ridisegna = () => {
+    drum.innerHTML = valori().map(v => `<div class="durata-drum-voce" data-v="${v}">${String(v).replace('.', ',')}</div>`).join('');
+    scrollAIdx(idxDa(parseFloat(input.value) || 2));
+  };
+  const aggiorna = () => {
+    const vs = valori(); const idx = Math.round(drum.scrollTop / DRUM_H);
+    const v = vs[Math.max(0, Math.min(idx, vs.length - 1))];
+    input.value = String(v).replace(',', '.');
+    onChange(durataAOre(v, unita));
+  };
+  ridisegna();
+  let st; drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiorna, 150); });
+  drum.addEventListener('scrollend', aggiorna);
+  input.oninput = () => { const n = parseFloat(input.value); if (n > 0) { onChange(durataAOre(n, unita)); scrollAIdx(idxDa(n), true); } };
+  drum.querySelectorAll('.durata-drum-voce').forEach(v => { v.onclick = () => { scrollAIdx(valori().indexOf(+v.dataset.v)); aggiorna(); }; });
+  unitaEl.querySelectorAll('.chip').forEach(b => {
     b.onclick = () => {
-      durata = +b.dataset.v;
-      $('durata-edit-input').value = '';
-      dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando(); disegnaDurata();
+      unitaEl.querySelectorAll('.chip').forEach(c => c.classList.remove('attivo')); b.classList.add('attivo'); unita = b.dataset.u;
+      ridisegna(); const n = parseFloat(input.value); if (n > 0) onChange(durataAOre(n, unita));
     };
   });
-  // Se durata è un valore non standard, mostralo nella casella
-  if (!DURATE.includes(durata)) {
-    const isGiorni = durata >= oreGiornata && durata % oreGiornata === 0;
-    $('durata-edit-input').value = isGiorni ? durata / oreGiornata : durata;
-    $('durata-unita').textContent = isGiorni ? 'giorni' : 'ore';
-  }
-  if (!$('f-durata-chips').dataset.init) {
-    $('f-durata-chips').dataset.init = '1';
-    $('durata-unita').onclick = () => {
-      const btn = $('durata-unita');
-      btn.textContent = btn.textContent === 'ore' ? 'giorni' : 'ore';
-      const v = parseFloat($('durata-edit-input').value);
-      if (v > 0) {
-        durata = Math.round(v * (btn.textContent === 'giorni' ? oreGiornata : 1));
-        dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando(); disegnaDurata();
+}
+const DRUM_W = 80;
+function disegnaDurata() {
+  const picker = $('f-durata-picker');
+  if (!picker?.dataset.init) {
+    if (picker) picker.dataset.init = '1';
+    montaDurataPicker('f-durata', (oreVal) => {
+      durata = oreVal;
+      dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
+    });
+  } else {
+    // Sincronizza drum + input con il valore corrente (es. da voce AI)
+    const { n, u } = oreDurata(durata);
+    const inp = $('f-durata-input'); if (inp && parseFloat(inp.value) !== n) inp.value = n;
+    const unitaEl = $('f-durata-unita');
+    if (unitaEl) {
+      const cambio = unitaEl.querySelector('.chip.attivo')?.dataset.u !== u;
+      if (cambio) {
+        unitaEl.querySelectorAll('.chip').forEach(c => c.classList.toggle('attivo', c.dataset.u === u));
+        const drum = $('f-durata-drum');
+        if (drum) drum.innerHTML = (DURATA_OPZ[u]||DURATA_OPZ.ore).map(v => `<div class="durata-drum-voce" data-v="${v}">${String(v).replace('.', ',')}</div>`).join('');
       }
-    };
-    $('durata-edit-input').oninput = () => {
-      const v = parseFloat($('durata-edit-input').value);
-      if (v > 0) {
-        const gg = $('durata-unita').textContent === 'giorni';
-        durata = Math.round(v * (gg ? oreGiornata : 1));
-        chips.querySelectorAll('.chip').forEach(c => c.classList.remove('attivo'));
-        dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
-      }
-    };
+      const drum = $('f-durata-drum'); if (drum) drum.scrollTop = (DURATA_OPZ[u]||DURATA_OPZ.ore).findIndex(v => v >= n) * DRUM_H;
+    }
   }
 }
-function scorriDrum() { /* non usata: sostituita da disegnaDurata con i chip */ }
+function scorriDrum() { /* non usata */ }
 
 // I giorni occupati da un lavoro, con le ore di ciascuno. Un lavoro lungo continua
 // nei giorni di lavoro successivi (es. 2 giorni dal venerdì = venerdì e sabato).
@@ -6010,7 +6077,7 @@ function disegnaLavoro() {
   const voci = l.costi.voci;
   const riga = (v, i) => v.tipo === 'Personale'
     ? `<div class="costo-voce"><div class="costo-testa"><span class="etichetta">Personale</span><b>${euro(importoVoce(v))}</b><button type="button" class="togli" data-i="${i}" aria-label="Togli">✕</button></div>
-        <div class="personale"><span>Ore</span><input type="number" class="num-scrivi pers-ore" data-i="${i}" data-k="ore" inputmode="decimal" min="0" step="0.5" value="${virgola(v.ore)}" aria-label="Ore"><span>Costo all'ora</span><input type="number" class="num-scrivi pers-tariffa" data-i="${i}" data-k="tariffa" inputmode="decimal" min="0" step="1" value="${virgola(v.tariffa)}" aria-label="Costo all'ora"></div></div>`
+        <div class="personale"><div class="pers-campo"><span>€/ora</span><input type="number" data-i="${i}" data-k="tariffa" inputmode="decimal" min="0" step="1" value="${virgola(v.tariffa)}"></div><div class="pers-campo"><span>ore</span><input type="number" data-i="${i}" data-k="ore" inputmode="decimal" min="0" step="0.5" value="${virgola(v.ore)}"></div></div></div>`
     : `<div class="costo-voce riga-unica"><span class="etichetta">${sicuro(v.tipo)}</span><span class="con-euro"><input data-i="${i}" inputmode="decimal" value="${virgola(v.importo)}" placeholder="0" aria-label="Importo ${sicuro(v.tipo)}"></span><button type="button" class="togli" data-i="${i}" aria-label="Togli">✕</button></div>`;
 
   // Ridisegnando (es. dopo aver girato la rotella del prezzo) le tendine aperte restano aperte e la pagina non salta
@@ -6049,7 +6116,7 @@ function disegnaLavoro() {
         ${!l.fatto ? `<div class="sposta l-sposta"><small>Sposta a</small><button type="button" class="chip" data-a="${tra(0)}">Oggi</button><button type="button" class="chip" data-a="${tra(1)}">Domani</button><button type="button" class="chip" data-a="${prossimoLavorativo(l.data)}">Giorno di lavoro dopo</button></div>` : ''}
         <div class="campo"><span>Ora</span><div class="chips piccoli" id="l-ora">${[['', 'Qualsiasi'], ['mattina', 'Mattina'], ['pomeriggio', 'Pomeriggio']].map(([k, n]) => `<button type="button" class="chip${(l.ora || '') === k ? ' attivo' : ''}" data-o="${k}">${n}</button>`).join('')}<label class="chip${l.ora && l.ora.includes(':') ? ' attivo' : ''}">${l.ora && l.ora.includes(':') ? l.ora : 'Alle…'}<input type="time" id="l-ora-precisa" value="${l.ora && l.ora.includes(':') ? l.ora : '08:00'}" aria-label="Ora precisa"></label></div></div>
         ${l.fatto ? `<div class="campo"><span>Ore vere <small>· quanto ci hai messo</small></span><div><div class="durata-casella-wrap"><input type="number" id="l-orevere-input" inputmode="decimal" min="0.25" step="0.25" placeholder="${virgola(l.durata || 2)}" value="${l.oreVere != null ? l.oreVere : ''}"><span class="chip" style="pointer-events:none">h</span></div><div class="chips piccoli" style="margin-top:6px"><button type="button" class="chip" id="l-orevere-prev">come previsto (${nomeDurata(l.durata || 2)})</button>${l.cronoOre ? `<button type="button" class="chip" id="l-orevere-crono">cronometro (${virgola(l.cronoOre)} h)</button>` : ''}</div></div></div>` : ''}
-        <div class="campo"><span>Durata prevista</span><div><div class="chips piccoli" id="l-durata">${DURATE.map(o => `<button type="button" class="chip${o === (l.durata || 2) ? ' attivo' : ''}" data-o="${o}">${nomeDurata(o)}</button>`).join('')}</div><div class="durata-casella-wrap" style="margin-top:6px"><input type="number" id="l-durata-input" inputmode="decimal" min="0.5" step="0.5" placeholder="Altra${l.durata && !DURATE.includes(l.durata) ? ` (${virgola(l.durata)})` : ''}" value="${l.durata && !DURATE.includes(l.durata) ? (l.durata >= oreGiornata ? l.durata / oreGiornata : l.durata) : ''}"><button type="button" id="l-durata-unita" class="chip attivo">${l.durata && !DURATE.includes(l.durata) && l.durata >= oreGiornata ? 'giorni' : 'ore'}</button></div></div></div>
+        <div class="campo"><span>Durata prevista</span>${htmlDurataPicker('l-durata', l.durata || 2)}</div>
         <button type="button" class="secondario" id="l-stato">${l.fatto ? 'Rimetti da fare' : 'Segna come fatto'}</button>
       </div>
     </details>
@@ -6127,17 +6194,7 @@ function disegnaLavoro() {
     if (dopo.length) avvisa(`Prezzo cambiato. Anche nei prossimi ${dopo.length}?`, null, { etichetta: 'Sì, tutti', fai: () => { dopo.forEach(x => (x.prezzo = p)); tutto(); avvisa(`Prezzo cambiato in ${nLavori(dopo.length + 1)}`); } });
   };
   $('l-data').onchange = e => { if (!e.target.value) return; const d = Math.round((daIso(e.target.value) - daIso(l.data)) / 86400000); l.data = e.target.value; if (l.date) l.date = l.date.map(g => { const x = daIso(g); x.setDate(x.getDate() + d); return iso(x); }); disegnaLavoro(); };
-  $('l-durata').querySelectorAll('.chip').forEach(b => { b.onclick = () => { l.durata = +b.dataset.o; delete l.date; disegnaLavoro(); }; });
-  if ($('l-durata-input')) {
-    $('l-durata-input').oninput = () => {
-      const v = parseFloat($('l-durata-input').value);
-      if (v > 0) { const gg = $('l-durata-unita').textContent === 'giorni'; l.durata = Math.round(v * (gg ? oreGiornata : 1)); delete l.date; disegnaLavoro(); }
-    };
-    $('l-durata-unita').onclick = () => {
-      const btn = $('l-durata-unita'); btn.textContent = btn.textContent === 'ore' ? 'giorni' : 'ore';
-      const v = parseFloat($('l-durata-input').value); if (v > 0) { l.durata = Math.round(v * (btn.textContent === 'giorni' ? oreGiornata : 1)); delete l.date; disegnaLavoro(); }
-    };
-  }
+  montaDurataPicker('l-durata', (oreVal) => { l.durata = oreVal; delete l.date; dbSalva(); });
   if ($('l-orevere-input')) {
     $('l-orevere-input').onchange = e => { const v = parseFloat(e.target.value); if (v > 0) { l.oreVere = v; disegnaLavoro(); } else if (!e.target.value.trim()) { l.oreVere = null; disegnaLavoro(); } };
     if ($('l-orevere-prev')) $('l-orevere-prev').onclick = () => { l.oreVere = l.durata || 2; disegnaLavoro(); };
