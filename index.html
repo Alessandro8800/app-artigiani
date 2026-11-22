@@ -711,6 +711,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .k-ric-form-azioni .secondario { flex: none; }
 .k-ric-elimina { color: var(--rosso) !important; border-color: var(--rosso) !important; }
 
+/* Analytics lavori */
+.an-sotto { font-size: 13px; font-weight: 800; color: var(--testo-2); margin: 0 0 8px; }
+.an-stagione { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; align-items: end; }
+.an-mes { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.an-mes-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--foglia); opacity: .85; }
+.an-mes-label { font-size: 9px; font-weight: 700; color: var(--testo-2); }
+.an-mes.ora .an-mes-bar { background: var(--rosso); opacity: 1; }
+
 /* Preventivi */
 .prev-placeholder { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 24px 24px; gap: 20px; }
 .prev-placeholder svg { opacity: .4; }
@@ -6478,6 +6486,59 @@ function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   return { stima, quota: quotaCosti(), fatti, ricavi, costi: costiTot, costiSegnati: costi, utileLavori, speseAtt, utile: arrotonda(utileLavori - speseAtt), conCosti: conCosti.length, ore, incassato, perGruppo, mediaPagamento, pagatiQuanti: attese.length };
 }
 
+function htmlAnalyticsLavori() {
+  const ultimoAnno = tra(-365);
+  const fatti = lavori.filter(l => l.fatto && !l.iniziale && !l.memo);
+  const fattiAnno = fatti.filter(l => l.data && l.data >= ultimoAnno);
+  if (!fattiAnno.length) return '';
+
+  // A: Frequenza ultimi 12 mesi
+  const freqMap = {};
+  fattiAnno.forEach(l => {
+    const k = normalizza(l.cosa || '—');
+    if (!freqMap[k]) freqMap[k] = { nome: l.cosa || '—', n: 0 };
+    freqMap[k].n++;
+  });
+  const topFreq = Object.values(freqMap).sort((a, b) => b.n - a.n).slice(0, 5);
+  const maxFreq = Math.max(1, topFreq[0]?.n || 1);
+
+  // B: Redditività su tutti i lavori fatti (min 3 occorrenze)
+  const redMap = {};
+  fatti.forEach(l => {
+    const k = normalizza(l.cosa || '—');
+    if (!redMap[k]) redMap[k] = { nome: l.cosa || '—', tot: 0, n: 0 };
+    redMap[k].tot += (l.prezzo || 0) - (costiDi(l) || 0);
+    redMap[k].n++;
+  });
+  const topRed = Object.values(redMap)
+    .filter(x => x.n >= 3)
+    .map(x => ({ ...x, avg: arrotonda(x.tot / x.n) }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 5);
+  const maxRed = Math.max(1, topRed[0]?.avg || 1);
+
+  // C: Stagionalità — tutti i lavori completati storicamente
+  const mesiCount = Array(12).fill(0);
+  fatti.forEach(l => { if (l.data) mesiCount[daIso(l.data).getMonth()]++; });
+  const maxMese = Math.max(1, ...mesiCount);
+  const MESI_IT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const meseOra = new Date().getMonth();
+  const meseBoxes = mesiCount.map((n, i) => {
+    const h = n > 0 ? Math.max(4, Math.round(n / maxMese * 48)) : 2;
+    return `<div class="an-mes${i === meseOra ? ' ora' : ''}"><div class="an-mes-bar" style="height:${h}px"></div><span class="an-mes-label">${MESI_IT[i]}</span></div>`;
+  }).join('');
+
+  return `<div class="k-blocco">
+    <div class="k-titolo"><h2>Come lavoro</h2></div>
+    <p class="an-sotto">Lavori più frequenti (ultimi 12 mesi)</p>
+    <div class="k-righe">${topFreq.map(f => `<div class="k-riga"><span>${sicuro(maiuscola(f.nome))}</span><span class="k-traccia"><i style="width:${Math.round(f.n / maxFreq * 100)}%"></i></span><b>${f.n}×</b></div>`).join('')}</div>
+    ${topRed.length ? `<p class="an-sotto" style="margin-top:14px">Lavori più redditizi (almeno 3 volte, utile medio)</p>
+    <div class="k-righe">${topRed.map(x => `<div class="k-riga"><span>${sicuro(maiuscola(x.nome))}</span><span class="k-traccia"><i style="width:${Math.round(Math.max(0, x.avg) / maxRed * 100)}%"></i></span><b class="${x.avg >= 0 ? 'utile' : 'perdita'}">${euro(x.avg)}</b></div>`).join('')}</div>` : ''}
+    <p class="an-sotto" style="margin-top:14px">Stagionalità (tutti i lavori completati)</p>
+    <div class="an-stagione">${meseBoxes}</div>
+  </div>`;
+}
+
 function disegnaGraficoConti() {
   const ultimi6 = Array.from({ length: 6 }, (_, i) => periodo('mese', i - 5));
   const dati = ultimi6.map(m => ({
@@ -6648,6 +6709,8 @@ function disegnaConti() {
       <div class="k-grafico" role="group" aria-label="Utile dei lavori mese per mese, diviso per tipo di cliente">${barre}</div>
       <p class="k-didascalia">${scelta ? `${scelta.nome}: utile dei lavori <b>${euro(scelta.utileLavori)}</b> · ${nLavori(scelta.fatti.length)}` : 'Tocca una barra per vedere il mese'}</p>
     </div>
+
+    ${htmlAnalyticsLavori()}
 
     </div>`;
 
