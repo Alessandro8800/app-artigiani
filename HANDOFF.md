@@ -491,6 +491,13 @@ Funzione attuale (riga 5996): gestisce oggi, domani, dopodomani, giorni della se
 - **Impostazioni → Il mio lavoro → "La tua zona"**: paese cercato a mano (Nominatim, `cercaZona`) o dal GPS (`zonaDaPosizione`, reverse geocoding). `impostaZona()` aggiorna `zonaMeteo` + `zonaScelta`, salvati in Dexie (`zona`). La zona serve a: meteo, suggerimenti vie (box ~80 km), e "Apri in Maps" (`indirizzoCompleto`: "via Roma 12" → "via Roma 12, Conegliano"; se il paese c'è già non tocca). Il bottone posizione del meteo è stato tolto (la zona si cambia in un posto solo).
 - **Fallback:** AI in errore, risposta illeggibile o oltre 15 secondi → nota grezza + avviso "Salvato come nota, controlla". Senza chiave (e se l'utente non la inserisce) resta il riconoscimento a parole chiave; dal mic dell'inbox va nella scheda aperta.
 - I numeri di riga citati sopra negli step sono cambiati.
+- **(22/11) Il "+" di "Tutte le notifiche"** apre la scelta: Nuovo lavoro, Nota, Spesa, Pagamento, Sposta lavoro. Pagamento e Sposta lavoro sono **grigi** se nessuno deve soldi / non ci sono lavori. Nota, Spesa e Pagamento sono **schede a parte** (`#nn-pop`, `#ns-pop`, `#np-pop`), non card: la X torna a "tutte" senza lasciare card vuote. Con l'inbox vuota in cima c'è una card "+ Aggiungi".
+  - **Nota:** in alto "A un cliente" (di partenza; va in fondo alla scheda cliente come "22 nov: testo", senza titolo) **oppure** "A un giorno" (promemoria `memo` con titolo + testo). Sempre una sola delle due. "+ Nota" della scheda giorno apre questa scheda su quel giorno.
+  - **Spesa:** "Dell'attività" (→ `spese`, pagina Conti) o "Di un cliente" (→ `l.costi.voci` del suo lavoro più vicino). "👷 Lavoratore" = ore × €/ora (voce `Personale`).
+  - **Liste clienti** (`cercaClienteNota`): 3 nomi + "Mostra tutti", con un segno grigio (lavoro in arrivo / deve X € / ultimo lavoro). Con `data-solo="debitori"` (pagamenti): solo chi deve, prima chi deve da più tempo.
+- **(22/11) Cifre in euro — regola per tutta l'app:** di partenza una **casella** (la tastiera si apre SOLO toccandola, mai da sola), sotto **cifre pronte** da toccare (tutto/metà del debito, ultimo prezzo del cliente, prezzo solito per quel lavoro, ultima cifra di quella spesa: `CIFRE_PRONTE`), e un'**icona** accanto alla scritta che apre la **rotella** (tieni premuto: passi da 5 €, poi 1 €, poi 0,10 €). Un solo componente: `htmlRotella()` + `creaRotella()` / `montaRotelle()`; la cifra sta nella casella nascosta `.rot-valore` (con l'id che leggono le altre funzioni). Niente più − e +. Un campo nuovo con una cifra va fatto così.
+- **(22/11) Dietro ogni finestra aperta lo sfondo si sfoca** (`backdrop-filter` su `.q-pop`, `.foglio-sfondo` ecc.).
+- **Prove nel browser:** `localhost:5173` e `127.0.0.1:5173` hanno dati separati. Il titolare prova l'app in uno dei due: le prove (e i reset) vanno fatte **sull'altro**, mai nella sua scheda.
 
 ---
 
@@ -653,6 +660,9 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 11. **Testo "Privacy" da correggere** (21/11) — in Impostazioni dice "L'app non manda i tuoi dati a nessuno: niente server", ma le frasi dette al microfono vanno all'AI di Anthropic (e i nomi dei paesi/vie cercati a OpenStreetMap). Da riscrivere insieme prima di dare l'app ad altri.
 12. **Raggio della zona** (21/11, da decidere) — scelta 10/30/50/80 km sotto "La tua zona" per i suggerimenti delle vie (ora fisso ~80 km). Più città: sconsigliato (non si sa a quale appartiene "via Roma 12").
 13. **Via detta a voce salvata già con il paese** (21/11, idea) — se un lavoro arriva senza paese, cercare la via nella zona e salvarla completa ("via Roma 12, Susegana"); se la via c'è in più paesi del raggio, chiederlo nella card.
+14. **Provare sul telefono vero la pressione lunga della rotella** (22/11) — i livelli 5 € → 1 € → 0,10 € sono stati provati solo con tocchi simulati nel browser.
+15. **Rotella della durata (ore)** (22/11, da decidere) — ha ancora la casella "scrivi" dentro la rotella; le cifre in euro no. Proposto di renderla uguale alle altre, il titolare non ha ancora risposto.
+16. **Cifre lasciate apposta senza la nuova casella** (22/11) — righe dei costi dentro un lavoro (Terra 30 €…), ore ed €/ora del Personale, numeri delle Impostazioni, debiti di prima nell'importazione. Erano eccezioni (liste di righe piccole / non sono importi); da rivedere solo se il titolare lo chiede.
 
 **Già fatto:**
 - ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)
