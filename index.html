@@ -176,6 +176,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .av-voce strong { font-size: 15px; }
 .av-voce small { font-size: 13px; color: var(--testo-2); }
 .av-voce em { font-style: normal; font-size: 13px; font-weight: 800; color: var(--foglia); white-space: nowrap; }
+.av-az-grp { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
+.av-az { font-size: 13px; font-weight: 800; color: var(--foglia); background: none; border: none; padding: 2px 0; cursor: pointer; white-space: nowrap; }
 .av-vuoto { text-align: center; padding: 24px 8px; color: var(--testo-2); }
 .nr-badge { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; padding: 0 3px; background: #d97706; color: #fff; font-size: 10px; font-weight: 900; display: grid; place-items: center; }
 /* Sheet note rapide */
@@ -2109,6 +2111,28 @@ function calcolaAvvisi() {
       avvisi.push({ gruppo: 'Non ti hanno pagato', alto: rosso, titolo: `${c.nome} · ${euro(k.dovuto)}`, sotto: `da ${k.giorni} giorni · ${rosso ? 'è ora di telefonare' : 'è ora di mandare un messaggio'}`, azione: rosso ? 'Chiama' : 'Messaggio', giorni: k.giorni, fai: () => { chiudiAvvisi(); apriScheda(c.nome); } });
     }
   }
+  // 5. Spese ricorrenti in scadenza (entro 30 giorni o già scadute)
+  for (const r of speseRicorrenti) {
+    if (!r.prossima || r.prossima > tra(30)) continue;
+    const passata = r.prossima < tra(0);
+    const diff = Math.round((daIso(r.prossima) - OGGI) / 86400000);
+    const sottoData = passata ? `Scaduta il ${dataBreve(r.prossima)}` : diff === 0 ? 'Scade oggi' : `Tra ${diff} giorno${diff === 1 ? '' : 'i'}`;
+    avvisi.push({
+      gruppo: 'Costi fissi',
+      alto: passata,
+      titolo: r.nome,
+      sotto: `${sottoData} · ${euro(r.importo)}`,
+      azioni: [
+        { etichetta: 'Pagata', fai: () => {
+          spese.push({ id: String(Date.now()), tipo: r.categoria || 'Altro', importo: r.importo, data: tra(0), modo: 'una', note: r.nome });
+          avanzaRicorrente(r.id);
+          chiudiAvvisi();
+          avvisa(`${r.nome}: segnata come pagata`);
+        }},
+        { etichetta: 'Riprogramma', fai: () => { chiudiAvvisi(); apriRiprogrammaRicorrente(r.id); } }
+      ]
+    });
+  }
   return avvisi;
 }
 function aggiornaAvvisi() {
@@ -2125,15 +2149,21 @@ function aggiornaAvvisi() {
 function disegnaAvvisi() {
   const avvisi = calcolaAvvisi();
   // Prima i più urgenti: cronometro, poi chi non paga (dal più vecchio), lavori in sospeso, senza prezzo
-  const ordine = ['Cronometro', 'Non ti hanno pagato', 'Lavori in sospeso', 'Senza prezzo'];
+  const ordine = ['Cronometro', 'Non ti hanno pagato', 'Costi fissi', 'Lavori in sospeso', 'Senza prezzo'];
   avvisi.sort((a, b) => ordine.indexOf(a.gruppo) - ordine.indexOf(b.gruppo) || (b.giorni || 0) - (a.giorni || 0));
   let gruppo = '', html = '';
   avvisi.forEach((a, i) => {
     if (a.gruppo !== gruppo) { gruppo = a.gruppo; html += `<p class="av-gruppo">${gruppo}</p>`; }
-    html += `<button type="button" class="av-voce${a.alto ? ' alto' : ''}" data-i="${i}"><i class="av-pallino"></i><span><strong>${sicuro(a.titolo)}</strong><small>${sicuro(a.sotto)}</small></span><em>${a.azione} ›</em></button>`;
+    if (a.azioni) {
+      const azHtml = a.azioni.map((az, j) => `<button type="button" class="av-az" data-i="${i}" data-j="${j}">${sicuro(az.etichetta)} ›</button>`).join('');
+      html += `<div class="av-voce${a.alto ? ' alto' : ''}"><i class="av-pallino"></i><span><strong>${sicuro(a.titolo)}</strong><small>${sicuro(a.sotto)}</small></span><div class="av-az-grp">${azHtml}</div></div>`;
+    } else {
+      html += `<button type="button" class="av-voce${a.alto ? ' alto' : ''}" data-i="${i}"><i class="av-pallino"></i><span><strong>${sicuro(a.titolo)}</strong><small>${sicuro(a.sotto)}</small></span><em>${a.azione} ›</em></button>`;
+    }
   });
   $('av-lista').innerHTML = html || '<p class="av-vuoto">✓ Nessun avviso. Tutto in ordine.</p>';
-  $('av-lista').querySelectorAll('.av-voce').forEach(b => { b.onclick = () => avvisi[+b.dataset.i].fai(); });
+  $('av-lista').querySelectorAll('.av-voce[data-i]').forEach(b => { b.onclick = () => avvisi[+b.dataset.i].fai(); });
+  $('av-lista').querySelectorAll('.av-az[data-i]').forEach(b => { b.onclick = e => { e.stopPropagation(); avvisi[+b.dataset.i].azioni[+b.dataset.j].fai(); }; });
 }
 function apriAvvisi() { disegnaAvvisi(); $('avvisi-foglio').hidden = false; document.body.classList.add('bloccato'); }
 function chiudiAvvisi() { $('avvisi-foglio').hidden = true; document.body.classList.remove('bloccato'); }
@@ -3897,6 +3927,20 @@ let _riprogrammaCard = null;
 let _riprogrammaItem = null;
 let _riprogrammaMese = new Date();
 let _riprogrammaDataScelta = null;
+let _ricorrenteInRiprogramma = null;   // id della speseRicorrenti in riprogrammazione
+
+function apriRiprogrammaRicorrente(id) {
+  _ricorrenteInRiprogramma = id;
+  _riprogrammaCard = null; _riprogrammaItem = null;
+  const r = speseRicorrenti.find(x => x.id === id);
+  $('ripr-nome').textContent = r ? r.nome : 'Costo fisso';
+  $('ripr-data-vec').textContent = r ? `Scadenza attuale: ${dataBreve(r.prossima)}` : '';
+  _riprogrammaMese = new Date();
+  _riprogrammaDataScelta = null;
+  $('ripr-conferma-row').hidden = true;
+  disegnaRiprCalendario();
+  $('ripr-pop').hidden = false;
+}
 
 function apriRiprogrammaInbox(card, item) {
   _riprogrammaCard = card;
@@ -3932,7 +3976,7 @@ function disegnaRiprCalendario() {
       $('ripr-pop').hidden = true;
       apriStorico(_storicoKey);
     } else {
-      // Inbox: seleziona il giorno, mostra bottone Conferma
+      // Inbox o ricorrente: seleziona il giorno, mostra bottone Conferma
       _riprogrammaDataScelta = giorno;
       const gg = maiuscola(fmtSettBreve.format(daIso(giorno)));
       $('ripr-conferma-btn').textContent = `Conferma ${gg}`;
@@ -3944,6 +3988,15 @@ function disegnaRiprCalendario() {
 
 function confRiprCalendario() {
   if (!_riprogrammaDataScelta) return;
+  if (_ricorrenteInRiprogramma !== null) {
+    // Ricorrente: aggiorna solo la prossima scadenza
+    const r = speseRicorrenti.find(x => x.id === _ricorrenteInRiprogramma);
+    if (r) { r.prossima = _riprogrammaDataScelta; dbSalva(); avvisa(`${r.nome}: nuova scadenza ${dataBreve(_riprogrammaDataScelta)}`); }
+    _ricorrenteInRiprogramma = null; _riprogrammaDataScelta = null;
+    $('ripr-conferma-row').hidden = true;
+    setTimeout(() => { $('ripr-pop').hidden = true; }, 200);
+    return;
+  }
   if (_riprogrammaCard) {
     // Il cliente è sempre quello della card (il nome nel popup non si può più cambiare)
     const cliente = ((_riprogrammaItem?.campi || []).find(([k]) => k === 'Cliente') || [])[1] || '';
@@ -3971,7 +4024,7 @@ $('ripr-chiudi').onclick = () => {
     const v = INBOX_ESEMPI.riprogramma.voci, i = v.indexOf(_riprogrammaItem);
     if (i >= 0) { v.splice(i, 1); aggiornaBadge(); if (!$('ai-inbox').hidden) apriInbox(_inboxCatCorrente); }
   }
-  _riprogrammaCard = null; _riprogrammaItem = null; _riprogrammaDataScelta = null; $('ripr-conferma-row').hidden = true;
+  _riprogrammaCard = null; _riprogrammaItem = null; _riprogrammaDataScelta = null; _ricorrenteInRiprogramma = null; $('ripr-conferma-row').hidden = true;
   if (dalPiu && lavoriDaSpostare().length) apriSceltaLavoro();
 };
 $('ripr-prima').onclick = () => { _riprogrammaMese = new Date(_riprogrammaMese.getFullYear(), _riprogrammaMese.getMonth() - 1, 1); disegnaRiprCalendario(); };
