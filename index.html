@@ -688,6 +688,20 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .importo.utile { color: var(--foglia); }
 .importo.perdita { color: var(--rosso); }
 
+/* Costi fissi (speseRicorrenti) */
+.k-ric-riga { width: 100%; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; padding: 11px 14px; background: var(--carta); border: 1px solid var(--linea); border-radius: 14px; text-align: left; }
+.k-ric-nome { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-ric-det { font-size: 13px; font-weight: 700; color: var(--testo-2); white-space: nowrap; }
+.k-ric-data { font-size: 12px; color: var(--testo-2); white-space: nowrap; }
+.k-ric-lista { display: flex; flex-direction: column; gap: 8px; }
+.k-ric-form { background: var(--carta); border: 1.5px solid var(--foglia); border-radius: 16px; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
+.k-ric-form input[type="text"], .k-ric-form input[type="number"], .k-ric-form input[type="date"] { width: 100%; border: 1.5px solid var(--linea); border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: var(--font-testo); background: var(--sfondo); color: var(--testo); box-sizing: border-box; }
+.k-ric-form input[type="date"] { font-size: 15px; }
+.k-ric-form .k-ric-label { font-size: 12px; font-weight: 800; color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; margin-bottom: -6px; }
+.k-ric-form-azioni { display: flex; gap: 8px; justify-content: flex-end; }
+.k-ric-form-azioni .secondario { flex: none; }
+.k-ric-elimina { color: var(--rosso) !important; border-color: var(--rosso) !important; }
+
 /* Preventivi */
 .prev-placeholder { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 24px 24px; gap: 20px; }
 .prev-placeholder svg { opacity: .4; }
@@ -6349,7 +6363,7 @@ $('l-chiudi').onclick = chiudiLavoro;
 // ---- Conti: la pagina del titolare ----
 // Lavori fatti nel periodo (ricavi) − costi dei lavori = utile dei lavori.
 // Utile dei lavori − spese dell'attività (benzina, attrezzi, assicurazione… non a carico dei clienti) = utile vero.
-let kTipo = 'mese', kSpost = 0, kBarra = null;
+let kTipo = 'mese', kSpost = 0, kBarra = null, _formRicorrente = null;
 const fmtMeseAnno = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' });
 const fmtMeseCortoK = new Intl.DateTimeFormat('it-IT', { month: 'short' });
 const nLavori = n => n === 1 ? '1 lavoro' : n + ' lavori';
@@ -6540,12 +6554,89 @@ function disegnaConti() {
     ${migliori.length ? `<div class="k-blocco">
       <div class="k-titolo"><h2>Clienti che rendono di più</h2><span>utile</span></div>
       <div class="s-righe">${migliori.map(([n, v], i) => `<button type="button" class="s-riga" data-n="${sicuro(n)}"><span class="cosa">${i + 1}. ${sicuro(n)}</span><small>${nLavori(k.fatti.filter(l => l.nome === n).length)}</small><span class="importo ${v < 0 ? 'perdita' : 'utile'}">${euro(arrotonda(v))}</span></button>`).join('')}</div>
-    </div>` : ''}`;
+    </div>` : ''}
+
+    <div class="k-blocco">
+      <div class="k-titolo"><h2>Costi fissi</h2><button type="button" class="secondario" id="k-nuova-ricorrente" style="font-size:13px;padding:5px 12px">+ Aggiungi</button></div>
+      ${_formRicorrente !== null ? (() => {
+        const f = _formRicorrente;
+        const FREQ = { mensile: 'Mensile', trimestrale: 'Trimestrale', annuale: 'Annuale' };
+        const CAT = ['Mezzi', 'Ufficio', 'Personale', 'Altro'];
+        return `<div class="k-ric-form">
+          <input type="text" id="krf-nome" placeholder="Es. Assicurazione furgone" value="${sicuro(f.nome || '')}" autocomplete="off">
+          <div>
+            <div class="k-ric-label">Importo (€)</div>
+            <input type="number" id="krf-importo" placeholder="0" value="${f.importo > 0 ? f.importo : ''}" min="0" step="0.01">
+          </div>
+          <div>
+            <div class="k-ric-label">Frequenza</div>
+            <div class="chips piccoli" id="krf-freq">${Object.entries(FREQ).map(([v, l]) => `<button type="button" class="chip${f.frequenza === v ? ' attivo' : ''}" data-f="${v}">${l}</button>`).join('')}</div>
+          </div>
+          <div>
+            <div class="k-ric-label">Prossima scadenza</div>
+            <input type="date" id="krf-data" value="${f.prossima || ''}">
+          </div>
+          <div>
+            <div class="k-ric-label">Categoria</div>
+            <div class="chips piccoli" id="krf-cat">${CAT.map(c => `<button type="button" class="chip${f.categoria === c ? ' attivo' : ''}" data-c="${c}">${c}</button>`).join('')}</div>
+          </div>
+          <div class="k-ric-form-azioni">
+            <button type="button" class="secondario" id="krf-annulla">Annulla</button>
+            ${f.id ? `<button type="button" class="secondario k-ric-elimina" id="krf-elimina">Elimina</button>` : ''}
+            <button type="button" class="salva" id="krf-salva">Salva</button>
+          </div>
+        </div>`;
+      })() : ''}
+      <div class="k-ric-lista">${speseRicorrenti.length
+        ? speseRicorrenti.map(r => {
+            const freq = r.frequenza === 'mensile' ? 'mese' : r.frequenza === 'trimestrale' ? 'trim' : 'anno';
+            return `<button type="button" class="k-ric-riga" data-rid="${sicuro(r.id)}"><span class="k-ric-nome">${sicuro(r.nome)}</span><span class="k-ric-det">${euro(r.importo)}/${freq}</span><span class="k-ric-data">📅 ${dataBreve(r.prossima)}</span></button>`;
+          }).join('')
+        : '<p class="imp-testo">Nessun costo fisso. Aggiungi assicurazioni, telefono, abbonamenti…</p>'}
+      </div>
+    </div>`;
 
   $('k-corpo').querySelectorAll('.k-barra').forEach(b => { b.onclick = () => { kBarra = kBarra === +b.dataset.i ? null : +b.dataset.i; disegnaConti(); }; });
   $('k-corpo').querySelectorAll('.s-riga[data-n]').forEach(b => { b.onclick = () => apriScheda(b.dataset.n); });
   $('k-corpo').querySelectorAll('.s-riga[data-s]').forEach(b => { b.onclick = () => apriSpesa(spese.find(x => x.id === +b.dataset.s)); });
   $('k-nuova-spesa').onclick = () => apriSpesa(null);
+
+  // Costi fissi
+  if ($('k-nuova-ricorrente')) $('k-nuova-ricorrente').onclick = () => {
+    _formRicorrente = { nome: '', importo: '', frequenza: 'annuale', prossima: tra(30), categoria: 'Altro' };
+    disegnaConti();
+    setTimeout(() => $('krf-nome')?.focus(), 50);
+  };
+  if ($('krf-freq')) $('krf-freq').querySelectorAll('.chip[data-f]').forEach(b => {
+    b.onclick = () => { _formRicorrente.frequenza = b.dataset.f; $('krf-freq').querySelectorAll('.chip').forEach(c => c.classList.toggle('attivo', c.dataset.f === b.dataset.f)); };
+  });
+  if ($('krf-cat')) $('krf-cat').querySelectorAll('.chip[data-c]').forEach(b => {
+    b.onclick = () => { _formRicorrente.categoria = b.dataset.c; $('krf-cat').querySelectorAll('.chip').forEach(c => c.classList.toggle('attivo', c.dataset.c === b.dataset.c)); };
+  });
+  if ($('krf-annulla')) $('krf-annulla').onclick = () => { _formRicorrente = null; disegnaConti(); };
+  if ($('krf-elimina')) $('krf-elimina').onclick = () => {
+    const backup = { ..._formRicorrente, nome: $('krf-nome').value.trim() || _formRicorrente.nome, importo: parseFloat($('krf-importo').value) || _formRicorrente.importo };
+    _formRicorrente = null; eliminaRicorrente(backup.id);
+    avvisa(`${backup.nome}: rimosso`, { etichetta: 'Annulla', fai: () => { speseRicorrenti.push(backup); dbSalva(); disegnaConti(); } });
+    disegnaConti();
+  };
+  if ($('krf-salva')) $('krf-salva').onclick = () => {
+    const nome = $('krf-nome').value.trim(), importo = parseFloat($('krf-importo').value), prossima = $('krf-data').value;
+    if (!nome) { $('krf-nome').focus(); avvisa('Scrivi il nome del costo'); return; }
+    if (!(importo > 0)) { $('krf-importo').focus(); avvisa('Inserisci l\'importo'); return; }
+    if (!prossima) { avvisa('Scegli la data di scadenza'); return; }
+    const f = _formRicorrente;
+    if (f.id) {
+      const r = speseRicorrenti.find(x => x.id === f.id);
+      if (r) { r.nome = nome; r.importo = importo; r.frequenza = f.frequenza; r.prossima = prossima; r.categoria = f.categoria; dbSalva(); }
+    } else {
+      nuovaRicorrente({ nome, importo, frequenza: f.frequenza, prossima, categoria: f.categoria });
+    }
+    _formRicorrente = null; disegnaConti();
+  };
+  $('k-corpo').querySelectorAll('.k-ric-riga[data-rid]').forEach(b => {
+    b.onclick = () => { const r = speseRicorrenti.find(x => x.id === b.dataset.rid); if (r) { _formRicorrente = { ...r }; disegnaConti(); setTimeout(() => $('krf-nome')?.focus(), 50); } };
+  });
 }
 $('k-prima').onclick = () => { kSpost--; kBarra = null; disegnaConti(); };
 $('k-dopo').onclick = () => { if (kSpost < 0) { kSpost++; kBarra = null; disegnaConti(); } };
