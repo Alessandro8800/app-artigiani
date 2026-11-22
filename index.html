@@ -776,6 +776,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-mic-btn.ascolta { border-color: var(--verde); color: var(--verde); background: var(--verde-chiaro, rgba(0,180,100,.08)); }
 .prev-cli-nuovo b { font-weight: 800; }
 .prev-tot-riga { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-top: 1.5px solid var(--linea); margin-top: 4px; }
+.prev-validita-riga { display: flex; align-items: center; gap: 8px; padding: 8px 4px 2px; font-size: 14px; font-weight: 600; color: var(--testo-2); }
+.prev-validita-num { width: 52px; text-align: center; border: 1.5px solid var(--linea); border-radius: 8px; padding: 4px 6px; font-size: 14px; font-weight: 700; font-family: var(--font-testo); background: var(--sfondo); color: var(--testo); }
+.prev-validita-num:focus { outline: none; border-color: var(--foglia); }
 .prev-tot-riga span { font-size: 15px; font-weight: 700; color: var(--testo-2); }
 .prev-tot-riga b { font-family: var(--font-titoli); font-size: 24px; color: var(--foglia); }
 .prev-azioni-ant { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
@@ -6552,6 +6555,7 @@ let _prevEditId = null;
 let _prevCompletoId = null;
 let _prevBozzaCliente = '';
 let _prevBozzaIndirizzo = '';
+let _prevBozzaValidita = 30;
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -8449,7 +8453,7 @@ function salvaPrevBozza() {
   const p = {
     id: Date.now(),
     numero: `${anno}/${String(_prevContatore).padStart(3, '0')}`,
-    data: tra(0), clienteNome: _prevBozzaCliente, clienteIndirizzo: _prevBozzaIndirizzo,
+    data: tra(0), clienteNome: _prevBozzaCliente, clienteIndirizzo: _prevBozzaIndirizzo, validita: _prevBozzaValidita,
     voci: _prevBozzaVoci.map(v => ({ ...v })),
     note: _prevBozzaNote,
     totale: prevTotale(_prevBozzaVoci),
@@ -8459,7 +8463,7 @@ function salvaPrevBozza() {
     const idx = preventivi.findIndex(x => x.id === _prevEditId);
     if (idx >= 0) { p.id = preventivi[idx].id; p.numero = preventivi[idx].numero; preventivi[idx] = p; }
   } else { preventivi.push(p); _prevContatore++; }
-  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevVista = 'lista';
+  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null; _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevBozzaValidita = 30; _prevVista = 'lista';
   dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
 }
 
@@ -8474,7 +8478,7 @@ function salvaPrevESaltiAPDF() {
 function modificaPrev(id) {
   const p = preventivi.find(x => x.id === id); if (!p) return;
   _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || '';
-  _prevBozzaCliente = p.clienteNome || ''; _prevBozzaIndirizzo = p.clienteIndirizzo || '';
+  _prevBozzaCliente = p.clienteNome || ''; _prevBozzaIndirizzo = p.clienteIndirizzo || ''; _prevBozzaValidita = p.validita || 30;
   _prevEditId = id; _prevVista = 'anteprima'; disegnaPreventivi();
 }
 
@@ -8518,9 +8522,10 @@ function cercaClientePrev(input) {
       _prevBozzaCliente = nome;
       input.value = nome;
       lista.hidden = true;
-      // Pre-compila indirizzo se lo conosco già
+      // Pre-compila indirizzo: cerca nell'ultimo preventivo fatto a questo cliente
       if (!_prevBozzaIndirizzo) {
-        const exExt = extra[nome]; if (exExt?.indirizzo) { _prevBozzaIndirizzo = exExt.indirizzo; const ind = $('prev-ind-input'); if (ind) ind.value = _prevBozzaIndirizzo; }
+        const ultimoConInd = preventivi.slice().reverse().find(p => normalizza(p.clienteNome) === normalizza(nome) && p.clienteIndirizzo);
+        if (ultimoConInd) { _prevBozzaIndirizzo = ultimoConInd.clienteIndirizzo; const ind = $('prev-ind-input'); if (ind) ind.value = _prevBozzaIndirizzo; }
       }
       // Aggiungi come nuovo cliente in extra se non c'è
       if (b.classList.contains('prev-cli-nuovo') && !extra[nome]) { extra[nome] = { tel: '', colore: '', ripeti: false, note: '', mesiSemestrale: [] }; dbSalva(); }
@@ -8583,7 +8588,7 @@ function disegnaPreventivi() {
           <div class="prev-doc-info">${[datiAttivita.piva ? `P.IVA ${sicuro(datiAttivita.piva)}` : '', datiAttivita.telefono ? sicuro(datiAttivita.telefono) : ''].filter(Boolean).join(' · ')}</div>
         </div>
         <div class="prev-doc-titolo">PREVENTIVO N° ${sicuro(p.numero)}</div>
-        <div class="prev-doc-data">${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+        <div class="prev-doc-data">${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}${p.validita ? ` · Valido per ${p.validita} giorni` : ''}</div>
         <div class="prev-doc-cliente">
           <div>Cliente: <input id="prev-cliente-input" value="${sicuro(p.clienteNome || '')}" placeholder="Nome cliente"></div>
           ${p.clienteIndirizzo ? `<div class="prev-doc-indirizzo">${sicuro(p.clienteIndirizzo)}</div>` : ''}
@@ -8650,14 +8655,20 @@ function disegnaPreventivi() {
           <b>${euro(tot + ivaImporto)}</b>
         </div>
         ${_prevBozzaNote ? `<p style="font-size:14px;color:var(--testo-2);margin:8px 0 0;font-style:italic">${sicuro(_prevBozzaNote)}</p>` : ''}
+        <div class="prev-validita-riga">
+          <span>Offerta valida per</span>
+          <input id="prev-validita-input" class="prev-validita-num" type="number" min="1" max="365" value="${_prevBozzaValidita}" inputmode="numeric">
+          <span>giorni</span>
+        </div>
       </div>
       <div class="prev-azioni-ant">
         <button class="salva" onclick="salvaPrevBozza()">Salva bozza</button>
         <button class="prev-stampa" onclick="salvaPrevESaltiAPDF()">Salva e genera PDF</button>
-        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';_prevBozzaCliente='';_prevBozzaIndirizzo='';disegnaPreventivi()">Scarta</button>
+        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';_prevBozzaCliente='';_prevBozzaIndirizzo='';_prevBozzaValidita=30;disegnaPreventivi()">Scarta</button>
       </div>`;
     disegnaPrevVoci();
     $('prev-cli-input')?.addEventListener('blur', () => { setTimeout(() => { const r = $('prev-cli-lista'); if (r) r.hidden = true; }, 200); });
+    $('prev-validita-input')?.addEventListener('input', e => { _prevBozzaValidita = Math.max(1, parseInt(e.target.value) || 30); });
     return;
   }
 
