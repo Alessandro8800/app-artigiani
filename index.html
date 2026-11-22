@@ -8705,7 +8705,7 @@ function disegnaPreventivi() {
     const ivaPerc = +datiAttivita.iva || 0;
     const ivaImporto = ivaPerc ? arrotonda(tot * ivaPerc / 100) : 0;
     corpo.innerHTML = `
-      <button class="prev-torna" onclick="tornaIndietroConBozza()">← Salva come bozza</button>
+      <button class="prev-torna" onclick="tornaIndietroConBozza()">← Indietro</button>
       <div class="k-blocco">
         <div class="k-titolo"><h2>Cliente</h2></div>
         <div class="prev-cerca-cliente inbox-cerca-cliente">
