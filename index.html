@@ -6587,6 +6587,8 @@ let _prevBozzaIndirizzo = '';
 let _prevBozzaValidita = 30;
 let _prevBozzaCondPag = null;   // null = disabilitato, stringa = attivo
 let _prevBozzaInizio = null;    // null = disabilitato, stringa = attivo
+let _prevBozzaStatoOrig = 'bozza';  // stato del preventivo prima di modificarlo
+let _prevBozzaSnapOrig = null;      // snapshot JSON per rilevare se qualcosa è cambiato
 function contiDi(da, a, pagatiIl = giorniDiPagamento()) {
   const fatti = lavori.filter(l => l.fatto && !l.iniziale && l.data >= da && l.data <= a);
   const ricavi = arrotonda(fatti.reduce((t, l) => t + (l.prezzo || 0), 0));
@@ -8518,12 +8520,19 @@ function salvaPrevBozza(stato = 'bozza') {
 function scartaPrev() {
   _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null;
   _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevBozzaValidita = 30;
-  _prevBozzaCondPag = null; _prevBozzaInizio = null; _prevVista = 'lista';
+  _prevBozzaCondPag = null; _prevBozzaInizio = null;
+  _prevBozzaStatoOrig = 'bozza'; _prevBozzaSnapOrig = null;
+  _prevVista = 'lista';
   disegnaPreventivi();
 }
 function tornaIndietroConBozza() {
-  if (_prevBozzaVoci.length > 0) { salvaPrevBozza(); avvisa('Salvato come bozza'); }
-  else { scartaPrev(); }
+  if (_prevBozzaVoci.length > 0) {
+    const snapNow = JSON.stringify({ voci: _prevBozzaVoci, note: _prevBozzaNote, cliente: _prevBozzaCliente, indirizzo: _prevBozzaIndirizzo, validita: _prevBozzaValidita, condPag: _prevBozzaCondPag, inizio: _prevBozzaInizio });
+    const cambiato = !_prevBozzaSnapOrig || snapNow !== _prevBozzaSnapOrig;
+    const stato = cambiato ? 'bozza' : _prevBozzaStatoOrig;
+    salvaPrevBozza(stato);
+    avvisa(cambiato ? 'Salvato come bozza' : 'Salvato ✓');
+  } else { scartaPrev(); }
 }
 function salvaPrevESaltiAPDF() {
   salvaPrevBozza('inviato'); // salva e torna alla lista
@@ -8534,6 +8543,8 @@ function modificaPrev(id) {
   _prevBozzaVoci = p.voci.map(v => ({ ...v })); _prevBozzaNote = p.note || '';
   _prevBozzaCliente = p.clienteNome || ''; _prevBozzaIndirizzo = p.clienteIndirizzo || ''; _prevBozzaValidita = p.validita || 30;
   _prevBozzaCondPag = p.condPagamento ?? null; _prevBozzaInizio = p.inizioLavori ?? null;
+  _prevBozzaStatoOrig = p.stato || 'bozza';
+  _prevBozzaSnapOrig = JSON.stringify({ voci: p.voci, note: p.note || '', cliente: p.clienteNome || '', indirizzo: p.clienteIndirizzo || '', validita: p.validita || 30, condPag: p.condPagamento ?? null, inizio: p.inizioLavori ?? null });
   _prevEditId = id; _prevVista = 'anteprima'; disegnaPreventivi();
 }
 
