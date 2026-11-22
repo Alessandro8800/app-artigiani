@@ -727,6 +727,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-placeholder .prev-azioni { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 8px; }
 .prev-azioni .salva { width: 100%; }
 .prev-annulla { background: var(--rosso-chiaro); border: 1.5px solid var(--rosso); color: var(--rosso); font-size: 16px; font-weight: 800; padding: 14px; border-radius: 16px; cursor: pointer; font-family: var(--font-testo); width: 100%; }
+/* Intro preventivi (prima volta) */
+.prev-intro { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 24px 24px; gap: 14px; }
+.prev-intro svg { opacity: .35; }
+.prev-intro h2 { font-family: var(--font-titoli); font-size: 22px; margin: 0; }
+.prev-intro p { font-size: 14px; color: var(--testo-2); line-height: 1.6; margin: 0; max-width: 280px; }
+.prev-salta { background: none; border: none; color: var(--testo-2); font-size: 14px; font-weight: 600; padding: 6px 12px; cursor: pointer; text-decoration: underline; }
+/* Pill "Tariffe" nell'header */
+.prev-hint-pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(224,138,46,.15); color: #b06a0e; border: none; cursor: pointer; white-space: nowrap; letter-spacing: .01em; }
+.prev-hint-pill:active { background: rgba(224,138,46,.28); }
 /* Barra input preventivo (inline, sopra alla lista) */
 #prev-bar { padding: 4px 0 16px; }
 .prev-crea-label { font-size: 13px; font-weight: 800; color: var(--testo-2); text-transform: uppercase; letter-spacing: .06em; margin: 0 2px 8px; }
@@ -1484,7 +1493,7 @@ button.s-riga:first-child { border-top: 0; }
   </section>
 
   <section id="vista-preventivi" class="gutter" hidden>
-    <header class="testata"><h1>Preventivi</h1></header>
+    <header class="testata"><h1>Preventivi</h1><button id="prev-hint-pill" class="prev-hint-pill" hidden onclick="apriPrevForm()">Tariffe</button></header>
     <div id="prev-bar" hidden>
       <p class="prev-crea-label">Crea preventivo</p>
       <div class="prev-bar-inner">
@@ -8344,6 +8353,14 @@ document.querySelectorAll('.barra button').forEach(b => {
 // ======== PREVENTIVI ========
 
 let prevDati = null;
+let _prevSkipped = false;
+try { _prevSkipped = localStorage.getItem('prev-skipped') === '1'; } catch(e) {}
+
+function saltaPrevIntro() {
+  _prevSkipped = true;
+  try { localStorage.setItem('prev-skipped', '1'); } catch(e) {}
+  disegnaPreventivi();
+}
 
 const PREV_FORM = [
   {
@@ -8828,6 +8845,9 @@ function disegnaPreventivi() {
       const mic = $('prev-bar-mic'); if (mic && !mic.innerHTML.trim()) mic.innerHTML = SVG_MIC;
     }
   }
+  // Pill "Tariffe": visibile solo nella lista quando l'utente ha saltato ma non ancora compilato
+  const hp = $('prev-hint-pill');
+  if (hp) hp.hidden = !(_prevVista === 'lista' && prevDati === null && _prevSkipped);
 
   corpo.style.paddingBottom = '';
 
@@ -8942,6 +8962,19 @@ function disegnaPreventivi() {
       disegnaPreventivi();
     });
     $('prev-inizio-txt')?.addEventListener('input', e => { _prevBozzaInizio = e.target.value; });
+    return;
+  }
+
+  // Prima volta: schermata benvenuto (questionario mai visto e non saltato)
+  if (prevDati === null && !_prevSkipped) {
+    corpo.innerHTML = `
+      <div class="prev-intro">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        <h2>Quanto chiedi per ogni lavoro?</h2>
+        <p>Dimmi le tue tariffe tipo: l'assistente le usa per fare preventivi precisi, su misura per come lavori tu.</p>
+        <button class="salva" style="width:auto;padding:12px 32px" onclick="apriPrevForm()">Imposta ora</button>
+        <button class="prev-salta" onclick="saltaPrevIntro()">Faccio dopo</button>
+      </div>`;
     return;
   }
 
