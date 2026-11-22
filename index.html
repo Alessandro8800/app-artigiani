@@ -1096,21 +1096,14 @@ button.s-riga:first-child { border-top: 0; }
 .prezzo-edit-panel input[type=number] { flex: 1; border: none; background: none; font-size: 22px; font-weight: 800; color: var(--testo); outline: none; min-width: 0; }
 .prezzo-edit-panel input[type=number]::-webkit-inner-spin-button, .prezzo-edit-panel input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .prezzo-edit-panel span { font-size: 22px; font-weight: 800; color: var(--ambra); }
-/* Drum verticale per la durata */
-.durata-picker { display: flex; gap: 10px; align-items: flex-start; }
-.durata-drum-wrap { width: 68px; height: 132px; position: relative; overflow: hidden; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); flex-shrink: 0; }
-.durata-drum { overflow-y: auto; scroll-snap-type: y mandatory; height: 100%; scrollbar-width: none; padding: 44px 0; box-sizing: border-box; }
-.durata-drum::-webkit-scrollbar { display: none; }
-.durata-drum-voce { height: 44px; scroll-snap-align: center; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--testo); cursor: pointer; }
-.durata-drum-sel { position: absolute; left: 4px; right: 4px; top: 50%; transform: translateY(-50%); height: 40px; border-radius: 10px; background: var(--foglia-chiara); border: 1.5px solid var(--foglia); pointer-events: none; z-index: 0; }
-.durata-drum-wrap::before, .durata-drum-wrap::after { content: ''; position: absolute; left: 0; right: 0; height: 44px; z-index: 1; pointer-events: none; }
-.durata-drum-wrap::before { top: 0; background: linear-gradient(to bottom, var(--carta) 20%, transparent); }
-.durata-drum-wrap::after { bottom: 0; background: linear-gradient(to top, var(--carta) 20%, transparent); }
-.durata-destra { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-.durata-destra input[type=number] { width: 100%; border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); font-size: 20px; font-weight: 800; color: var(--testo); padding: 10px 12px; outline: none; box-sizing: border-box; }
-.durata-destra input[type=number]:focus { border-color: var(--foglia); }
-.durata-destra input[type=number]::-webkit-inner-spin-button, .durata-destra input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-.durata-unita { display: flex; gap: 6px; }
+/* Picker durata: casella + pill unità + numeri suggeriti */
+.durata-picker { display: flex; flex-direction: column; gap: 8px; }
+.durata-riga-top { display: flex; align-items: center; gap: 8px; }
+.durata-riga-top input[type=number] { flex: 1; border: 1.5px solid var(--linea); border-radius: 10px; background: var(--carta); font-size: 20px; font-weight: 800; color: var(--testo); padding: 10px 12px; outline: none; box-sizing: border-box; }
+.durata-riga-top input[type=number]:focus { border-color: var(--foglia); }
+.durata-riga-top input[type=number]::-webkit-inner-spin-button, .durata-riga-top input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.durata-pill-unita { background: var(--foglia-chiara); border: 1.5px solid var(--foglia); color: var(--foglia); border-radius: 20px; padding: 8px 14px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.durata-suggeriti { display: flex; flex-wrap: wrap; gap: 6px; }
 /* Personale: una riga, €/ora prima */
 .personale { display: flex; gap: 8px; }
 .pers-campo { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--sfondo); border-radius: 10px; padding: 7px 10px; }
@@ -1525,15 +1518,11 @@ button.s-riga:first-child { border-top: 0; }
             <div class="campo">
               <span>Durata</span>
               <div class="durata-picker" id="f-durata-picker">
-                <div class="durata-drum-wrap"><div class="durata-drum-sel"></div><div class="durata-drum" id="f-durata-drum"></div></div>
-                <div class="durata-destra">
-                  <input type="number" id="f-durata-input" inputmode="decimal" min="0.5" step="0.5">
-                  <div class="durata-unita" id="f-durata-unita">
-                    <button class="chip attivo" data-u="ore">ore</button>
-                    <button class="chip" data-u="giorni">giorni</button>
-                    <button class="chip" data-u="mesi">mesi</button>
-                  </div>
+                <div class="durata-riga-top">
+                  <input type="number" id="f-durata-input" inputmode="decimal" min="0.5" step="0.5" value="2">
+                  <button type="button" class="durata-pill-unita" id="f-durata-pill">ore</button>
                 </div>
+                <div class="durata-suggeriti" id="f-durata-suggeriti"></div>
               </div>
               <div class="ora-toggle" id="f-ora-toggle" role="radiogroup" aria-label="A che ora">
                 <div class="ora-pill" id="ora-pill"></div>
@@ -3041,13 +3030,13 @@ function montaRotelle(radice, opzioni) {
 const rotellaLavoro = { get r() { return creaRotella($('rot-lavoro')); }, reset() { this.r.reset(); } };
 function disegnaPrezzoDrum() { rotellaLavoro.r.disegna(); }
 function scorriPrezzoDrum() { rotellaLavoro.r.scorri(); }
-// Drum verticale per la durata: valori per unità, conversione in ore
-const DRUM_H = 44; // px per voce del drum
+// Picker durata: casella + pill unità (cicla ore→giorni→mesi→ore) + numeri suggeriti
 const DURATA_OPZ = {
-  ore: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10, 12],
-  giorni: [1, 2, 3, 4, 5, 6, 7, 10, 14, 30],
-  mesi: [1, 2, 3, 4, 5, 6, 12],
+  ore: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8],
+  giorni: [1, 2, 3, 4, 5, 7, 10, 14],
+  mesi: [1, 2, 3, 6, 12],
 };
+const UNITA_CICLO = ['ore', 'giorni', 'mesi'];
 const ORE_MESE = () => oreGiornata * 22;
 const durataAOre = (n, u) => u === 'ore' ? n : u === 'giorni' ? n * oreGiornata : n * ORE_MESE();
 const oreDurata = (v) => {
@@ -3060,49 +3049,40 @@ const oreDurata = (v) => {
 function htmlDurataPicker(prefix, valOre) {
   const { n, u } = oreDurata(valOre || 2);
   return `<div class="durata-picker" id="${prefix}-picker">
-    <div class="durata-drum-wrap"><div class="durata-drum-sel"></div><div class="durata-drum" id="${prefix}-drum"></div></div>
-    <div class="durata-destra">
+    <div class="durata-riga-top">
       <input type="number" id="${prefix}-input" inputmode="decimal" min="0.5" step="0.5" value="${n}">
-      <div class="durata-unita" id="${prefix}-unita">
-        <button class="chip${u==='ore'?' attivo':''}" data-u="ore">ore</button>
-        <button class="chip${u==='giorni'?' attivo':''}" data-u="giorni">giorni</button>
-        <button class="chip${u==='mesi'?' attivo':''}" data-u="mesi">mesi</button>
-      </div>
+      <button type="button" class="durata-pill-unita" id="${prefix}-pill">${u}</button>
     </div>
+    <div class="durata-suggeriti" id="${prefix}-suggeriti"></div>
   </div>`;
 }
 function montaDurataPicker(prefix, onChange) {
-  const drum = $(prefix + '-drum');
   const input = $(prefix + '-input');
-  const unitaEl = $(prefix + '-unita');
-  if (!drum || !input || !unitaEl) return;
-  let unita = unitaEl.querySelector('.chip.attivo')?.dataset.u || 'ore';
-  const valori = () => DURATA_OPZ[unita] || DURATA_OPZ.ore;
-  const scrollAIdx = (idx, smooth) => drum.scrollTo({ top: idx * DRUM_H, behavior: smooth ? 'smooth' : 'instant' });
-  const idxDa = (n) => { const vs = valori(); let i = vs.findIndex(v => v >= n); if (i < 0) i = vs.length - 1; else if (i > 0 && Math.abs(vs[i-1]-n) < Math.abs(vs[i]-n)) i--; return i; };
-  const ridisegna = () => {
-    drum.innerHTML = valori().map(v => `<div class="durata-drum-voce" data-v="${v}">${String(v).replace('.', ',')}</div>`).join('');
-    scrollAIdx(idxDa(parseFloat(input.value) || 2));
+  const pill = $(prefix + '-pill');
+  const suggeriti = $(prefix + '-suggeriti');
+  if (!input || !pill || !suggeriti) return;
+  let unita = pill.textContent.trim() || 'ore';
+  const ridisegnaSuggeriti = () => {
+    suggeriti.innerHTML = (DURATA_OPZ[unita] || DURATA_OPZ.ore)
+      .map(v => `<button type="button" class="chip" data-v="${v}">${String(v).replace('.', ',')}</button>`)
+      .join('');
+    suggeriti.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => {
+        input.value = String(b.dataset.v).replace(',', '.');
+        onChange(durataAOre(parseFloat(b.dataset.v), unita));
+      };
+    });
   };
-  const aggiorna = () => {
-    const vs = valori(); const idx = Math.round(drum.scrollTop / DRUM_H);
-    const v = vs[Math.max(0, Math.min(idx, vs.length - 1))];
-    input.value = String(v).replace(',', '.');
-    onChange(durataAOre(v, unita));
+  ridisegnaSuggeriti();
+  input.oninput = () => { const n = parseFloat(input.value); if (n > 0) onChange(durataAOre(n, unita)); };
+  pill.onclick = () => {
+    unita = UNITA_CICLO[(UNITA_CICLO.indexOf(unita) + 1) % UNITA_CICLO.length];
+    pill.textContent = unita;
+    ridisegnaSuggeriti();
+    const n = parseFloat(input.value);
+    if (n > 0) onChange(durataAOre(n, unita));
   };
-  ridisegna();
-  let st; drum.addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(aggiorna, 150); });
-  drum.addEventListener('scrollend', aggiorna);
-  input.oninput = () => { const n = parseFloat(input.value); if (n > 0) { onChange(durataAOre(n, unita)); scrollAIdx(idxDa(n), true); } };
-  drum.querySelectorAll('.durata-drum-voce').forEach(v => { v.onclick = () => { scrollAIdx(valori().indexOf(+v.dataset.v)); aggiorna(); }; });
-  unitaEl.querySelectorAll('.chip').forEach(b => {
-    b.onclick = () => {
-      unitaEl.querySelectorAll('.chip').forEach(c => c.classList.remove('attivo')); b.classList.add('attivo'); unita = b.dataset.u;
-      ridisegna(); const n = parseFloat(input.value); if (n > 0) onChange(durataAOre(n, unita));
-    };
-  });
 }
-const DRUM_W = 80;
 function disegnaDurata() {
   const picker = $('f-durata-picker');
   if (!picker?.dataset.init) {
@@ -3112,22 +3092,12 @@ function disegnaDurata() {
       dateScelte = []; allineaDate(); if (!quandoFisso) quando = giorniMigliori()[0] || quando; disegnaQuando();
     });
   } else {
-    // Sincronizza drum + input con il valore corrente (es. da voce AI)
+    // Sincronizza input + pill con il valore corrente (es. da voce AI)
     const { n, u } = oreDurata(durata);
     const inp = $('f-durata-input'); if (inp && parseFloat(inp.value) !== n) inp.value = n;
-    const unitaEl = $('f-durata-unita');
-    if (unitaEl) {
-      const cambio = unitaEl.querySelector('.chip.attivo')?.dataset.u !== u;
-      if (cambio) {
-        unitaEl.querySelectorAll('.chip').forEach(c => c.classList.toggle('attivo', c.dataset.u === u));
-        const drum = $('f-durata-drum');
-        if (drum) drum.innerHTML = (DURATA_OPZ[u]||DURATA_OPZ.ore).map(v => `<div class="durata-drum-voce" data-v="${v}">${String(v).replace('.', ',')}</div>`).join('');
-      }
-      const drum = $('f-durata-drum'); if (drum) drum.scrollTop = (DURATA_OPZ[u]||DURATA_OPZ.ore).findIndex(v => v >= n) * DRUM_H;
-    }
+    const p = $('f-durata-pill'); if (p && p.textContent.trim() !== u) p.textContent = u;
   }
 }
-function scorriDrum() { /* non usata */ }
 
 // I giorni occupati da un lavoro, con le ore di ciascuno. Un lavoro lungo continua
 // nei giorni di lavoro successivi (es. 2 giorni dal venerdì = venerdì e sabato).
