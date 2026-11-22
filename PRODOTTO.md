@@ -382,9 +382,17 @@ una alla volta → offline e installazione → prova sul telefono.
   Android "vera" dal Play Store. Da scegliere quando costruiamo l'app.
 
 
+## Nuovo look (deciso il 22/11 sera)
+
+- **Si rifà tutto il look dell'app, da zero**: colori, caratteri, icone, forme, animazioni.
+  **Le cose restano al loro posto**, le funzioni non cambiano. Chiaro e scuro tutti e due curati.
+  21st.dev e simili solo come ispirazione, niente da installare.
+  Strategia e scaletta: `design/NUOVO-LOOK.md`.
+
 ## Da rivedere
 
 - **Tutto un po' troppo grande nell'app** (Alessandro, 18/11): da rimpicciolire in generale.
+  → si risolve nel **nuovo look** (`design/NUOVO-LOOK.md`, fase 3).
 - **Altre impostazioni, proposta da decidere**: prezzo fisso (si scrive da solo). ("Paga ogni 6 mesi": fatto.)
 - Colore per tipo (idea sotto) e colore per cliente: tenerli tutti e due? Da decidere.
 

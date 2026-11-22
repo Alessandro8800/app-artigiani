@@ -1,0 +1,95 @@
+# Nuovo look dell'app — strategia e scaletta
+
+Deciso con Alessandro il 22/11/2026 sera. Da qui si riparte il 23/11.
+
+---
+
+## 1. Cosa abbiamo deciso
+
+- **Si cambia solo il look.** Cambiano colori, caratteri, icone, forme dei tasti e delle carte,
+  ombre e animazioni. **Ogni cosa resta al suo posto** e le funzioni restano le stesse.
+  Spostare i pezzi sullo schermo (es. il calendario orizzontale, punto 17 dell'HANDOFF) è un
+  lavoro a parte, da fare dopo.
+- **Si parte da zero.** I 3 temi del 22/11 (Verde foresta, Acciaio, Carta) si mettono da parte.
+  Restano consultabili come artifact (link in `HANDOFF.md` → "Temi grafici"), ma non sono la base.
+- **Chiaro e scuro, tutti e due curati.** Ogni colore si sceglie in coppia (chiaro + scuro) e si
+  controlla che si legga bene, anche al sole e da chi non distingue bene i colori.
+- **21st.dev, shadcn/ui e Aceternity UI si usano come vetrina di idee, non si installano.**
+  Sono fatti per siti costruiti con React + Tailwind, mentre l'app è un unico file in HTML e
+  JavaScript semplice. Installarli vorrebbe dire rifare l'app e appesantirla sul telefono.
+  Quindi: Alessandro indica cosa gli piace, Claude lo rifà nello stile dell'app, leggero.
+
+## 2. Dove cercare le ispirazioni
+
+| Sito | Cosa ci trovi | Quanto serve |
+|---|---|---|
+| **Mobbin** (mobbin.com) | Schermate vere di app famose per telefono | Il più utile: sono app per telefono, come la nostra |
+| **Dribbble** (dribbble.com, cerca "mobile app calendar", "finance app") | Disegni di grafici, spesso molto belli | Buono per colori e atmosfera |
+| **21st.dev** | Tasti, menu, carte, animazioni | Buono per singoli pezzi e animazioni |
+| **Aceternity UI** | Effetti speciali, sfondi animati | Solo piccoli tocchi: in un'app di lavoro distraggono |
+| **shadcn/ui** | Pezzi sobri e ordinati | Buono come esempio di ordine e coerenza |
+| **Le app sul tuo telefono** | Banca, meteo, calendario, ecc. | Ottime: le usi già e sai cosa ti piace |
+
+## 3. Scaletta di lavoro
+
+### Fase 0 — Mettere al sicuro (Claude, 5 minuti)
+- Segnare in git il punto di partenza ("prima del nuovo look"), per poter tornare indietro.
+
+### Fase 1 — Ispirazioni (Alessandro, 30-45 minuti)
+- Raccogliere **8-15 immagini** (screenshot) di cose che piacciono, dai siti sopra o da app.
+- Metterle nella cartella `design/ispirazioni/`, oppure incollarle direttamente in chat.
+- Per ognuna, una frase: **cosa ti piace** (il colore, il carattere, la forma dei tasti,
+  l'animazione, l'ordine…). Vanno bene anche le cose che **non** ti piacciono.
+- Bonus: nominare 2-3 app che "si sentono" come vorresti la tua.
+
+### Fase 2 — Tre proposte (Claude, poi scelta insieme)
+- Dalle ispirazioni, Claude prepara **3 direzioni diverse** della **stessa schermata**
+  (Calendario, la prima pagina), con dati realistici, in chiaro e in scuro.
+- Si guardano **sul telefono**. Alessandro sceglie una direzione, oppure prende pezzi da più di una.
+
+### Fase 3 — Il "kit" del nuovo look (Claude, poi approvazione)
+Una sola pagina di prova con tutti i pezzi, nella direzione scelta:
+- colori (chiaro + scuro), caratteri e grandezze del testo;
+- tasti, carte, campi da scrivere, fogli che salgono dal basso, etichette, numerini;
+- barra in basso, barra "Parla", icone (un solo stile per tutta l'app);
+- animazioni (cerchio "Fatto", "Pagato", apertura dei fogli).
+
+Qui si risolve anche **"tutto un po' troppo grande"** (da `PRODOTTO.md` → "Da rivedere").
+Alessandro approva il kit prima di toccare l'app.
+
+### Fase 4 — Mettere in ordine i colori dell'app (Claude, non si vede)
+- Oggi alcuni colori sono scritti "a mano" in punti sparsi del file: cambiando tema, quelli
+  restano vecchi. Prima di applicare il nuovo look, si raccolgono tutti in un unico posto.
+  L'app deve restare **identica** dopo questo passo: si controlla con foto prima/dopo.
+
+### Fase 5 — Applicare il nuovo look, una schermata alla volta (Claude)
+Ordine:
+1. pezzi comuni (tasti, carte, fogli, barra in basso, barra "Parla");
+2. Calendario (prima pagina);
+3. Clienti e scheda cliente;
+4. foglio "Nuovo cliente" / Modifica;
+5. scheda del lavoro;
+6. Conti;
+7. Preventivi;
+8. Impostazioni e Profilo;
+9. notifiche, note rapide, avvisi e finestre piccole.
+
+Dopo **ogni** schermata: build, foto in chiaro e in scuro, prova sul telefono di Alessandro,
+salvataggio con git. Niente pubblicazione (push) finché Alessandro non lo dice.
+
+### Fase 6 — Collaudo finale
+- Prova completa sul telefono vero, anche all'aperto al sole.
+
+## 4. Regole per questo lavoro
+
+- Solo look: niente pezzi spostati, niente funzioni nuove.
+- Niente librerie nuove pesanti: l'app pesa già circa 550 KB.
+- Un solo stile di icone per tutta l'app.
+- Prove nel browser sempre sull'indirizzo che Alessandro non sta usando (dati separati).
+
+## 5. Domande ancora aperte (da decidere domani)
+
+- In Impostazioni c'è già **"Colore dell'app"** (Foglia, Mare, Terracotta…). Col nuovo look resta?
+  Si tiene solo il colore principale scelto, o si toglie?
+- Il cerchio "Fatto" e le altre animazioni: si tengono così o si ridisegnano?
+- I caratteri attuali (Bricolage Grotesque + Manrope): si decide guardando le proposte della Fase 2.

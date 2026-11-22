@@ -695,6 +695,10 @@ Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
 
 ## Prossimi passi (in ordine di priorità)
 
+0. **Nuovo look (dal 23/11, priorità del titolare)** — rifare tutto l'aspetto da zero, senza
+   spostare niente. Leggere prima `design/NUOVO-LOOK.md`: strategia, scaletta in 6 fasi e
+   domande aperte. I temi Verde/Acciaio/Carta qui sotto ("Temi grafici") sono messi da parte.
+
 1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. `confermaCarta` per cat=`nota` con `Cliente` presente salva già in `prendiExtra(cliente).note`, ma la scheda cliente non mostra ancora queste note extra in modo prominente.
 2. **Collegare pagamenti ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. (21/11: i **costi** detti a voce vanno già nel lavoro del cliente; `CLIENTI_FAKE` è stato tolto, si usano i clienti veri. Manca il legame pagamento → lavoro.)
 3. ✅ **Mic per scheda specifica** — fatto (21/11): i 3 microfoni passano tutti dall'AI, che smista nella categoria giusta.
