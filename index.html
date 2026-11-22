@@ -855,6 +855,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .imp-r:first-of-type { border-top: 0; }
 .imp-testa { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 0; background: none; padding: 12px 16px; min-height: 60px; }
 .imp-testa > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* Profilo */
+.profilo-ai-box { background: var(--carta); border: 1px solid var(--linea); border-radius: 20px; overflow: hidden; margin-bottom: 12px; }
+.profilo-ai-testa { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--linea); }
+.profilo-ai-testa strong { font-size: 15px; }
+.profilo-progresso { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--testo-2); font-weight: 600; }
+.profilo-progresso svg { flex-shrink: 0; }
+.profilo-imp-btn { width: 100%; display: flex; align-items: center; gap: 12px; padding: 15px 16px; background: var(--carta); border: 1px solid var(--linea); border-radius: 16px; color: var(--testo); font-size: 15px; font-weight: 700; text-align: left; }
+.imp-torna-btn { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: var(--foglia); font-size: 15px; font-weight: 700; padding: 0; margin-bottom: 4px; }
+/* Fine Profilo */
 .imp-h2-chk { display: flex; align-items: center; gap: 7px; }
 .imp-h-chk { flex-shrink: 0; }
 .imp-h-chk-no { opacity: .45; }
@@ -1495,9 +1504,29 @@ button.s-riga:first-child { border-top: 0; }
   </div>
 
   <section id="vista-impostazioni" class="gutter" hidden>
+    <button class="imp-torna-btn" id="imp-torna-btn" onclick="tornaAProfilo()" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Profilo
+    </button>
     <header class="testata"><h1>Impostazioni</h1></header>
     <div id="i-elenco"></div>
     <input type="file" id="i-ripristina" accept="application/json,.json" hidden>
+  </section>
+
+  <section id="vista-profilo" class="gutter" hidden>
+    <header class="testata"><h1>Profilo</h1></header>
+    <div class="profilo-ai-box">
+      <div class="profilo-ai-testa">
+        <strong>Per l'assistente</strong>
+        <span class="profilo-progresso" id="profilo-progresso"></span>
+      </div>
+      <div id="profilo-elenco"></div>
+    </div>
+    <button type="button" class="profilo-imp-btn" id="profilo-imp-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      Impostazioni app
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
   </section>
 </div>
 
@@ -1519,9 +1548,9 @@ button.s-riga:first-child { border-top: 0; }
     <svg width="28" height="28" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="14" x2="15" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     Preventivi
   </button>
-  <button data-vista="impostazioni">
-    <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Impostazioni
+  <button data-vista="profilo">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profilo
   </button>
 </nav>
 
@@ -7517,23 +7546,22 @@ function riassuntoGiorni() {
 const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-label="Un altro colore">${minianello}</button>`;
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
+const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome, corpo: el => {
+  const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
+  el.innerHTML = `
+    <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
+    <label class="campo"><span>Partita IVA</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
+    <label class="campo"><span>Telefono</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
+    <p class="imp-testo" style="margin-top:4px">IVA sui preventivi</p>
+    <div class="segmenti" id="i-att-iva-seg"></div>
+    <p class="imp-testo">Questi dati appaiono nel preventivo completo che dai al cliente. Se non sei sicuro sull'IVA, chiedi al tuo commercialista.</p>`;
+  $('i-att-nome').onchange = e => { datiAttivita.nome = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-piva').onchange = e => { datiAttivita.piva = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-tel').onchange  = e => { datiAttivita.telefono = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  segmenti($('i-att-iva-seg'), Object.fromEntries(ivaOpzioni.map(o => [o.k, o.label])), datiAttivita.iva, k => { datiAttivita.iva = k; dbSalva(); disegnaCorrente(); });
+} };
+
 const GRUPPI_IMP = [
-  ['Per iniziare', [
-    { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome, corpo: el => {
-      const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
-      el.innerHTML = `
-        <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
-        <label class="campo"><span>Partita IVA</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
-        <label class="campo"><span>Telefono</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
-        <p class="imp-testo" style="margin-top:4px">IVA sui preventivi</p>
-        <div class="segmenti" id="i-att-iva-seg"></div>
-        <p class="imp-testo">Questi dati appaiono nel preventivo completo che dai al cliente. Se non sei sicuro sull'IVA, chiedi al tuo commercialista.</p>`;
-      $('i-att-nome').onchange = e => { datiAttivita.nome = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
-      $('i-att-piva').onchange = e => { datiAttivita.piva = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
-      $('i-att-tel').onchange  = e => { datiAttivita.telefono = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
-      segmenti($('i-att-iva-seg'), Object.fromEntries(ivaOpzioni.map(o => [o.k, o.label])), datiAttivita.iva, k => { datiAttivita.iva = k; dbSalva(); disegnaImpostazioni(); });
-    } },
-  ]],
   ['Come appare', [
     { id: 'tema', nome: 'Tema', valore: () => TEMI[tema], corpo: el => {
       el.innerHTML = '<div class="segmenti"></div>';
@@ -7677,7 +7705,7 @@ const GRUPPI_IMP = [
         <button type="button" class="secondario" id="i-zona-gps">📍 Usa dove sono adesso</button>`;
       const box = $('i-zona-risultati');
       let trovati = [], timer = null, giro = 0;
-      const scegli = z => { impostaZona(z); disegnaImpostazioni(); };
+      const scegli = z => { impostaZona(z); disegnaCorrente(); };
       const mostra = (html) => { box.hidden = !html; box.innerHTML = html || ''; };
       // Ricerca mentre scrivi: dalla 3ª lettera, aspetta che smetti un attimo di scrivere
       $('i-zona').oninput = () => {
@@ -7754,7 +7782,7 @@ const GRUPPI_IMP = [
     } },
   ]],
   ['Personalizza', [
-    { id: 'tipi', nome: 'Tipi di cliente', valore: () => TIPI.join(', '), corpo: el => {
+    { id: 'tipi', nome: 'Tipi di cliente', valore: () => TIPI.join(', '), done: () => TIPI.length > 0, corpo: el => {
       // Rinominare cambia anche i clienti di quel tipo; un tipo in uso non si toglie
       listaModificabile(el, TIPI, {
         segnaposto: 'Nuovo tipo, es. Ufficio',
@@ -7930,6 +7958,59 @@ const GRUPPI_IMP = [
     } },
   ]],
 ];
+
+const VOCI_PROFILO = [
+  VOCE_DATI_ATT,
+  GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'zona'),
+  GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'tipi'),
+];
+
+function disegnaCorrente() {
+  if ($('vista-profilo') && !$('vista-profilo').hidden) disegnaProfilo();
+  else disegnaImpostazioni();
+}
+
+let rigaApertaProfilo = null;
+function disegnaProfilo() {
+  const conDone = VOCI_PROFILO.filter(v => v.done).length;
+  const completati = VOCI_PROFILO.filter(v => v.done && v.done()).length;
+  const dots = VOCI_PROFILO.filter(v => v.done).map(v => v.done()
+    ? '<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="var(--foglia)"/></svg>'
+    : '<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--linea)" stroke-width="1.5" stroke-dasharray="3 2"/></svg>').join('');
+  const progEl = $('profilo-progresso');
+  if (progEl) progEl.innerHTML = `${dots} <span>${completati} di ${conDone} completati</span>`;
+  const freccina = '<svg class="freccina" width="20" height="20" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  $('profilo-elenco').innerHTML = VOCI_PROFILO.map(r => `
+    <div class="imp-r${r.id === rigaApertaProfilo ? ' aperta' : ''}">
+      <button type="button" class="imp-testa" data-id="${r.id}" aria-expanded="${r.id === rigaApertaProfilo}">
+        <span><strong>${r.nome}</strong><small>${sicuro(r.valore())}</small></span>${freccina}
+      </button>
+      ${r.id === rigaApertaProfilo ? `<div class="imp-corpo" id="prc-${r.id}"></div>` : ''}
+    </div>`).join('');
+  $('profilo-elenco').querySelectorAll('.imp-testa').forEach(b => {
+    b.onclick = () => { rigaApertaProfilo = rigaApertaProfilo === b.dataset.id ? null : b.dataset.id; disegnaProfilo(); };
+  });
+  const r = VOCI_PROFILO.find(x => x.id === rigaApertaProfilo);
+  if (r) r.corpo($('prc-' + r.id));
+  const btn = $('profilo-imp-btn');
+  if (btn) btn.onclick = apriImpostazioni;
+}
+
+function apriImpostazioni() {
+  $('vista-profilo').hidden = true;
+  $('vista-impostazioni').hidden = false;
+  $('imp-torna-btn').hidden = false;
+  disegnaImpostazioni();
+  window.scrollTo(0, 0);
+}
+
+function tornaAProfilo() {
+  $('vista-impostazioni').hidden = true;
+  $('imp-torna-btn').hidden = true;
+  $('vista-profilo').hidden = false;
+  disegnaProfilo();
+  window.scrollTo(0, 0);
+}
 
 function disegnaImpostazioni() {
   const freccina = '<svg class="freccina" width="20" height="20" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -8214,12 +8295,14 @@ document.querySelectorAll('.barra button').forEach(b => {
     document.querySelectorAll('.barra button').forEach(x => x.classList.toggle('attiva', x === b));
     $('vista-calendario').hidden = b.dataset.vista !== 'calendario';
     $('vista-clienti').hidden = b.dataset.vista !== 'clienti';
-    $('vista-impostazioni').hidden = b.dataset.vista !== 'impostazioni';
+    $('vista-impostazioni').hidden = true;
+    $('imp-torna-btn').hidden = true;
     $('vista-conti').hidden = b.dataset.vista !== 'conti';
     $('vista-preventivi').hidden = b.dataset.vista !== 'preventivi';
+    $('vista-profilo').hidden = b.dataset.vista !== 'profilo';
     if (b.dataset.vista === 'conti') disegnaConti();
     if (b.dataset.vista === 'clienti') disegnaClienti();
-    if (b.dataset.vista === 'impostazioni') disegnaImpostazioni();
+    if (b.dataset.vista === 'profilo') disegnaProfilo();
     if (b.dataset.vista === 'preventivi') disegnaPreventivi();
     window.scrollTo(0, 0);
   };
