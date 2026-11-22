@@ -729,7 +729,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .prev-placeholder p { margin: 0; color: var(--testo-2); font-size: 16px; line-height: 1.5; max-width: 300px; }
 .prev-placeholder .prev-azioni { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 8px; }
 .prev-azioni .salva { width: 100%; }
-.prev-salta { background: none; border: 0; color: var(--testo-2); font-size: 15px; font-weight: 700; padding: 10px; cursor: pointer; }
+.prev-annulla { background: var(--rosso-chiaro); border: 1.5px solid var(--rosso); color: var(--rosso); font-size: 16px; font-weight: 800; padding: 14px; border-radius: 16px; cursor: pointer; font-family: var(--font-testo); width: 100%; }
 .prev-sezione { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
 .prev-sezione h3 { font-family: var(--font-titoli); font-size: 18px; margin: 0; padding-bottom: 6px; border-bottom: 1px solid var(--linea); color: var(--foglia); }
 .prev-domanda { display: flex; flex-direction: column; gap: 10px; background: var(--carta); border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px; }
@@ -8474,6 +8474,16 @@ function salvaPrevBozza() {
   dbSalva(); disegnaPreventivi(); avvisa('Preventivo salvato ✓');
 }
 
+function scartaPrev() {
+  _prevBozzaVoci = []; _prevBozzaNote = ''; _prevEditId = null;
+  _prevBozzaCliente = ''; _prevBozzaIndirizzo = ''; _prevBozzaValidita = 30;
+  _prevBozzaCondPag = null; _prevBozzaInizio = null; _prevVista = 'lista';
+  disegnaPreventivi();
+}
+function tornaIndietroConBozza() {
+  if (_prevBozzaVoci.length > 0) { salvaPrevBozza(); avvisa('Salvato come bozza'); }
+  else { scartaPrev(); }
+}
 function salvaPrevESaltiAPDF() {
   const wasEditId = _prevEditId;
   salvaPrevBozza(); // resetta _prevVista a 'lista' e _prevEditId a null
@@ -8645,7 +8655,7 @@ function disegnaPreventivi() {
     const ivaPerc = +datiAttivita.iva || 0;
     const ivaImporto = ivaPerc ? arrotonda(tot * ivaPerc / 100) : 0;
     corpo.innerHTML = `
-      <button class="prev-torna" onclick="_prevVista='nuovo';disegnaPreventivi()">← Modifica descrizione</button>
+      <button class="prev-torna" onclick="tornaIndietroConBozza()">← Salva come bozza</button>
       <div class="k-blocco">
         <div class="k-titolo"><h2>Cliente</h2></div>
         <div class="prev-cerca-cliente inbox-cerca-cliente">
@@ -8688,9 +8698,8 @@ function disegnaPreventivi() {
         ${_prevBozzaInizio !== null ? `<input id="prev-inizio-txt" class="imp-input" style="margin:4px 0 2px" value="${sicuro(_prevBozzaInizio)}" placeholder="Es. inizio entro 7 giorni, durata 2 giorni">` : ''}
       </div>
       <div class="prev-azioni-ant">
-        <button class="salva" onclick="salvaPrevBozza()">Salva bozza</button>
         <button class="prev-stampa" onclick="salvaPrevESaltiAPDF()">Salva e genera PDF</button>
-        <button class="prev-salta" onclick="_prevVista='lista';_prevBozzaVoci=[];_prevBozzaNote='';_prevBozzaCliente='';_prevBozzaIndirizzo='';_prevBozzaValidita=30;_prevBozzaCondPag=null;_prevBozzaInizio=null;disegnaPreventivi()">Scarta</button>
+        <button class="prev-annulla" onclick="scartaPrev()">Annulla</button>
       </div>`;
     disegnaPrevVoci();
     $('prev-cli-input')?.addEventListener('blur', () => { setTimeout(() => { const r = $('prev-cli-lista'); if (r) r.hidden = true; }, 200); });
