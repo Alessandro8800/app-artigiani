@@ -14,6 +14,13 @@ Deciso con Alessandro il 22/11/2026 sera. Da qui si riparte il 23/11.
   Restano consultabili come artifact (link in `HANDOFF.md` → "Temi grafici"), ma non sono la base.
 - **Chiaro e scuro, tutti e due curati.** Ogni colore si sceglie in coppia (chiaro + scuro) e si
   controlla che si legga bene, anche al sole e da chi non distingue bene i colori.
+  **Ordine (23/11): prima si fa tutta la versione scura, poi si pensa a quella chiara.**
+  Per la chiara c'è già un esempio: `ispirazioni/39-pin-gestione-soldi.png` (crema + verde bosco).
+- **Stile scuro che esce dalle ispirazioni** (43 esempi in `ispirazioni/INDICE.md`): nero morbido,
+  carte grigie con bordo sottile, **un solo colore d'accento**, numeri grandi, barra in basso a
+  pillola con il microfono rotondo staccato, fogli dal basso con lo sfondo sfocato, spunte che si
+  disegnano. Le 3 proposte della Fase 2 possono differire soprattutto per il **colore d'accento**
+  (verde, blu notte, arancione).
 - **21st.dev, shadcn/ui e Aceternity UI si usano come vetrina di idee, non si installano.**
   Sono fatti per siti costruiti con React + Tailwind, mentre l'app è un unico file in HTML e
   JavaScript semplice. Installarli vorrebbe dire rifare l'app e appesantirla sul telefono.

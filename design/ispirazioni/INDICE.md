@@ -70,6 +70,23 @@ di scrivere i numeri. Vedi `NUOVO-LOOK.md` → domande aperte.
 a pillola che galleggia; elenchi compatti con pallino colorato ed etichetta; avvisi col bordo del
 loro colore; spunte che si disegnano. Sempre scuro, sempre sobrio: lo stile è coerente col primo giro.
 
+## Terzo giro (23/11) — Pinterest, schermate intere
+
+| # | Foto | Link | Cosa ci prendo per l'app |
+|---|---|---|---|
+| 39 | 39-pin-gestione-soldi.png | [Pin](https://it.pinterest.com/pin/1136947868464691758/) | **L'unico chiaro**: crema + verde bosco. Riquadro grande col totale, tasti rotondi, anello delle spese, barre con un solo mese evidenziato, tasto rotondo al centro della barra in basso. → **base per la futura versione chiara** |
+| 40 | 40-pin-banca-scura.jpg | [Pin](https://it.pinterest.com/pin/1096696946784643773/) | Blu notte con una luce in alto, numero enorme, 4 riquadri-azione, carte delle transazioni, barre con una sola evidenziata, **barra a pillola + tasto rotondo staccato**. → la barra in basso con il microfono "Parla" a parte |
+| 41 | 41-pin-pannello-nero-grafico.jpg | [Pin](https://it.pinterest.com/pin/350577152265320580/) | Pannello nero: riquadri con icona in un quadratino, numeri grandi, etichette verdi/rosse "+3,2%", tasto blu + tasto bianco affiancati, grafico con un solo mese acceso. → pagina Conti |
+| 42 | 42-pin-calendario-scuro.jpg | [Pin](https://it.pinterest.com/pin/710161435033240336/) | Calendario scuro con un solo colore (arancione): giorni della settimana in una pillola, oggi in un cerchio pieno, più giorni uniti da una pillola. → calendario della prima pagina, lavori di più giorni |
+| 43 | 43-pin-pannello-tante-info.png | [Pin](https://it.pinterest.com/pin/568509152985070181/) | Il "kit" di shadcn in scuro: tutto in grigi e bianco, nessun colore. Campi, interruttori, liste, calendario, numeri con − e +. → esempio di ordine e coerenza |
+
+**Cosa dicono questi 5:**
+- Finalmente **schermate intere di app per telefono**.
+- **Un solo colore d'accento** per tutta l'app (blu, arancione o verde), il resto in grigi.
+- Nei grafici **una sola barra accesa**, le altre spente.
+- **Barra in basso a pillola con un tasto rotondo staccato**: perfetto per il microfono "Parla".
+- Il colore d'accento è la scelta più grande da fare: verde (come ora), blu notte o arancione.
+
 ## Attenzione
 
 - Sono **quasi tutti solo scuri**: per il tema chiaro servono altre ispirazioni.
