@@ -8015,14 +8015,19 @@ function riassuntoGiorni() {
 const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-label="Un altro colore">${minianello}</button>`;
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
-const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!(datiAttivita.nome && datiAttivita.piva && datiAttivita.telefono && datiAttivita.email && datiAttivita.indirizzo), corpo: el => {
+const _valida = {
+  piva:  v => /^\d{11}$/.test(v || ''),
+  tel:   v => ((v || '').replace(/\D/g, '').length >= 9),
+  email: v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''),
+};
+const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!(datiAttivita.nome && _valida.piva(datiAttivita.piva) && _valida.tel(datiAttivita.telefono) && _valida.email(datiAttivita.email) && datiAttivita.indirizzo), corpo: el => {
   const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 4, label: '4%' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
   const ck = v => `<span class="campo-ck${v ? ' fatto' : ''}">✓</span>`;
   el.innerHTML = `
     <label class="campo"><span>Nome o ragione sociale ${ck(datiAttivita.nome)}</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
-    <label class="campo"><span>Partita IVA ${ck(datiAttivita.piva)}</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
-    <label class="campo"><span>Telefono ${ck(datiAttivita.telefono)}</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
-    <label class="campo"><span>Email ${ck(datiAttivita.email)}</span><input id="i-att-email" class="imp-input" type="email" value="${sicuro(datiAttivita.email)}" placeholder="Es. mario@esempio.it"></label>
+    <label class="campo"><span>Partita IVA ${ck(_valida.piva(datiAttivita.piva))}</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890" inputmode="numeric"></label>
+    <label class="campo"><span>Telefono ${ck(_valida.tel(datiAttivita.telefono))}</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
+    <label class="campo"><span>Email ${ck(_valida.email(datiAttivita.email))}</span><input id="i-att-email" class="imp-input" type="email" value="${sicuro(datiAttivita.email)}" placeholder="Es. mario@esempio.it"></label>
     <label class="campo"><span>Indirizzo sede ${ck(datiAttivita.indirizzo)}</span><input id="i-att-indirizzo" class="imp-input" value="${sicuro(datiAttivita.indirizzo)}" placeholder="Es. Via Roma 12, Conegliano"></label>
     <p class="imp-testo" style="margin-top:4px">IVA sui preventivi</p>
     <div class="segmenti" id="i-att-iva-seg"></div>
