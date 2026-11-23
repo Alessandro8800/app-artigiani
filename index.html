@@ -906,6 +906,34 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .agenda-riga { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; background: var(--sfondo); border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
 .agenda-riga.scelto { border-color: var(--foglia); background: var(--foglia-chiara); }
 .agenda-riga.oggi .agenda-data b { color: var(--foglia); }
+/* Vista rotella */
+.rotella-cal { display: flex; flex-direction: column; gap: 0; height: 100%; }
+.rot-striscia { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; align-items: center; padding: 10px 0; }
+.rot-striscia::-webkit-scrollbar { display: none; }
+.rot-g { scroll-snap-align: center; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 5px; border-radius: 14px; border: none; background: none; cursor: pointer; transform-origin: center; will-change: transform, opacity; gap: 2px; min-width: 44px; }
+.rot-g.scelto { background: var(--foglia-chiara); }
+.rot-gg { font-size: 10px; color: var(--testo-2); text-transform: uppercase; letter-spacing: 0.4px; line-height: 1; }
+.rot-num { font-size: 20px; font-weight: 700; line-height: 1.1; color: var(--testo); }
+.rot-g.oggi .rot-num { color: var(--foglia); }
+.rot-g.scelto .rot-num { color: var(--foglia); font-weight: 800; }
+.rot-pallini { display: flex; gap: 2px; min-height: 5px; }
+.rot-pallini i { width: 5px; height: 5px; border-radius: 50%; background: var(--foglia); display: block; }
+.rot-sep { width: 1px; height: 32px; background: var(--linea); flex-shrink: 0; margin: 0 2px; opacity: 0.5; }
+.rot-agenda { flex: 1; overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+.rot-av { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; cursor: pointer; background: var(--sfondo); border: 1px solid transparent; }
+.rot-av-data { display: flex; flex-direction: column; align-items: center; min-width: 32px; }
+.rot-av-data small { font-size: 10px; color: var(--testo-2); text-transform: uppercase; }
+.rot-av-data b { font-size: 16px; font-weight: 800; color: var(--foglia); }
+.rot-av-testo { font-size: 14px; color: var(--testo); border-left: 3px solid var(--foglia); padding-left: 8px; }
+.rot-av-testo small { display: block; font-size: 12px; color: var(--testo-2); }
+.rot-vuoto { text-align: center; color: var(--testo-2); padding: 28px 16px; font-size: 14px; }
+/* Mini preview rotella in impostazioni */
+.mini-rot { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 8px 0; }
+.mini-rot-g { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 4px; border-radius: 8px; transform-origin: center; }
+.mini-rot-g.scelto { background: var(--foglia-chiara); }
+.mini-rot-g span { font-size: 7px; color: var(--testo-2); text-transform: uppercase; }
+.mini-rot-g b { font-size: 13px; font-weight: 700; color: var(--testo); }
+.mini-rot-g.scelto b { color: var(--foglia); }
 .agenda-data { font-size: 10px; color: var(--testo-2); font-weight: 700; min-width: 26px; text-align: center; line-height: 1.2; }
 .agenda-data b { display: block; font-size: 20px; font-weight: 900; color: var(--testo); line-height: 1; }
 .agenda-lavori { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -2798,6 +2826,7 @@ function disegnaCalendario() {
   g.className = vistaHome === 'giorni' ? 'griglia' : 'q-scelte';
   if (vistaHome === 'giorni') {
     if (templateCalendario === 'per-settimane') return riempiGrigliaSettimane(g);
+    if (templateCalendario === 'rotella') return riempiRotella(g);
     if (templateCalendario === 'agenda') return riempiAgenda(g);
     return riempiGriglia(g, meseVisto, scelto, scegli, false);
   }
@@ -2890,6 +2919,101 @@ function riempiAgenda(g) {
     riga.onclick = () => apriGiornoPanel(s);
     g.appendChild(riga);
   }
+}
+
+function riempiRotella(g) {
+  const a = meseVisto.getFullYear(), m = meseVisto.getMonth();
+  const quanti = new Date(a, m + 1, 0).getDate();
+  const mp = mappaGiorni();
+  g.className = 'rotella-cal';
+  g.innerHTML = '<div class="rot-striscia" id="rot-striscia"></div><div class="rot-agenda" id="rot-agenda"></div>';
+  const strip = g.querySelector('#rot-striscia');
+  const agDiv = g.querySelector('#rot-agenda');
+
+  // Larghezza di ogni giorno + spazio per centrare il primo e l'ultimo
+  const GW = 50; // px per slot giorno
+  const pad = () => Math.round(strip.clientWidth / 2 - GW / 2);
+
+  // Costruisce i giorni
+  for (let n = 1; n <= quanti; n++) {
+    const s = iso(new Date(a, m, n));
+    const dt = daIso(s);
+    const gg = NOMI_GIORNI[dt.getDay()].slice(0, 3);
+    const lavs = (mp[s]?.lavori || []);
+    if (n === 1) { // padding iniziale
+      const sp = document.createElement('div');
+      sp.style.cssText = `flex-shrink:0;width:${pad()}px`;
+      strip.appendChild(sp);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'rot-g' + (s === tra(0) ? ' oggi' : '') + (s === scelto ? ' scelto' : '');
+    btn.dataset.s = s;
+    btn.style.width = GW + 'px';
+    const pioggia = livelloPioggia(s);
+    btn.innerHTML = `<span class="rot-gg">${gg}</span><span class="rot-num">${n}${pioggia ? GOCCIA : ''}</span><span class="rot-pallini">${lavs.slice(0, 3).map(v => { const c = prendiExtra(v.l.nome).colore; return `<i${c ? ` style="background:${c}"` : ''}></i>`; }).join('')}</span>`;
+    btn.onclick = () => { scelto = btn.dataset.s; _rotScrolla(scelto, true); _rotAggiorna(); };
+    strip.appendChild(btn);
+    if (n === quanti) { // padding finale
+      const sp = document.createElement('div');
+      sp.style.cssText = `flex-shrink:0;width:${pad()}px`;
+      strip.appendChild(sp);
+    }
+  }
+
+  function _rotScala() {
+    const center = strip.scrollLeft + strip.clientWidth / 2;
+    strip.querySelectorAll('.rot-g').forEach(el => {
+      const dist = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center);
+      const t = Math.min(dist / (strip.clientWidth * 0.45), 1);
+      el.style.transform = `scale(${1 - t * 0.28})`;
+      el.style.opacity = 1 - t * 0.55;
+    });
+  }
+
+  function _rotAggiorna() {
+    strip.querySelectorAll('.rot-g').forEach(b => b.classList.toggle('scelto', b.dataset.s === scelto));
+    const lavs = (mp[scelto]?.lavori || []);
+    const dt = daIso(scelto);
+    const titolo = `${NOMI_GIORNI[dt.getDay()]} ${dt.getDate()} ${maiuscola(new Intl.DateTimeFormat('it-IT', { month: 'long' }).format(dt))}`;
+    agDiv.innerHTML = `<div style="font-size:13px;color:var(--testo-2);padding:0 2px 4px">${titolo}</div>` +
+      (lavs.length > 0
+        ? lavs.map(v => { const c = prendiExtra(v.l.nome).colore || 'var(--foglia)'; return `<div class="rot-av" onclick="apriGiornoPanel('${scelto}')"><div class="rot-av-testo" style="border-color:${c}"><b>${sicuro(v.l.nome)}</b>${v.l.cosa ? `<small>${sicuro(v.l.cosa)}</small>` : ''}</div></div>`; }).join('')
+        : '<div class="rot-vuoto">Nessun lavoro</div>');
+    _rotScala();
+  }
+
+  function _rotScrolla(s, smooth) {
+    const el = strip.querySelector(`[data-s="${s}"]`);
+    if (!el) return;
+    const offset = el.offsetLeft - strip.clientWidth / 2 + el.offsetWidth / 2;
+    strip.scrollTo({ left: Math.max(0, offset), behavior: smooth ? 'smooth' : 'instant' });
+  }
+
+  let _scrollTimer;
+  strip.addEventListener('scroll', () => {
+    _rotScala();
+    clearTimeout(_scrollTimer);
+    _scrollTimer = setTimeout(() => {
+      const center = strip.scrollLeft + strip.clientWidth / 2;
+      let best = null, bestD = Infinity;
+      strip.querySelectorAll('.rot-g').forEach(el => {
+        const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center);
+        if (d < bestD) { bestD = d; best = el; }
+      });
+      if (best && best.dataset.s !== scelto) { scelto = best.dataset.s; _rotAggiorna(); }
+    }, 120);
+  }, { passive: true });
+
+  // Primo render: scroll al giorno selezionato senza animazione
+  requestAnimationFrame(() => {
+    // Ricalcola i padding ora che il layout è stabile
+    const p = pad();
+    const pads = strip.querySelectorAll('div[style*="width"]');
+    pads.forEach(el => { el.style.width = p + 'px'; });
+    _rotScrolla(scelto || tra(0), false);
+    _rotScala();
+    _rotAggiorna();
+  });
 }
 
 function riempiAnno(g) {
@@ -7914,7 +8038,7 @@ const soglie = { arancio: 7, rosso: 21 };   // giorni di ritardo prima dell'etic
 let tema = 'auto', testo = 'normale', accento = 'arancio', ultimaCopia = '';
 let templateCalendario = 'mensile';
 let vibrazioneAttiva = true;
-const TEMPLATE_CAL = { mensile: 'Mensile', 'per-settimane': 'Per settimane', agenda: 'Agenda', anno: 'Anno · Report' };
+const TEMPLATE_CAL = { mensile: 'Mensile', 'per-settimane': 'Per settimane', rotella: 'Rotella', agenda: 'Agenda', anno: 'Anno · Report' };
 let rigaAperta = null;
 // Notifiche: quali vuole e a che ora (nella prova si scelgono soltanto, non arrivano ancora)
 const NOTIFICHE = [
@@ -8154,7 +8278,22 @@ const GRUPPI_IMP = [
         return h + '</div>';
       }
 
-      const builders = { mensile: miniMensile, 'per-settimane': miniPerSettimane, agenda: miniAgenda, anno: miniAnno };
+      function miniRotella() {
+        let h = '<div class="mini-rot">';
+        const mp = mappaGiorni();
+        for (let i = -3; i <= 3; i++) {
+          const s = tra(i);
+          const dt = daIso(s);
+          const gg = NOMI_GIORNI[dt.getDay()].slice(0, 2);
+          const n = dt.getDate();
+          const t = Math.min(Math.abs(i) / 3.5, 1);
+          const sc = (1 - t * 0.32).toFixed(2);
+          const op = (1 - t * 0.5).toFixed(2);
+          h += `<div class="mini-rot-g${i === 0 ? ' scelto' : ''}" style="transform:scale(${sc});opacity:${op}"><span>${gg}</span><b>${n}</b></div>`;
+        }
+        return h + '</div>';
+      }
+      const builders = { mensile: miniMensile, 'per-settimane': miniPerSettimane, rotella: miniRotella, agenda: miniAgenda, anno: miniAnno };
 
       function render() {
         const id = tpl[idx];
