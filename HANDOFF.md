@@ -735,7 +735,7 @@ const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condomini
 14. **Provare sul telefono vero la pressione lunga della rotella** (22/11) — i livelli 5 € → 1 € → 0,10 € sono stati provati solo con tocchi simulati nel browser.
 15. **Rotella della durata (ore)** (22/11, da decidere) — ha ancora la casella "scrivi" dentro la rotella; le cifre in euro no. Proposto di renderla uguale alle altre, il titolare non ha ancora risposto.
 16. **Cifre lasciate apposta senza la nuova casella** (22/11) — righe dei costi dentro un lavoro (Terra 30 €…), ore ed €/ora del Personale, numeri delle Impostazioni, debiti di prima nell'importazione. Erano eccezioni (liste di righe piccole / non sono importi); da rivedere solo se il titolare lo chiede.
-17. **Calendario orizzontale a scorrimento con effetto prospettiva** (22/11, template da aggiungere) — tutti i giorni in orizzontale, si scorre a destra e a sinistra. Il giorno centrale (quello selezionato) è leggermente più grande; i giorni via via più lontani dal centro diventano progressivamente più piccoli — l'effetto deve essere sottile, quasi impercettibile, ma dare la sensazione di profondità/rotella. Come il date picker a tamburo di iOS, ma sdraiato. Da usare come variante del selettore settimana attuale.
+17. ✅ **Calendario orizzontale a scorrimento con effetto prospettiva** (22/11, template da aggiungere → fatto) — tutti i giorni in orizzontale, si scorre a destra e a sinistra. Il giorno centrale (quello selezionato) è leggermente più grande; i giorni via via più lontani dal centro diventano progressivamente più piccoli — l'effetto deve essere sottile, quasi impercettibile, ma dare la sensazione di profondità/rotella. Come il date picker a tamburo di iOS, ma sdraiato. Da usare come variante del selettore settimana attuale.
 
 **Già fatto:**
 - ✅ AI vocale (Web Speech API + Claude Haiku 5.5, routing 8 categorie, localStorage key)
@@ -993,3 +993,38 @@ let messaggioAttivoIdx = 0;  // quale dei due è attivo
 
 Sopra il contatore manuale: 3 bottoni `5% / 15% / 26%` (id `i-tasse-quick`).
 Aggiornar l'etichetta del contatore: `el.querySelector('.contatore b').textContent = \`${tasse}%\`` (il `b` è figlio del `div` interno, non del `button`).
+
+---
+
+## Vista Rotella — ✅ fatto (nov 2026)
+
+Template `'rotella'` in `TEMPLATE_CAL`. Dispatch in `disegnaCalendario`: `if (templateCalendario === 'rotella') return riempiRotella(g)`.
+
+- Striscia orizzontale con `scroll-snap-type: x mandatory`; ogni giorno è `.rot-g` con `scroll-snap-align: center`
+- Effetto scala: i giorni lontani dal centro si rimpiccioliscono (`scale`) e sfumano (`opacity`) — calcolo basato sulla distanza dal centro della strip
+- Agenda sotto (`.rot-agenda`) ridisegnata a ogni cambio giorno selezionato
+- Funzioni: `riempiRotella(g)`, `_rotScrolla(strip, smooth)`, `_rotAggiorna()`
+- Miniatura nelle impostazioni: `miniRotella()` (7 giorni centrati, scala statica)
+- CSS: `.rotella-cal`, `.rot-striscia`, `.rot-g`, `.rot-gg`, `.rot-num`, `.rot-pallini`
+
+---
+
+## TIPI_COLORI — colori per tipo cliente (nov 2026)
+
+`datiAttivita.TIPI_COLORI` = `{ Privato: '#aaaaaa', Condominio: '#3b82c4', Fabbrica: '#8a5cc7' }` — salvato in Dexie insieme a `datiAttivita`.
+
+`datiAttivita.TIPI_COLORI_V: 2` — versione migrazione. Se < 2 al caricamento della sezione, resetta ai default sopra e salva. Incrementare la versione ogni volta che cambiano i default.
+
+`coloreCli(c)` — helper globale (vicino a `datiCliente`): restituisce `c.colore` individuale oppure `TIPI_COLORI[c.tipo]`. Usato ovunque si disegnano cerchi/pallini clienti (lista, scheda, lavori). **Non usare `c.colore` diretto per colorare cerchi clienti.**
+
+Pallini nelle impostazioni: `extraBtn` di `listaModificabile` inietta `.tipo-col-dot`; il click apre `apriTavolozza(c => ...)`.
+
+**`listaModificabile` — parametri aggiuntivi:**
+- `maxVoci: N` — nasconde il campo "Aggiungi" quando l'elenco ha già N elementi
+- `onAggiungi: v => ...` — callback chiamata dopo `elenco.push`, prima di `disegnaImpostazioni()`
+
+---
+
+## Mic — elaborazione in background (nov 2026)
+
+Dopo il riconoscimento vocale finale: vibrazione + chiusura overlay in 600 ms. `categorizzaVoceAI` gira in background (`async`, non `await`). Il risultato arriva nell'inbox silenziosamente, **senza barra di progresso visibile**. Il punto 7 della sezione "Decisioni di prodotto AI" è quindi superato.
