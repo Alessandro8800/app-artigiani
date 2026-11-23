@@ -2114,6 +2114,15 @@ button.s-riga:first-child { border-top: 0; }
         <input id="f-dove" autocomplete="off" autocapitalize="words" placeholder="Es. Via Roma 10">
       </label>
 
+      <!-- 3. Telefono -->
+      <div class="campo" id="f-tel-wrap">
+        <span>Telefono</span>
+        <div class="tel-riga">
+          <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
+          <button type="button" class="tel-piu" id="f-tel-add">+</button>
+        </div>
+      </div>
+
       <!-- Il lavoro: solo in "Nuovo cliente" -->
       <div class="f-lavoro" id="f-lavoro">
         <!-- 3. Cosa -->
@@ -2169,16 +2178,6 @@ button.s-riga:first-child { border-top: 0; }
                 <button class="ora-voce" type="button" data-o="mattina">Mattina</button>
                 <button class="ora-voce" type="button" data-o="">Qualsiasi</button>
                 <button class="ora-voce" type="button" data-o="pomeriggio">Pomeriggio</button>
-              </div>
-            </div>
-          </details>
-
-          <details class="avanzate-sotto">
-            <summary>Telefono</summary>
-            <div class="campo" id="f-tel-wrap">
-              <div class="tel-riga">
-                <input id="f-tel" type="text" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
-                <button type="button" class="tel-piu" id="f-tel-add">+</button>
               </div>
             </div>
           </details>
