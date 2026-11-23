@@ -7090,7 +7090,7 @@ function quotaCosti() {
   return (quotaCache = p ? Math.min(c / p, 0.95) : 0);
 }
 let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Impostazioni; 0 = non mostrare)
-let datiAttivita = { nome: '', piva: '', telefono: '', iva: '0' };
+let datiAttivita = { nome: '', piva: '', telefono: '', iva: '0', email: '', indirizzo: '', descrizione: '' };
 function nuovoIdLavoro() { return lavori.length ? Math.max(...lavori.map(l => +l.id || 0)) + 1 : 0; }
 let preventivi = [];
 let _prevContatore = 1;
@@ -7994,18 +7994,25 @@ const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività'
     <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
     <label class="campo"><span>Partita IVA</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
     <label class="campo"><span>Telefono</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
+    <label class="campo"><span>Email</span><input id="i-att-email" class="imp-input" type="email" value="${sicuro(datiAttivita.email)}" placeholder="Es. mario@esempio.it"></label>
+    <label class="campo"><span>Indirizzo sede</span><input id="i-att-indirizzo" class="imp-input" value="${sicuro(datiAttivita.indirizzo)}" placeholder="Es. Via Roma 12, Conegliano"></label>
     <p class="imp-testo" style="margin-top:4px">IVA sui preventivi</p>
     <div class="segmenti" id="i-att-iva-seg"></div>
     <p class="imp-testo" style="margin-top:8px">Tasse</p>
     ${contatore('tasse', 'Da mettere da parte', `${tasse}%`)}
-    <p class="imp-testo">Nome, partita IVA e telefono appaiono nel preventivo che dai al cliente. Con le tasse, nella pagina Conti vedi quanto mettere da parte e quanto ti resta davvero. Per IVA e percentuale delle tasse chiedi al tuo commercialista.</p>`;
+    <p class="imp-testo" style="margin-top:12px">Di che ti occupi</p>
+    <label class="campo"><textarea id="i-att-descr" class="imp-input" rows="2" placeholder="Es. Impianti elettrici civili e industriali a Treviso">${sicuro(datiAttivita.descrizione)}</textarea></label>
+    <p class="imp-testo">Nome, P.IVA, telefono ed email appaiono nel preventivo. "Di che ti occupi" aiuta l'assistente a capire il tuo lavoro. Con le tasse, nella pagina Conti vedi quanto mettere da parte. Per IVA e tasse chiedi al tuo commercialista.</p>`;
   el.querySelectorAll('[data-k=tasse]').forEach(b => { b.onclick = () => {
     tasse = Math.min(60, Math.max(0, tasse + +b.dataset.d));
     datiAttivita.tasse = tasse; dbSalva(); disegnaCorrente();   // prima le tasse non si salvavano
   }; });
-  $('i-att-nome').onchange = e => { datiAttivita.nome = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
-  $('i-att-piva').onchange = e => { datiAttivita.piva = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
-  $('i-att-tel').onchange  = e => { datiAttivita.telefono = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-nome').onchange      = e => { datiAttivita.nome        = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-piva').onchange      = e => { datiAttivita.piva        = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-tel').onchange       = e => { datiAttivita.telefono    = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-email').onchange     = e => { datiAttivita.email       = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-indirizzo').onchange = e => { datiAttivita.indirizzo   = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  $('i-att-descr').onchange     = e => { datiAttivita.descrizione = e.target.value;        dbSalva(); };
   segmenti($('i-att-iva-seg'), Object.fromEntries(ivaOpzioni.map(o => [o.k, o.label])), datiAttivita.iva, k => { datiAttivita.iva = k; dbSalva(); disegnaCorrente(); });
 } };
 
@@ -9592,7 +9599,8 @@ function disegnaPreventivi() {
       <div class="prev-doc">
         <div class="prev-doc-header">
           <div class="prev-doc-azienda">${sicuro(datiAttivita.nome || 'La tua attività')}</div>
-          <div class="prev-doc-info">${[datiAttivita.piva ? `P.IVA ${sicuro(datiAttivita.piva)}` : '', datiAttivita.telefono ? sicuro(datiAttivita.telefono) : ''].filter(Boolean).join(' · ')}</div>
+          <div class="prev-doc-info">${[datiAttivita.piva ? `P.IVA ${sicuro(datiAttivita.piva)}` : '', datiAttivita.telefono ? sicuro(datiAttivita.telefono) : '', datiAttivita.email ? sicuro(datiAttivita.email) : ''].filter(Boolean).join(' · ')}</div>
+          ${datiAttivita.indirizzo ? `<div class="prev-doc-info">${sicuro(datiAttivita.indirizzo)}</div>` : ''}
         </div>
         <div class="prev-doc-titolo">PREVENTIVO N° ${sicuro(p.numero)}</div>
         <div class="prev-doc-data">${new Date(p.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}${p.validita ? ` · Valido per ${p.validita} giorni` : ''}</div>
