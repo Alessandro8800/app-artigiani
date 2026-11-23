@@ -5388,7 +5388,7 @@ async function dbInizia() {
 async function dbCarica() {
   if (!_dexie) return;
   try {
-    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle','speseStelle','speseRicorrenti','datiAttivita','preventivi','prevContatore']);
+    const r = await _dexie.stato.bulkGet(['lavori','pagamenti','extra','noteRapide','_nrId','prevDati','inizioChiuso','inbox','storico','spese','daSistemare','zona','cronometro','lavoriStelle','speseStelle','speseRicorrenti','datiAttivita','preventivi','prevContatore','sollecito']);
     if (r[12] && r[12].valore) cronometro = JSON.parse(r[12].valore);
     if (r[6]) inizioChiuso = !!r[6].valore;
     if (r[11] && r[11].valore) { const z = JSON.parse(r[11].valore); zonaMeteo = { nome: z.nome, lat: +z.lat, lon: +z.lon, dettaglio: z.dettaglio || '' }; zonaScelta = true; }
@@ -5397,6 +5397,8 @@ async function dbCarica() {
     if (r[15] && r[15].valore) speseRicorrenti.splice(0, Infinity, ...JSON.parse(r[15].valore));
     if (r[16] && r[16].valore) Object.assign(datiAttivita, JSON.parse(r[16].valore));
     if (typeof datiAttivita.tasse === 'number') tasse = datiAttivita.tasse;   // (24/11) le tasse ora si salvano con i dati dell'attività
+    if (r[19] && r[19].valore) { const s = JSON.parse(r[19].valore); if (s.firma !== undefined) firma = s.firma; if (s.modelloSollecito) modelloSollecito = s.modelloSollecito; }
+    if (!firma && datiAttivita.nome) firma = datiAttivita.nome;   // pre-compila firma dal nome se non è mai stata impostata
     if (r[17] && r[17].valore) preventivi.splice(0, Infinity, ...JSON.parse(r[17].valore));
     if (r[18] && r[18].valore) _prevContatore = r[18].valore;
     // Inbox da confermare, storico, spese e note da sistemare: restano anche chiudendo l'app
@@ -5452,6 +5454,7 @@ function dbSalva() {
       { chiave: 'datiAttivita',   valore: JSON.stringify(datiAttivita) },
       { chiave: 'preventivi',     valore: JSON.stringify(preventivi) },
       { chiave: 'prevContatore',  valore: _prevContatore },
+      { chiave: 'sollecito',      valore: JSON.stringify({ firma, modelloSollecito }) },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -7989,7 +7992,7 @@ const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-labe
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
 const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome, corpo: el => {
-  const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
+  const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 4, label: '4%' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
   el.innerHTML = `
     <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
     <label class="campo"><span>Partita IVA</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
@@ -8247,8 +8250,8 @@ const GRUPPI_IMP = [
       el.innerHTML = `<label class="campo"><span>La tua firma</span><input id="i-firma" class="imp-input" value="${sicuro(firma)}" placeholder="Es. Marco, giardiniere"></label>
         <label class="campo"><span>Il messaggio</span><textarea id="i-modello" class="imp-input" rows="4">${sicuro(modelloSollecito)}</textarea></label>
         <p class="imp-testo">{nome}, {importo}, {lavoro} e {firma} si scrivono da soli. Si manda col tasto "Messaggio" accanto a chi è in arancione o rosso: si apre WhatsApp col testo pronto, e lo puoi cambiare prima di mandarlo.</p>`;
-      $('i-firma').onchange = e => { firma = e.target.value.trim(); disegnaImpostazioni(); };
-      $('i-modello').onchange = e => { modelloSollecito = e.target.value; disegnaImpostazioni(); };
+      $('i-firma').onchange   = e => { firma = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
+      $('i-modello').onchange = e => { modelloSollecito = e.target.value; dbSalva(); disegnaImpostazioni(); };
     } },
   ]],
   ['Personalizza', [
