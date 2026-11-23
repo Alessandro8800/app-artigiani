@@ -1927,7 +1927,10 @@ button.s-riga:first-child { border-top: 0; }
       </div>
       <div id="profilo-elenco"></div>
     </div>
-    <!-- (24/11) tolto il tasto "Impostazioni app": c'è già l'ingranaggio accanto al profilo nella prima pagina -->
+    <!-- (24/11) Profilo = tutto ciò che riguarda te e il tuo lavoro: qui sotto "Il lavoro" e "Personalizza"
+         (spostati dalle Impostazioni, che ora hanno solo l'app: aspetto, notifiche, dati, aiuto).
+         Tolto anche il tasto "Impostazioni app": c'è già l'ingranaggio accanto al profilo. -->
+    <div id="profilo-gruppi" style="margin-top:14px"></div>
   </section>
 </div>
 
@@ -8429,7 +8432,15 @@ function disegnaProfilo() {
   $('profilo-elenco').querySelectorAll('.imp-testa').forEach(b => {
     b.onclick = () => { rigaApertaProfilo = rigaApertaProfilo === b.dataset.id ? null : b.dataset.id; disegnaProfilo(); };
   });
-  const r = VOCI_PROFILO.find(x => x.id === rigaApertaProfilo);
+  // Sotto: "Il lavoro" e "Personalizza" (senza ripetere le voci già in "Per l'assistente")
+  const giaSopra = VOCI_PROFILO.map(v => v.id);
+  const gruppi = GRUPPI_IMP.filter(([t]) => GRUPPI_NEL_PROFILO.includes(t))
+    .map(([t, righe]) => [t, righe.filter(r => !giaSopra.includes(r.id))]);
+  $('profilo-gruppi').innerHTML = htmlGruppiImp(gruppi, rigaApertaProfilo, 'prc-');
+  $('profilo-gruppi').querySelectorAll('.imp-testa').forEach(b => {
+    b.onclick = () => { rigaApertaProfilo = rigaApertaProfilo === b.dataset.id ? null : b.dataset.id; disegnaProfilo(); };
+  });
+  const r = [...VOCI_PROFILO, ...gruppi.flatMap(g => g[1])].find(x => x.id === rigaApertaProfilo);
   if (r) r.corpo($('prc-' + r.id));
 }
 
@@ -8474,25 +8485,36 @@ function tornaAlCalendario() {
   window.scrollTo(0, 0);
 }
 
-function disegnaImpostazioni() {
+// (24/11) Questi gruppi stanno nel Profilo (te e il tuo lavoro); nelle Impostazioni resta solo l'app
+const GRUPPI_NEL_PROFILO = ['Il lavoro', 'Personalizza'];
+
+// I gruppi a righe che si aprono (stesso disegno in Impostazioni e Profilo)
+function htmlGruppiImp(gruppi, aperta, prefisso) {
   const freccina = '<svg class="freccina" width="20" height="20" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const chkSvg = ok => ok
     ? '<svg class="imp-h-chk" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--foglia)" stroke-width="2.5"/><path d="M8 12l3 3 5-5" fill="none" stroke="var(--foglia)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     : '<svg class="imp-h-chk imp-h-chk-no" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="var(--linea)" stroke-width="1.8" stroke-dasharray="4 3"/></svg>';
-  $('i-elenco').innerHTML = GRUPPI_IMP.map(([titolo, righe]) => {
+  return gruppi.map(([titolo, righe]) => {
     const haCheck = righe.some(r => r.done);
     const tuttiOk = haCheck && righe.filter(r => r.done).every(r => r.done());
     return `<div class="imp-gruppo righe">
       <h2 class="${haCheck ? 'imp-h2-chk' : ''}">${titolo}${haCheck ? chkSvg(tuttiOk) : ''}</h2>
       ${righe.map(r => `
-      <div class="imp-r${r.id === rigaAperta ? ' aperta' : ''}">
-        <button type="button" class="imp-testa" data-id="${r.id}" aria-expanded="${r.id === rigaAperta}"><span><strong>${r.nome}</strong><small>${sicuro(r.valore())}</small></span>${freccina}</button>
-        ${r.id === rigaAperta ? `<div class="imp-corpo" id="ic-${r.id}"></div>` : ''}
+      <div class="imp-r${r.id === aperta ? ' aperta' : ''}">
+        <button type="button" class="imp-testa" data-id="${r.id}" aria-expanded="${r.id === aperta}"><span><strong>${r.nome}</strong><small>${sicuro(r.valore())}</small></span>${freccina}</button>
+        ${r.id === aperta ? `<div class="imp-corpo" id="${prefisso}${r.id}"></div>` : ''}
       </div>`).join('')}
     </div>`;
   }).join('');
+}
+
+function disegnaImpostazioni() {
+  // Molte voci, dopo una modifica, ridisegnano "le impostazioni": se sono aperte nel Profilo, ridisegno quello
+  if ($('vista-profilo') && !$('vista-profilo').hidden) return disegnaProfilo();
+  const solaApp = GRUPPI_IMP.filter(([t]) => !GRUPPI_NEL_PROFILO.includes(t));
+  $('i-elenco').innerHTML = htmlGruppiImp(solaApp, rigaAperta, 'ic-');
   $('i-elenco').querySelectorAll('.imp-testa').forEach(b => { b.onclick = () => { rigaAperta = rigaAperta === b.dataset.id ? null : b.dataset.id; disegnaImpostazioni(); }; });
-  const r = GRUPPI_IMP.flatMap(g => g[1]).find(x => x.id === rigaAperta);
+  const r = solaApp.flatMap(g => g[1]).find(x => x.id === rigaAperta);
   if (r) r.corpo($('ic-' + r.id));
 }
 

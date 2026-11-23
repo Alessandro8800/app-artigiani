@@ -44,6 +44,13 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
   cliente a volte arriva come tipo di lavoro (es. "Taglio erba").
 - Storia, scelte e ispirazioni: `design/NUOVO-LOOK.md`, `design/ispirazioni/`.
 
+## Profilo e Impostazioni (24/11)
+
+Regola del titolare: **Profilo = tutto ciò che riguarda te e il tuo lavoro**; **Impostazioni = solo
+l'app** (aspetto, notifiche, dati, aiuto). I gruppi "Il lavoro" e "Personalizza" restano definiti in
+`GRUPPI_IMP` ma si vedono nel Profilo (`GRUPPI_NEL_PROFILO`). Nuove voci: metterle nel gruppo giusto.
+Nel Profilo non c'è più il tasto "Impostazioni app" (c'è l'ingranaggio in prima pagina).
+
 ## Gesti (23/11)
 
 Codice nel blocco `// ===== GESTI (23/11) =====` vicino alla fine dello script.
