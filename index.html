@@ -8075,12 +8075,13 @@ function segmenti(el, voci, attiva, scegli) {
 }
 
 // Elenco modificabile: ogni voce si riscrive o si toglie, in fondo se ne aggiunge una
-function listaModificabile(el, elenco, { rinomina, puoiTogliere, segnaposto, extraBtn }) {
+function listaModificabile(el, elenco, { rinomina, puoiTogliere, segnaposto, extraBtn, maxVoci, onAggiungi }) {
+  const pieno = maxVoci && elenco.length >= maxVoci;
   el.innerHTML = '<div class="imp-lista">' + elenco.map((v, i) => {
     const motivo = puoiTogliere(v, i);
     const extra = extraBtn ? extraBtn(v, i) : '';
     return `<div class="imp-voce">${extra}<input value="${sicuro(v)}" data-i="${i}" aria-label="Modifica ${sicuro(v)}"><button type="button" data-i="${i}" aria-label="Togli ${sicuro(v)}"${motivo === true ? '' : ` disabled title="${sicuro(motivo)}"`}>✕</button></div>`;
-  }).join('') + `<div class="imp-voce"><input placeholder="${segnaposto}" data-nuovo="1" aria-label="${segnaposto}"><button type="button" class="aggiungi">Aggiungi</button></div></div>`;
+  }).join('') + (pieno ? '' : `<div class="imp-voce"><input placeholder="${segnaposto}" data-nuovo="1" aria-label="${segnaposto}"><button type="button" class="aggiungi">Aggiungi</button></div>`) + '</div>';
   el.querySelectorAll('input[data-i]').forEach(inp => {
     inp.onchange = () => {
       const i = +inp.dataset.i, nuovo = inp.value.trim(), vecchio = elenco[i];
@@ -8095,12 +8096,15 @@ function listaModificabile(el, elenco, { rinomina, puoiTogliere, segnaposto, ext
       avvisa(`Tolto: ${tolto}`, { etichetta: 'Annulla', fai: () => { elenco.splice(i, 0, tolto); disegnaImpostazioni(); } });
     };
   });
+  if (pieno) return;
   const nuovoInp = el.querySelector('input[data-nuovo]');
   const aggiungi = () => {
     const v = nuovoInp.value.trim();
     if (!v) return nuovoInp.focus();
     if (elenco.some(x => normalizza(x) === normalizza(v))) return avvisa('C\'è già');
-    elenco.push(maiuscola(v)); disegnaImpostazioni();
+    elenco.push(maiuscola(v));
+    if (onAggiungi) onAggiungi(maiuscola(v));
+    disegnaImpostazioni();
   };
   el.querySelector('.aggiungi').onclick = aggiungi;
   nuovoInp.onkeydown = e => { if (e.key === 'Enter') aggiungi(); };
@@ -8405,8 +8409,17 @@ const GRUPPI_IMP = [
     } },
     { id: 'tipi', nome: 'Tipi di cliente', valore: () => TIPI.join(', '), done: () => TIPI.length > 0, corpo: el => {
       if (!datiAttivita.TIPI_COLORI) datiAttivita.TIPI_COLORI = {};
+      // Migrazione: sostituisce i colori default della prima versione con quelli corretti
+      const _migOld = { Privato: '#3d9a5b', Condominio: '#3b82c4', Fabbrica: '#e08a2e' };
+      const _migNew = { Privato: '#aaaaaa', Condominio: '#3b82c4', Fabbrica: '#8a5cc7' };
+      let _migrato = false;
+      Object.entries(_migOld).forEach(([k, v]) => { if (datiAttivita.TIPI_COLORI[k] === v) { datiAttivita.TIPI_COLORI[k] = _migNew[k]; _migrato = true; } });
+      if (_migrato) dbSalva();
+      const _palette = ['#aaaaaa', '#3b82c4', '#8a5cc7', '#3d9a5b', '#d64545', '#d4b11f', '#e05591', '#5c8a3d', '#3d7a8a', '#c47b3b'];
+      TIPI.forEach(v => { if (!datiAttivita.TIPI_COLORI[v]) { const usati = Object.values(datiAttivita.TIPI_COLORI); datiAttivita.TIPI_COLORI[v] = _palette.find(c => !usati.includes(c)) || _palette[TIPI.indexOf(v) % _palette.length]; } });
       listaModificabile(el, TIPI, {
         segnaposto: 'Nuovo tipo, es. Ufficio',
+        maxVoci: 10,
         rinomina: (v, n) => {
           if (datiAttivita.TIPI_COLORI[v] !== undefined) { datiAttivita.TIPI_COLORI[n] = datiAttivita.TIPI_COLORI[v]; delete datiAttivita.TIPI_COLORI[v]; }
           lavori.forEach(l => { if (l.tipo === v) l.tipo = n; }); tutto();
@@ -8419,6 +8432,11 @@ const GRUPPI_IMP = [
         extraBtn: (v) => {
           const col = datiAttivita.TIPI_COLORI[v] || '#888';
           return `<button type="button" class="tipo-col-dot" data-tipo="${sicuro(v)}" style="background:${col}" aria-label="Cambia colore ${sicuro(v)}"></button>`;
+        },
+        onAggiungi: (v) => {
+          const usati = Object.values(datiAttivita.TIPI_COLORI);
+          datiAttivita.TIPI_COLORI[v] = _palette.find(c => !usati.includes(c)) || _palette[TIPI.length % _palette.length];
+          dbSalva();
         },
       });
       el.querySelectorAll('.tipo-col-dot').forEach(b => {
