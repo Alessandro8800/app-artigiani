@@ -1081,6 +1081,12 @@ button.s-riga:first-child { border-top: 0; }
 .msg-carosello { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .msg-carosello::-webkit-scrollbar { display: none; }
 .msg-card { flex: 0 0 85%; scroll-snap-align: start; background: var(--sfondo); border: 1.5px solid var(--linea); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.msg-card-attiva { border-color: var(--foglia); }
+.msg-card-top { display: flex; align-items: center; justify-content: space-between; }
+.msg-card-label { font-size: 15px; font-weight: 800; }
+.msg-reset { background: none; border: none; font-size: 18px; color: var(--testo-2); padding: 0 2px; cursor: pointer; line-height: 1; }
+.msg-salva { width: 100%; padding: 10px; border-radius: 10px; border: 1.5px solid var(--linea); background: none; font-size: 15px; font-weight: 700; color: var(--testo-2); cursor: pointer; }
+.msg-salva.attivo { background: var(--foglia); border-color: var(--foglia); color: #fff; }
 /* Autocomplete indirizzo */
 #campo-dove { position: relative; }
 .dove-suggerimenti { position: absolute; left: 0; right: 0; top: 100%; background: var(--carta); border-radius: 12px; border: 1.5px solid var(--foglia); overflow: hidden; z-index: 200; margin-top: 4px; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
@@ -5403,8 +5409,9 @@ async function dbCarica() {
     if (r[19] && r[19].valore) {
       const s = JSON.parse(r[19].valore);
       if (s.firma !== undefined) firma = s.firma;
-      if (Array.isArray(s.messaggi)) messaggi.splice(0, Infinity, ...s.messaggi.map((m, i) => ({ nome: m.nome || MESSAGGI_DEFAULT[i]?.nome, testo: m.testo || MESSAGGI_DEFAULT[i]?.testo })));
+      if (Array.isArray(s.messaggi)) messaggi.splice(0, 2, ...s.messaggi.slice(0, 2).map((m, i) => ({ nome: MESSAGGI_DEFAULT[i].nome, testo: m.testo || MESSAGGI_DEFAULT[i].testo })));
       else if (s.modelloSollecito) messaggi[0].testo = s.modelloSollecito;  // migrazione dai vecchi dati
+      if (typeof s.messaggioAttivoIdx === 'number') messaggioAttivoIdx = s.messaggioAttivoIdx === 1 ? 1 : 0;
     }
     if (!firma && datiAttivita.nome) firma = datiAttivita.nome;   // pre-compila firma dal nome se non è mai stata impostata
     if (r[17] && r[17].valore) preventivi.splice(0, Infinity, ...JSON.parse(r[17].valore));
@@ -5462,7 +5469,7 @@ function dbSalva() {
       { chiave: 'datiAttivita',   valore: JSON.stringify(datiAttivita) },
       { chiave: 'preventivi',     valore: JSON.stringify(preventivi) },
       { chiave: 'prevContatore',  valore: _prevContatore },
-      { chiave: 'sollecito',      valore: JSON.stringify({ firma, messaggi }) },
+      { chiave: 'sollecito',      valore: JSON.stringify({ firma, messaggi, messaggioAttivoIdx }) },
     ]);
   } catch (e) { console.warn('DB salva:', e); }
 }
@@ -6621,20 +6628,19 @@ document.addEventListener('DOMContentLoaded', () => {
 // Sollecito: arancione = ora del messaggio (WhatsApp con il testo già scritto), rosso = ora di telefonare
 let firma = '';
 const MESSAGGI_DEFAULT = [
-  { nome: 'Leggero',       testo: 'Ciao {nome}, ti ricordo il pagamento di {importo} per {lavoro}. Grazie! {firma}' },
-  { nome: 'Urgente',       testo: 'Gentile {nome}, il pagamento di {importo} per {lavoro} è ancora in sospeso. Ti chiedo di provvedere. {firma}' },
-  { nome: 'Personalizzato', testo: 'Ciao {nome}. {firma}' },
+  { nome: 'Leggero', testo: 'Ciao {nome}, ti ricordo il pagamento di {importo} per {lavoro}. Grazie! {firma}' },
+  { nome: 'Urgente', testo: 'Gentile {nome}, il pagamento di {importo} per {lavoro} è ancora in sospeso. Ti chiedo di provvedere. {firma}' },
 ];
 let messaggi = MESSAGGI_DEFAULT.map(m => ({ ...m }));
-function testoSollecito(c, k, idx = 0) {
+let messaggioAttivoIdx = 0;
+function testoSollecito(c, k) {
   const lav = k.daPagare.length === 1 ? (k.daPagare[0].cosa || 'il lavoro').toLowerCase() : `${k.daPagare.length} lavori`;
-  const tpl = (messaggi[idx] || messaggi[0]).testo;
+  const tpl = messaggi[messaggioAttivoIdx].testo;
   return tpl.replace('{nome}', c.nome).replace('{importo}', euro(k.dovuto)).replace('{lavoro}', lav).replace('{firma}', firma).trim();
 }
 function tastiSollecito(c, k) {
   const cifre = (c.tel || '').replace(/\D/g, '');
-  const idx = k.giorni > soglie.rosso ? 1 : 0;   // arancione → leggero, rosso → urgente
-  const wa = `https://wa.me/${cifre ? '39' + cifre : ''}?text=${encodeURIComponent(testoSollecito(c, k, idx))}`;
+  const wa = `https://wa.me/${cifre ? '39' + cifre : ''}?text=${encodeURIComponent(testoSollecito(c, k))}`;
   return `<a class="sol-msg" href="${wa}" target="_blank" rel="noopener">Messaggio</a>${cifre ? `<a class="sol-tel${k.giorni > soglie.rosso ? ' forte' : ''}" href="tel:${cifre}">Chiama</a>` : ''}`;
 }
 
@@ -8265,19 +8271,22 @@ const GRUPPI_IMP = [
     } },
     { id: 'messaggi', nome: 'Messaggi per chi deve pagare', valore: () => firma ? `Firmato: ${firma} · ${messaggi.length} modelli` : `${messaggi.length} modelli pronti`, corpo: el => {
       el.innerHTML = `<label class="campo"><span>La tua firma</span><input id="i-firma" class="imp-input" value="${sicuro(firma)}" placeholder="Es. Marco, giardiniere"></label>
-        <p class="imp-testo">La firma appare in tutti i messaggi. {nome}, {importo}, {lavoro} e {firma} si scrivono da soli.</p>
+        <p class="imp-testo" style="margin-bottom:4px">{nome}, {importo}, {lavoro} e {firma} si scrivono da soli.</p>
         <div class="msg-carosello">
           ${messaggi.map((m, i) => `
-            <div class="msg-card">
-              <p class="imp-testo" style="margin:0"><strong>${sicuro(m.nome)}</strong>${i === 0 ? ' · arancione' : i === 1 ? ' · rosso' : ''}</p>
-              <label class="campo" style="gap:4px"><span style="font-size:13px;font-weight:700;color:var(--testo-2)">Nome modello</span><input class="imp-input i-msg-nome" data-i="${i}" value="${sicuro(m.nome)}"></label>
-              <label class="campo" style="gap:4px"><textarea class="imp-input i-msg-testo" data-i="${i}" rows="4">${sicuro(m.testo)}</textarea></label>
+            <div class="msg-card${i === messaggioAttivoIdx ? ' msg-card-attiva' : ''}">
+              <div class="msg-card-top">
+                <span class="msg-card-label">${sicuro(m.nome)}</span>
+                <button type="button" class="msg-reset" data-i="${i}" title="Ripristina testo originale">↺</button>
+              </div>
+              <textarea class="imp-input i-msg-testo" data-i="${i}" rows="4">${sicuro(m.testo)}</textarea>
+              <button type="button" class="msg-salva${i === messaggioAttivoIdx ? ' attivo' : ''}" data-i="${i}">${i === messaggioAttivoIdx ? '✓ Attivo' : 'Salva e usa'}</button>
             </div>`).join('')}
-        </div>
-        <p class="imp-testo">Si apre WhatsApp col testo già scritto: puoi modificarlo prima di mandarlo.</p>`;
+        </div>`;
       $('i-firma').onchange = e => { firma = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
-      el.querySelectorAll('.i-msg-nome').forEach(inp => { inp.onchange = e => { messaggi[+inp.dataset.i].nome = e.target.value.trim() || MESSAGGI_DEFAULT[+inp.dataset.i].nome; dbSalva(); disegnaImpostazioni(); }; });
-      el.querySelectorAll('.i-msg-testo').forEach(ta =>  { ta.onchange  = e => { messaggi[+ta.dataset.i].testo = e.target.value || MESSAGGI_DEFAULT[+ta.dataset.i].testo; dbSalva(); disegnaImpostazioni(); }; });
+      el.querySelectorAll('.i-msg-testo').forEach(ta => { ta.oninput = e => { const btn = el.querySelector(`.msg-reset[data-i="${ta.dataset.i}"]`); if (btn) btn.style.opacity = e.target.value ? '1' : '0.4'; }; });
+      el.querySelectorAll('.msg-reset').forEach(btn => { btn.onclick = () => { const i = +btn.dataset.i; const ta = el.querySelector(`.i-msg-testo[data-i="${i}"]`); if (ta) { ta.value = MESSAGGI_DEFAULT[i].testo; messaggi[i].testo = MESSAGGI_DEFAULT[i].testo; dbSalva(); } }; });
+      el.querySelectorAll('.msg-salva').forEach(btn => { btn.onclick = () => { const i = +btn.dataset.i; const ta = el.querySelector(`.i-msg-testo[data-i="${i}"]`); messaggi[i].testo = (ta?.value || '').trim() || MESSAGGI_DEFAULT[i].testo; messaggioAttivoIdx = i; dbSalva(); disegnaImpostazioni(); }; });
     } },
   ]],
   ['Personalizza', [
