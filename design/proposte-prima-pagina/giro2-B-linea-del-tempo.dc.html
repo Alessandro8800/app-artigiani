@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Proposta B · Linea del tempo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0A0A}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:2px}
+.c{height:40px;display:flex;align-items:center;justify-content:center;position:relative;font-size:15px;font-weight:500;color:var(--t1);font-variant-numeric:tabular-nums}
+.c.past{color:var(--t3)}
+.c .n{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.c.today .n{background:var(--acc);color:var(--onacc);font-weight:700}
+.c.span-s{background:var(--s2);border-radius:20px 0 0 20px}
+.c.span-e{background:var(--s2);border-radius:0 20px 20px 0}
+.c .dot{position:absolute;bottom:1px;width:4px;height:4px;border-radius:50%;background:var(--acc)}
+.c .drop{position:absolute;top:2px;right:7px;color:var(--rain)}
+.tl{display:grid;grid-template-columns:58px 32px minmax(0,1fr);column-gap:8px}
+</style>
+</helmet>
+<div style="--bg:#0A0A0A;--s1:#141414;--s2:#1F1F1F;--bd:#262626;--t1:#F2F2F2;--t2:#A3A3A3;--t3:#8A8A8A;--acc:#FF7A3D;--onacc:#1C0A02;--accs:rgba(255,122,61,.12);--warn:#FFC53D;--rain:#5AB8FF;width:390px;height:1400px;position:relative;overflow:hidden;box-sizing:border-box;background:var(--bg);color:var(--t1);font-family:Inter,system-ui,sans-serif;padding:22px 20px 210px;display:flex;flex-direction:column;gap:20px">
+
+  <header style="display:flex;align-items:flex-start;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:64px;font-weight:700;letter-spacing:-0.05em;line-height:.9;font-variant-numeric:tabular-nums">23</span>
+      <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:600">Lunedì</span><span style="font-size:14px;color:var(--t2)">Novembre 2026</span></span>
+    </div>
+    <div style="display:flex;gap:2px">
+      <button aria-label="Profilo" style="width:44px;height:44px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;padding:0"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></button>
+      <button aria-label="Impostazioni" style="width:44px;height:44px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;padding:0"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+    </div>
+  </header>
+
+  <a href="#" style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);text-decoration:none;color:var(--t1)">
+    <span style="display:flex;align-items:baseline;gap:10px"><span style="font-size:14px;color:var(--t2)">Ti devono</span><span style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">1.240 €</span></span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--acc)"><span style="width:7px;height:7px;border-radius:50%;background:var(--acc)"></span>2 in ritardo</span>
+  </a>
+
+  <section aria-label="Calendario" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:600">Novembre</span>
+      <div style="display:flex">
+        <button aria-label="Mese prima" style="width:44px;height:36px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+        <button aria-label="Mese dopo" style="width:44px;height:36px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+      </div>
+    </div>
+    <div class="cal-g" style="font-size:11px;font-weight:600;color:var(--t2);text-align:center;letter-spacing:.06em;text-transform:uppercase;padding-bottom:4px">
+      <span>L</span><span>M</span><span>M</span><span>G</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div class="cal-g">
+      <sc-for list="{{cells}}" as="d" hint-placeholder-count="42">
+        <div class="{{d.cls}}">
+          <span class="n">{{d.n}}</span>
+          <sc-if value="{{d.dot}}" hint-placeholder-val="{{false}}"><span class="dot"></span></sc-if>
+          <sc-if value="{{d.rain}}" hint-placeholder-val="{{false}}"><svg class="drop" width="8" height="10" viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0C5 0 0 5.5 0 8a5 5 0 0 0 10 0C10 5.5 5 0 5 0z" fill="currentColor"></path></svg></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-label="Oggi" style="display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+      <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)">Oggi · 3 lavori · <span style="color:var(--t1)">330 €</span></h2>
+      <div style="display:flex;gap:14px">
+        <button style="border:0;background:transparent;color:var(--t2);font:600 13px Inter,sans-serif;padding:6px 0">Riprogramma</button>
+        <button style="border:0;background:transparent;color:var(--acc);font:600 13px Inter,sans-serif;padding:6px 0">+ Aggiungi</button>
+      </div>
+    </div>
+    <sc-for list="{{oggi}}" as="j" hint-placeholder-count="3">
+      <div class="tl">
+        <span style="padding-top:16px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--t1);text-align:right">{{j.ora}}</span>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <button aria-label="Segna come fatto" style="width:32px;height:44px;border:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:center;margin-top:4px"><span style="width:24px;height:24px;border-radius:50%;border:2px solid var(--acc);box-sizing:border-box;display:block"></span></button>
+          <span style="flex:1;width:2px;background:var(--bd);min-height:30px"></span>
+        </div>
+        <div style="padding:14px 0 18px;display:flex;flex-direction:column;gap:4px">
+          <strong style="font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:{{j.colore}}"></span>{{j.nome}}</strong>
+          <span style="font-size:14px;color:var(--t2)">{{j.cosa}} · <span style="color:var(--t1);font-weight:600">{{j.prezzo}}</span></span>
+          <span style="font-size:13px;color:var(--t2)">{{j.dove}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+
+  <section aria-label="Domani" style="display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+      <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)">Domani · 2 lavori · <span style="color:var(--t1)">210 €</span></h2>
+    </div>
+    <sc-for list="{{domani}}" as="j" hint-placeholder-count="2">
+      <div class="tl">
+        <span style="padding-top:16px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--t2);text-align:right">{{j.ora}}</span>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <button aria-label="Segna come fatto" style="width:32px;height:44px;border:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:center;margin-top:4px"><span style="width:24px;height:24px;border-radius:50%;border:2px solid var(--bd);box-sizing:border-box;display:block"></span></button>
+          <span style="flex:1;width:2px;background:var(--bd);min-height:30px"></span>
+        </div>
+        <div style="padding:14px 0 18px;display:flex;flex-direction:column;gap:4px">
+          <strong style="font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:{{j.colore}}"></span>{{j.nome}}</strong>
+          <span style="font-size:14px;color:var(--t2)">{{j.cosa}} · <span style="color:var(--t1);font-weight:600">{{j.prezzo}}</span></span>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+
+  <div style="position:absolute;left:12px;right:12px;bottom:92px;background:var(--s1);border:1px solid var(--bd);border-radius:24px;padding:12px 12px 10px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -10px 30px rgba(0,0,0,.6)">
+    <label for="dici" style="position:absolute;left:-9999px">Dì o scrivi</label>
+    <input id="dici" placeholder="Dì o scrivi cosa è successo…" style="border:0;background:transparent;color:var(--t1);font:400 16px Inter,sans-serif;outline:none;padding:4px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:4px">
+        <button aria-label="Avvisi, 1" style="position:relative;width:40px;height:40px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;padding:0"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3L2 20h20L12 3z"></path><path d="M12 10v4M12 17h.01"></path></svg><span style="position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--warn)"></span></button>
+        <span style="width:1px;height:16px;background:var(--bd)"></span>
+        <button aria-label="Da confermare, 2" style="position:relative;width:40px;height:40px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;padding:0"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 8 2 8H4s2-2 2-8"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg><span style="position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--acc)"></span></button>
+        <span style="width:1px;height:16px;background:var(--bd)"></span>
+        <button aria-label="Note" style="width:40px;height:40px;border:0;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;padding:0"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 12h7M9 16h5"></path></svg></button>
+      </div>
+      <button aria-label="Parla" style="height:44px;padding:0 18px;border-radius:22px;border:0;background:var(--acc);color:var(--onacc);display:flex;align-items:center;gap:8px;font:600 15px Inter,sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Parla</button>
+    </div>
+  </div>
+
+  <nav aria-label="Sezioni" style="position:absolute;left:0;right:0;bottom:0;height:80px;background:#0A0A0A;border-top:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-around;padding-top:8px">
+    <a href="#" style="position:relative;width:76px;height:52px;color:var(--t1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;font-size:11px;font-weight:600"><span style="position:absolute;top:-9px;width:28px;height:3px;border-radius:2px;background:var(--acc);box-shadow:0 0 12px var(--acc)"></span><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Calendario</a>
+    <a href="#" style="width:76px;height:52px;color:var(--t2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;font-size:11px;font-weight:500"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2.2.6 3.5 2.6 3.5 5.5"></path></svg>Clienti</a>
+    <a href="#" style="width:76px;height:52px;color:var(--t2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;font-size:11px;font-weight:500"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Conti</a>
+    <a href="#" style="width:76px;height:52px;color:var(--t2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;font-size:11px;font-weight:500"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M12.5 11v6M9.5 14h6"></path></svg>Preventivi</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var cells = [];
+    for (var i = 0; i < 6; i++) cells.push({ n: '', cls: 'c' });
+    for (var n = 1; n <= 30; n++) {
+      var cls = 'c';
+      if (n < 23) cls += ' past';
+      if (n === 23) cls += ' today';
+      if (n === 26) cls += ' span-s';
+      if (n === 27) cls += ' span-e';
+      cells.push({ n: n, cls: cls, dot: n === 24 || n === 25 || n === 28, rain: n === 25 });
+    }
+    while (cells.length < 42) cells.push({ n: '', cls: 'c' });
+    return {
+      cells: cells,
+      oggi: [
+        { ora: '8:30', nome: 'Villa Sibilla', colore: '#4FC3D9', cosa: 'Taglio siepe', prezzo: '180 €', dove: 'Via Mazzini 4, Monza' },
+        { ora: '14:30', nome: 'Luca Bassi', colore: '#9BE15D', cosa: 'Taglio erba', prezzo: '80 €', dove: 'Via XXIV Maggio 34, Lissone' },
+        { ora: '16:30', nome: 'Fabbrica Colombo', colore: '#B48CFF', cosa: 'Manutenzione verde', prezzo: '70 €', dove: 'Viale Lombardia 120, Monza' }
+      ],
+      domani: [
+        { ora: '9:00', nome: 'Anna Bosco', colore: '#FF8FA3', cosa: 'Raccolta foglie', prezzo: '90 €' },
+        { ora: '15:00', nome: 'Giardini Rota', colore: '#4FC3D9', cosa: 'Potatura', prezzo: '120 €' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -105,6 +105,19 @@ si cambia già dalle Impostazioni. Colore preferito: **arancione**. Il nuovo loo
 **com'è fatto** ogni pezzo (forme, calendario, carte, barra Parla, profondità, animazioni), non la
 tinta. → Rifare la Fase 2: 3 proposte arancioni che differiscono per **concetto visivo**.
 
+**Decisione (23/11): si possono cambiare le forme dei blocchi**, tenendo le stesse funzioni.
+(Cambia la regola "ogni cosa resta al suo posto" del 22/11.)
+
+### Giro 2 — 3 forme nuove, tutte arancioni (stessa pagina, scheda "Giro 2")
+
+| | Idea | Cosa cambia rispetto a oggi |
+|---|---|---|
+| **A · Cruscotto** | i numeri che contano subito in vista | riquadri in alto (Ti devono, Oggi, In ritardo); Avvisi/Da confermare/Note come pillole con il nome; **settimana in una striscia** (il mese con un tocco); carte con l'ora in un riquadro e "Fatto" a destra; i giorni dopo come righe da aprire; **microfono rotondo accanto alla barra in basso** |
+| **B · Linea del tempo** | sobria, quasi solo grigi, tipo agenda di carta | data enorme ("23"); Ti devono su una riga; calendario senza riquadro; **lavori su una linea del tempo** con l'ora a sinistra e un cerchio da spuntare; **casella "Dì o scrivi" fissa in basso** con dentro le 3 icone e "Parla" |
+| **C · Tattile** | tasti che sembrano veri, da premere | tasti in rilievo; **ruota dei giorni** che rimpicciolisce ai lati (punto 17 dell'HANDOFF); riquadro "Oggi" con l'anello 1/3 fatti; Ti devono con una barra colorata per ritardo; "Fatto" come tasto arancione in rilievo; **microfono grande al centro della barra in basso** |
+
+Note: in A e C profilo e impostazioni sono un solo tondo con le iniziali (da decidere).
+
 ## 4. Regole per questo lavoro
 
 - Solo look: niente pezzi spostati, niente funzioni nuove.
