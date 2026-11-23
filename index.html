@@ -1652,6 +1652,29 @@ button.s-riga:first-child { border-top: 0; }
 .mic-box-onda span:nth-child(6) { animation-delay: .1s; } .mic-box-onda span:nth-child(7) { animation-delay: .3s; }
 .mic-box-onda span:nth-child(8) { animation-delay: .2s; } .mic-box-onda span:nth-child(9) { animation-delay: .4s; }
 
+/* Barra dei comandi sotto il calendario (24/11): un unico riquadro come la casella di un'AI (#17).
+   Sopra: Parla (oppure la casella di testo) + matita/microfono; sotto: tre pillole con il nome. */
+.ai-barra { margin-top: 14px; padding: 8px; gap: 8px; background: var(--carta); border: 1px solid var(--linea); border-radius: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+.ai-barra-top { gap: 8px; }
+.ai-barra .ai-microfono { height: 56px; border-radius: 22px; font-size: 17px; }
+.ai-barra .ai-scrivi-btn, .ai-barra .ai-testo-invia { width: 56px; height: 56px; border-radius: 22px; transition: transform .12s ease-out, background .2s; }
+.ai-barra .ai-scrivi-btn { border: 0; background: var(--sfondo); color: var(--testo); }
+.ai-barra .ai-scrivi-btn svg, .ai-barra .ai-testo-invia svg { width: 22px; height: 22px; }
+.ai-barra .ai-testo-invia { box-shadow: 0 6px 18px color-mix(in srgb, var(--foglia) 40%, transparent); }
+.ai-barra .ai-testo-input { min-width: 0; height: 56px; border-radius: 22px; border: 1px solid var(--linea); background: var(--sfondo); font-size: 16px; padding: 0 18px; animation: apri-pop .25s ease-out; }
+.ai-barra .ai-testo-input:focus { border-color: var(--foglia); box-shadow: 0 0 0 3px var(--foglia-chiara); }
+.ai-scrive .ai-barra .ai-scrivi-btn { color: var(--foglia); background: var(--foglia-chiara); }   /* in modalità testo il tasto è il microfono arancio */
+.ai-barra .ai-ic-row { justify-content: space-between; gap: 6px; }
+.ai-barra .ai-ic-row-btn { flex: 1; width: auto; height: 42px; border-radius: 16px; background: var(--sfondo); color: var(--testo-2); gap: 6px; font-size: 13px; font-weight: 700; }
+.ai-barra .ai-ic-row-btn svg { width: 18px; height: 18px; flex: none; }
+.ai-barra .ai-ic-row-btn::after { order: 1; }
+#av-btn::after { content: 'Avvisi'; } #ai-tutto::after { content: 'Conferme'; } #nr-btn::after { content: 'Note'; }
+.ai-barra .ai-ic-row-btn .ai-badge { position: static; order: 2; }
+.ai-barra .ai-ic-row-btn:active { transform: scale(.95); background: var(--foglia-chiara); color: var(--foglia); }
+.ai-barra .av-btn.ci-sono { color: var(--ambra); }
+.ai-barra .av-btn.urgenti { color: var(--rosso); }
+.ai-barra .ai-ic-row-btn.av-attivo { color: var(--rosso); background: color-mix(in srgb, var(--rosso) 12%, var(--sfondo)); }
+
 /* Scheda del lavoro */
 .l-tendina { border-width: 1px; border-radius: 20px; }
 .l-btn-ripr, .l-btn-annulla { border-radius: 99px; }
@@ -6316,14 +6339,15 @@ function toggleAiScrivi() {
   const mic = $('ai-mic'), inp = $('ai-testo-input'), invia = $('ai-testo-invia');
   const icMatita = $('ai-scrivi-ic-matita'), icMic = $('ai-scrivi-ic-mic');
   if (!mic || !inp) return;
-  if (inp.hidden) {
-    mic.hidden = true; inp.hidden = false; if (invia) invia.hidden = false;
-    if (icMatita) icMatita.hidden = true; if (icMic) icMic.hidden = false;
-    inp.focus();
-  } else {
-    mic.hidden = false; inp.hidden = true; if (invia) invia.hidden = true;
-    if (icMatita) icMatita.hidden = false; if (icMic) icMic.hidden = true;
-  }
+  // Le icone sono disegni (SVG): per loro ".hidden = …" non funziona, serve l'attributo vero
+  const scrivi = inp.hidden;   // true = passo alla casella di testo
+  mic.hidden = scrivi; inp.hidden = !scrivi; if (invia) invia.hidden = !scrivi;
+  if (icMatita) icMatita.toggleAttribute('hidden', scrivi);
+  if (icMic) icMic.toggleAttribute('hidden', !scrivi);
+  const btn = $('ai-scrivi');
+  if (btn) btn.setAttribute('aria-label', scrivi ? 'Torna al microfono' : 'Scrivi un messaggio');
+  $('vista-calendario').classList.toggle('ai-scrive', scrivi);
+  if (scrivi) inp.focus();
 }
 
 function inviaTestoAI() {
@@ -6331,7 +6355,7 @@ function inviaTestoAI() {
   const testo = inp.value.trim(); if (!testo) return;
   if (!ANTHROPIC_KEY) { apriChiaveAI('globale'); return; }
   inp.value = '';
-  $('ai-testo-riga').hidden = true;
+  toggleAiScrivi();   // dopo l'invio si torna al microfono (prima qui c'era un pezzo che non esiste più e dava errore)
   const box = $('mic-box');
   $('mic-box-testo').textContent = testo;
   $('mic-box-cat-wrap').hidden = false;
