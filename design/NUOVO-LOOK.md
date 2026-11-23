@@ -136,7 +136,10 @@ Tutto il nuovo stile sta in due blocchi "NUOVO LOOK (23/11)" in fondo agli stili
 2. ✅ Movimenti dalle ispirazioni: barra in basso a pillola con luce che scivola, fogli che salgono
    morbidi con sfondo sfocato, avvisi col bordo arancio, luce che gira sul microfono quando
    ascolta, "Fatto" che si gonfia con un'onda di luce, tasti che si schiacciano.
-3. Da fare: le altre schermate (Clienti, scheda cliente, Nuovo cliente, Conti con i riquadri tipo C,
+3. ✅ Clienti: riquadri in alto (Ti devono grande, In ritardo rosso, Clienti), tasti rapidi,
+   ricerca a pillola, liste in un riquadro unico con le iniziali. Corretto: i clienti con un
+   tipo non in elenco sparivano, ora vanno in "Altri".
+4. Da fare: le altre schermate (scheda cliente, Nuovo cliente, Conti con i riquadri tipo C,
    Preventivi, Impostazioni), poi il tema chiaro (oggi l'arancio nel chiaro viene marrone).
 - Problema trovato: il colore e il tema scelti nelle Impostazioni non vengono ricordati.
 
