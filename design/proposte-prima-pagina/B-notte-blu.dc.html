@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Proposta B · Notte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#070B16}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:4px}
+.c{height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;font-size:15px;font-weight:600;color:var(--t1)}
+.c.past{color:var(--t2)}
+.c .n{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:12px}
+.c.today .n{background:var(--acc);color:var(--onacc);font-weight:800;box-shadow:0 0 18px rgba(61,107,245,.6)}
+.c.span-s{background:var(--accs);border-radius:14px 0 0 14px}
+.c.span-e{background:var(--accs);border-radius:0 14px 14px 0}
+.c .dot{position:absolute;bottom:2px;width:5px;height:5px;border-radius:50%;background:var(--acct)}
+.c .dot.done{background:var(--t3)}
+.c .drop{position:absolute;top:3px;right:6px;color:var(--rain)}
+</style>
+</helmet>
+<div style="--bg:#070B16;--s1:#101729;--s2:#18213A;--bd:#232E4D;--t1:#EEF2FF;--t2:#A3AECB;--t3:#4E5A7A;--acc:#3D6BF5;--acct:#8FAAFF;--onacc:#FFFFFF;--accs:rgba(61,107,245,.22);--warn:#F5A524;--rain:#38D0E8;width:390px;height:1440px;position:relative;overflow:hidden;box-sizing:border-box;background:radial-gradient(120% 420px at 50% -60px, rgba(61,107,245,.38), transparent 70%), #070B16;color:var(--t1);font-family:Inter,system-ui,sans-serif;padding:20px 16px 110px;display:flex;flex-direction:column;gap:18px">
+
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;line-height:1.15">Lunedì 23 novembre</h1>
+      <p style="margin:0;font-size:14px;color:var(--t2);font-weight:500">3 lavori oggi · Ti devono <span style="color:var(--t1);font-weight:700">1.240 €</span></p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button aria-label="Profilo" style="width:44px;height:44px;border-radius:50%;border:1px solid var(--bd);background:rgba(24,33,58,.7);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></button>
+      <button aria-label="Impostazioni" style="width:44px;height:44px;border-radius:50%;border:1px solid var(--bd);background:rgba(24,33,58,.7);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+    </div>
+  </header>
+
+  <section aria-label="Calendario" style="background:rgba(16,23,41,.85);border:1px solid var(--bd);border-radius:24px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:16px;padding:4px">
+      <button aria-label="Mese prima" style="width:44px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--t1);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+      <div style="display:flex;gap:6px;font-size:17px;font-weight:700"><span>Novembre</span><span style="color:var(--t2)">2026</span></div>
+      <button aria-label="Mese dopo" style="width:44px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--t1);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+    </div>
+    <div class="cal-g" style="font-size:12px;font-weight:600;color:var(--t2);text-align:center;padding:2px 0">
+      <span>L</span><span>M</span><span>M</span><span>G</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div class="cal-g">
+      <sc-for list="{{cells}}" as="d" hint-placeholder-count="42">
+        <div class="{{d.cls}}">
+          <span class="n">{{d.n}}</span>
+          <sc-if value="{{d.dot}}" hint-placeholder-val="{{false}}"><span class="dot"></span></sc-if>
+          <sc-if value="{{d.done}}" hint-placeholder-val="{{false}}"><span class="dot done"></span></sc-if>
+          <sc-if value="{{d.rain}}" hint-placeholder-val="{{false}}"><svg class="drop" width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M5 0C5 0 0 5.5 0 8a5 5 0 0 0 10 0C10 5.5 5 0 5 0z" fill="currentColor"></path></svg></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-label="Assistente" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:10px">
+      <button style="flex:1;height:58px;border:0;border-radius:29px;background:var(--acc);color:var(--onacc);font:700 18px Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 28px rgba(61,107,245,.45)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Parla</button>
+      <button aria-label="Scrivi" style="width:58px;height:58px;border-radius:50%;border:1px solid var(--bd);background:var(--s1);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path><path d="M14 6l4 4"></path></svg></button>
+    </div>
+    <div style="display:flex;justify-content:center;gap:28px">
+      <button aria-label="Avvisi, 1" style="position:relative;width:48px;height:48px;border-radius:16px;border:1px solid var(--bd);background:var(--s1);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3L2 20h20L12 3z"></path><path d="M12 10v4M12 17h.01"></path></svg><span style="position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--warn);color:#241500;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">1</span></button>
+      <button aria-label="Da confermare, 2" style="position:relative;width:48px;height:48px;border-radius:16px;border:1px solid var(--bd);background:var(--s1);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 8 2 8H4s2-2 2-8"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg><span style="position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--acc);color:var(--onacc);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">2</span></button>
+      <button aria-label="Note" style="width:48px;height:48px;border-radius:16px;border:1px solid var(--bd);background:var(--s1);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 12h7M9 16h5"></path></svg></button>
+    </div>
+  </section>
+
+  <section aria-label="Oggi" style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <h2 style="margin:0;font-size:20px;font-weight:700">Oggi</h2>
+        <span style="font-size:13px;color:var(--t2);font-weight:500">3 lavori · 330 €</span>
+      </div>
+      <button aria-label="Aggiungi a oggi" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--bd);background:var(--s1);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+    </div>
+
+    <sc-for list="{{oggi}}" as="j" hint-placeholder-count="3">
+      <article style="background:var(--s1);border:1px solid var(--bd);border-radius:22px;padding:14px;display:flex;gap:12px;align-items:center">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:{{j.colore}};flex:none"></span>
+            <strong style="font-size:17px;font-weight:700">{{j.nome}}</strong>
+            <sc-if value="{{j.tipo}}" hint-placeholder-val="{{false}}"><span style="font-size:11px;font-weight:600;color:var(--t2);background:var(--s2);border-radius:8px;padding:3px 8px">{{j.tipo}}</span></sc-if>
+          </div>
+          <span style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--t2);font-weight:500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>{{j.dove}}</span>
+          <span style="font-size:14px;font-weight:500"><span style="color:var(--acct);font-weight:700">{{j.ora}}</span> · {{j.cosa}} · <b style="font-weight:700">{{j.prezzo}}</b></span>
+        </div>
+        <button aria-label="Segna come fatto" style="width:48px;height:48px;border-radius:16px;border:0;background:var(--accs);color:var(--acct);display:flex;align-items:center;justify-content:center;padding:0;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      </article>
+    </sc-for>
+  </section>
+
+  <section aria-label="Domani" style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <h2 style="margin:0;font-size:20px;font-weight:700">Domani <span style="color:var(--t2);font-weight:500;font-size:15px">· martedì 24</span></h2>
+        <span style="font-size:13px;color:var(--t2);font-weight:500">2 lavori · 210 €</span>
+      </div>
+      <button aria-label="Aggiungi a domani" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--bd);background:var(--s1);color:var(--t1);display:flex;align-items:center;justify-content:center;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+    </div>
+    <sc-for list="{{domani}}" as="j" hint-placeholder-count="2">
+      <article style="background:var(--s1);border:1px solid var(--bd);border-radius:22px;padding:14px;display:flex;gap:12px;align-items:center">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:{{j.colore}};flex:none"></span>
+            <strong style="font-size:17px;font-weight:700">{{j.nome}}</strong>
+          </div>
+          <span style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--t2);font-weight:500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>{{j.dove}}</span>
+          <span style="font-size:14px;font-weight:500"><span style="color:var(--acct);font-weight:700">{{j.ora}}</span> · {{j.cosa}} · <b style="font-weight:700">{{j.prezzo}}</b></span>
+        </div>
+        <button aria-label="Segna come fatto" style="width:48px;height:48px;border-radius:16px;border:1px solid var(--bd);background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;padding:0;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      </article>
+    </sc-for>
+  </section>
+
+  <nav aria-label="Sezioni" style="position:absolute;left:16px;right:16px;bottom:18px;height:68px;border-radius:34px;background:rgba(16,23,41,.80);backdrop-filter:blur(14px);border:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 8px;box-shadow:0 12px 32px rgba(0,0,0,.5)">
+    <a href="#" style="height:52px;padding:0 16px;border-radius:26px;background:var(--accs);color:var(--acct);display:flex;align-items:center;gap:8px;text-decoration:none;font-size:14px;font-weight:700"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Calendario</a>
+    <a href="#" aria-label="Clienti" style="width:56px;height:52px;border-radius:26px;color:var(--t2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;font-size:10px;font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2.2.6 3.5 2.6 3.5 5.5"></path></svg>Clienti</a>
+    <a href="#" aria-label="Conti" style="width:56px;height:52px;border-radius:26px;color:var(--t2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;font-size:10px;font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Conti</a>
+    <a href="#" aria-label="Preventivi" style="width:64px;height:52px;border-radius:26px;color:var(--t2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;font-size:10px;font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M12.5 11v6M9.5 14h6"></path></svg>Preventivi</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1440}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var cells = [];
+    for (var i = 0; i < 6; i++) cells.push({ n: '', cls: 'c' });
+    for (var n = 1; n <= 30; n++) {
+      var cls = 'c';
+      if (n < 23) cls += ' past';
+      if (n === 23) cls += ' today';
+      if (n === 26) cls += ' span-s';
+      if (n === 27) cls += ' span-e';
+      cells.push({
+        n: n,
+        cls: cls,
+        dot: n === 23 || n === 24 || n === 25 || n === 28,
+        done: n === 19 || n === 20 || n === 12,
+        rain: n === 25
+      });
+    }
+    while (cells.length < 42) cells.push({ n: '', cls: 'c' });
+    return {
+      cells: cells,
+      oggi: [
+        { nome: 'Villa Sibilla', tipo: 'Condominio', colore: '#4FC3D9', dove: 'Via Mazzini 4, Monza', ora: 'Mattina', cosa: 'Taglio siepe', prezzo: '180 €' },
+        { nome: 'Luca Bassi', tipo: '', colore: '#F5A524', dove: 'Via XXIV Maggio 34, Lissone', ora: '14:30', cosa: 'Taglio erba', prezzo: '80 €' },
+        { nome: 'Fabbrica Colombo', tipo: 'Fabbrica', colore: '#B48CFF', dove: 'Viale Lombardia 120, Monza', ora: 'Pomeriggio', cosa: 'Manutenzione verde', prezzo: '70 €' }
+      ],
+      domani: [
+        { nome: 'Anna Bosco', colore: '#FF8FA3', dove: 'Via dei Cipressi 9, Vedano', ora: 'Mattina', cosa: 'Raccolta foglie', prezzo: '90 €' },
+        { nome: 'Giardini Rota', colore: '#4FC3D9', dove: 'Via Cavour 21, Monza', ora: '15:00', cosa: 'Potatura', prezzo: '120 €' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

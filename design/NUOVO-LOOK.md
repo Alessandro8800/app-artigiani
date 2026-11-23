@@ -87,6 +87,21 @@ salvataggio con git. Niente pubblicazione (push) finché Alessandro non lo dice.
 ### Fase 6 — Collaudo finale
 - Prova completa sul telefono vero, anche all'aperto al sole.
 
+## Stato della Fase 2 (23/11)
+
+Tre proposte scure della prima pagina, stessa disposizione di oggi, dati inventati:
+https://claude.ai/artifact/KwCRQt2kYUYwbPB5dM8jzY (copia in `design/proposte-prima-pagina/`).
+
+| | Colore | Carattere | Carattere della proposta |
+|---|---|---|---|
+| **A · Bosco** | verde salvia | Manrope (quello di oggi) | la più vicina all'app attuale, rotonda, cerchio "Fatto" a contorno |
+| **B · Notte** | blu notte con una luce in alto | Inter | più "tecnologica": oggi in un quadratino che brilla, barra in basso sfocata, "Fatto" quadrato |
+| **C · Brace** | arancione su grigi neutri | Poppins | più morbida e grande: giorni della settimana in una pillola, data in grande, sezione attiva piena |
+
+In tutte: niente bordo colorato a sinistra sulle carte (il colore del cliente diventa un pallino),
+barra in basso a pillola che galleggia, lavori di più giorni uniti da una pillola (26-27).
+**Da scegliere:** una delle tre, o pezzi da più di una.
+
 ## 4. Regole per questo lavoro
 
 - Solo look: niente pezzi spostati, niente funzioni nuove.
