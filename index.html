@@ -1616,6 +1616,42 @@ button.s-riga:first-child { border-top: 0; }
 .ml-box .ml-fatto { color: var(--foglia); }
 .ml-box .ml-annulla { justify-content: center; margin-top: 4px; color: var(--testo-2); border-top: 1px solid var(--linea); border-radius: 0 0 16px 16px; }
 
+/* Animazioni (23/11) — "si vedono ma non disturbano" */
+/* Fatto: il lavoro scivola via di lato, poi quelli sotto salgono */
+#agenda .lavoro { border-radius: 16px; }
+#agenda .lavoro.via, #vista-clienti .cliente.via { transform: translateX(45%); opacity: 0; max-height: 0; padding-block: 0; margin-top: 0; border-width: 0;
+  transition: transform .32s ease-in, opacity .28s ease-in, max-height .3s .22s ease-out, padding .3s .22s ease-out; }
+/* Lavoro appena salvato: si illumina un attimo */
+#agenda .lavoro.appena-salvato { animation: brilla 1.8s ease-out; }
+@keyframes brilla { 0%, 30% { background: color-mix(in srgb, var(--foglia) 20%, transparent); } 100% { background: transparent; } }
+/* Salva → "✓ Salvato": la spunta si disegna */
+#f-salva:disabled { opacity: 1; }
+#f-salva:disabled svg path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: disegna-spunta .3s .05s ease-out forwards; }
+@keyframes disegna-spunta { to { stroke-dashoffset: 0; } }
+/* Numero che cambia: un lampo di luce mentre scorre */
+.cambia { animation: lampo-numero .8s ease-out; }
+@keyframes lampo-numero { 0%, 40% { text-shadow: 0 0 18px color-mix(in srgb, var(--foglia) 70%, transparent); } 100% { text-shadow: none; } }
+/* Elimina tenendo premuto: il tasto si riempie di rosso dal basso */
+.tieni { position: relative; overflow: hidden; isolation: isolate; touch-action: none; -webkit-user-select: none; user-select: none; }
+.tieni > svg { position: relative; }
+.tieni-pieno { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: color-mix(in srgb, var(--rosso) 45%, transparent); transform: scaleY(0); transform-origin: bottom; pointer-events: none; }
+/* Cambio schermata dalla barra */
+.entra-dx { animation: entra-da-destra .3s cubic-bezier(.22, 1, .36, 1); }
+.entra-sx { animation: entra-da-sinistra .3s cubic-bezier(.22, 1, .36, 1); }
+/* Numerini che saltano quando aumentano */
+.salta { animation: salta-badge .45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes salta-badge { 0% { transform: scale(.6); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+/* Onde del microfono: 9 barrette arancio che si muovono a ritmi diversi */
+.mic-box-onda { gap: 4px; height: 44px; }
+.mic-box-onda span { width: 4px; background: var(--foglia); box-shadow: 0 0 8px color-mix(in srgb, var(--foglia) 50%, transparent); }
+.mic-box-onda span:nth-child(1), .mic-box-onda span:nth-child(9) { height: 10px; animation-duration: 1.1s; }
+.mic-box-onda span:nth-child(2), .mic-box-onda span:nth-child(8) { height: 20px; animation-duration: .8s; }
+.mic-box-onda span:nth-child(3), .mic-box-onda span:nth-child(7) { height: 30px; animation-duration: 1s; }
+.mic-box-onda span:nth-child(4), .mic-box-onda span:nth-child(6) { height: 38px; animation-duration: .7s; }
+.mic-box-onda span:nth-child(5) { height: 44px; animation-duration: .9s; }
+.mic-box-onda span:nth-child(6) { animation-delay: .1s; } .mic-box-onda span:nth-child(7) { animation-delay: .3s; }
+.mic-box-onda span:nth-child(8) { animation-delay: .2s; } .mic-box-onda span:nth-child(9) { animation-delay: .4s; }
+
 /* Scheda del lavoro */
 .l-tendina { border-width: 1px; border-radius: 20px; }
 .l-btn-ripr, .l-btn-annulla { border-radius: 99px; }
@@ -1937,7 +1973,7 @@ button.s-riga:first-child { border-top: 0; }
 <div id="mic-box" hidden>
   <div class="mic-box">
     <div class="mic-box-testa">
-      <div class="mic-box-onda"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="mic-box-onda"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       <button id="mic-box-chiudi" class="mic-box-chiudi-btn" aria-label="Annulla">✕</button>
     </div>
     <p id="mic-box-testo" class="mic-box-testo"><em>Parla pure…</em></p>
@@ -2904,7 +2940,7 @@ function segnaFatto(carta, prezzoChiesto) {
   if (l.prezzo == null && !prezzoChiesto) return chiediPrezzo(carta);   // senza prezzo non risulterebbe mai da pagare
   l.fatto = true;
   carta.classList.add('fatto');        // 1. bordo verde + spunta
-  if (navigator.vibrate) navigator.vibrate(20);
+  vibra();
   disegnaTestata(); disegnaCalendario();
   const voce = carta.closest('.indietro-voce') || carta;
   setTimeout(() => voce.classList.add('via'), 800);   // 2. la carta si chiude
@@ -3513,7 +3549,7 @@ function creaRotella(el, { dopo } = {}) {
     lp = setTimeout(() => {
       lp = null;
       const v = Number(cell.dataset.v);
-      if (navigator.vibrate) navigator.vibrate(30);
+      vibra();
       r.livello++; r.centro = v;
       metti(v, false); // senza avvisare: una pagina che si ridisegna perderebbe il livello appena scelto
       r.disegna();
@@ -3948,6 +3984,8 @@ function salva() {
     // Dopo il salvataggio non si apre il giorno: si torna a dove eri (home, o le notifiche se venivi da lì)
     chiudiFoglio();
     tutto();
+    const nuovaCarta = document.querySelector(`#agenda .lavoro[data-id="${nuovo.id}"]`);   // il lavoro appena salvato si illumina
+    if (nuovaCarta) nuovaCarta.classList.add('appena-salvato');
     avvisa(`Salvato: ${nome}, ${nomeGiorno(quando).toLowerCase()}${ripetuti ? ` (+${ripetuti} ripetuti)` : ''}`);
     if (!$('scheda').hidden) disegnaScheda();
   }, 350);
@@ -6214,7 +6252,7 @@ function avviaMicrofono(sorgente) {
         const et = etichettaRisultato(ris);
         catEl.className = 'mic-box-cat cat-' + et.cat;
         catEl.textContent = et.testo;
-        if (navigator.vibrate && vibrazioneAttiva) navigator.vibrate(60);
+        vibra();
         // Countdown 4 secondi + Annulla
         const autoWrap = document.createElement('div');
         autoWrap.className = 'mic-box-auto-wrap';
@@ -6406,7 +6444,7 @@ function disegnaClienti() {
   const saldati = tutti.filter(c => c.dovuto === 0).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
   const totale = devono.reduce((s, c) => s + c.dovuto, 0);
 
-  $('c-totale').textContent = euro(totale);
+  contaNumero($('c-totale'), 'clienti-totale', totale);   // dopo un "Pagato" il numero scende contando
   const cts = $('c-totale-sotto');
   if (cts) cts.textContent = devono.length ? `da ${devono.length} ${devono.length === 1 ? 'cliente' : 'clienti'}` : 'nessuno ti deve soldi';
   // "In ritardo" = chi ha l'etichetta arancione o rossa (non tutti quelli che devono)
@@ -6540,7 +6578,7 @@ function segnaPagato(riga) {
   if (!dovuto || riga.classList.contains('fatto')) return;   // tocchi ripetuti: ignorati
   const annulla = registraPagamento(nome, dovuto);
   riga.classList.add('fatto');
-  if (navigator.vibrate) navigator.vibrate(20);
+  vibra();
   setTimeout(() => riga.classList.add('via'), 800);
   setTimeout(() => {
     disegnaClienti();
@@ -6638,6 +6676,7 @@ function disegnaScheda() {
     ${resa}
     <div class="s-righe">${tutteRighe.length ? tutteRighe.join('') : '<div class="s-vuoto">Ancora nessun lavoro</div>'}</div>`;
   $('s-corpo').querySelectorAll('.s-riga[data-id]').forEach(b => { b.onclick = () => apriLavoro(+b.dataset.id, b.dataset.fatto ? 'report' : undefined); });
+  contaNumero(document.querySelector('#scheda .s-dovuto strong'), 'scheda:' + schedaNome, k.dovuto);   // "Ti deve" scende contando
 
   if (!k.dovuto) return;
   $('s-tutto').onclick = () => pagaTutto($('s-tutto'));
@@ -6653,7 +6692,7 @@ function disegnaScheda() {
 function pagaTutto(b) {
   if (b.disabled) return;                       // tocchi ripetuti: ignorati
   const nome = schedaNome, { dovuto } = conto(nome);
-  if (navigator.vibrate) navigator.vibrate(20);
+  vibra();
   const annulla = registraPagamento(nome, dovuto);
   disegnaScheda();
   avvisa(`${nome}: pagato ${euro(dovuto)}`, { etichetta: 'Annulla', fai: () => { annulla(); if (schedaNome === nome) disegnaScheda(); disegnaClienti(); } });
@@ -6668,7 +6707,7 @@ function pagaParte() {
   $('s-errore').textContent = errore; $('s-errore').hidden = !errore;
   if (errore) return;
   const annulla = registraPagamento(nome, importo, pagaPer);
-  if (navigator.vibrate) navigator.vibrate(20);
+  vibra();
   disegnaScheda();
   const resta = arrotonda(dovuto - importo);
   avvisa(resta ? `Ricevuti ${euro(importo)}, restano ${euro(resta)}` : `${nome}: pagato tutto`,
@@ -6678,7 +6717,7 @@ function pagaParte() {
 $('s-chiudi').onclick = chiudiScheda;
 $('s-modifica').onclick = () => apriModifica(schedaNome);
 $('s-nuovo-job').onclick = () => apriFoglio(null, schedaNome);
-$('s-elimina').onclick = eliminaCliente;
+// (il tasto Elimina si usa tenendolo premuto: vedi tieniPremutoPer, più in basso)
 
 function eliminaCliente() {
   const nome = schedaNome;
@@ -8236,7 +8275,7 @@ const GRUPPI_IMP = [
       el.innerHTML = `<p class="imp-testo">Vibra quando l'assistente vocale riconosce quello che hai detto.</p>
         <div class="notifica"><div class="notifica-testa"><span><strong>Vibrazione al riconoscimento</strong></span>
           <button type="button" class="interruttore${vibrazioneAttiva ? ' acceso' : ''}" id="vib-toggle" role="switch" aria-checked="${vibrazioneAttiva}"><i></i></button></div></div>`;
-      el.querySelector('#vib-toggle').onclick = () => { vibrazioneAttiva = !vibrazioneAttiva; disegnaImpostazioni(); };
+      el.querySelector('#vib-toggle').onclick = () => { vibrazioneAttiva = !vibrazioneAttiva; ricordaAspetto(); if (vibrazioneAttiva) vibra(); disegnaImpostazioni(); };
     } },
     { id: 'notifiche', nome: 'Notifiche', valore: () => `${NOTIFICHE.filter(n => n.attiva).length} attive su ${NOTIFICHE.length} · in arrivo`, corpo: el => {
       el.innerHTML = `<span class="imp-in-arrivo">In arrivo: per ora si scelgono soltanto</span>
@@ -8654,9 +8693,12 @@ function estraiIndirizzo(testo) {
 }
 
 // Tema, colore e grandezza del testo scelti nelle Impostazioni: ora si ricordano (prima si perdevano a ogni apertura)
-function ricordaAspetto() { try { localStorage.setItem('aspetto', JSON.stringify({ tema, accento, testo })); } catch (e) {} }
+function ricordaAspetto() { try { localStorage.setItem('aspetto', JSON.stringify({ tema, accento, testo, vibrazione: vibrazioneAttiva })); } catch (e) {} }
+// Vibrazione leggera e breve (Fatto, Pagato, Elimina, pressione lunga). Si spegne da Impostazioni → Vibrazione.
+function vibra(ms = 12) { if (vibrazioneAttiva && navigator.vibrate) navigator.vibrate(ms); }
 try {
   const a = JSON.parse(localStorage.getItem('aspetto') || '{}');
+  if (typeof a.vibrazione === 'boolean') vibrazioneAttiva = a.vibrazione;
   if (ACCENTI[a.accento]) accento = a.accento;
   if (TEMI[a.tema]) { tema = a.tema; if (tema !== 'auto') document.documentElement.dataset.theme = tema; }
   if (TESTI[a.testo]) { testo = a.testo; document.documentElement.style.fontSize = (TESTI[testo][1] * 100) + '%'; }
@@ -8675,7 +8717,7 @@ document.addEventListener('click', e => {
 //    se si è già sul Calendario, il telefono esce dall'app come sempre.
 //    Come funziona: per ogni cosa aperta l'app aggiunge un passo alla "cronologia" del browser;
 //    l'indietro del telefono toglie un passo e qui chiudiamo la cosa in cima.
-const SEL_SOPRA = '.foglio-sfondo:not([hidden]), .q-pop:not([hidden])';
+const SEL_SOPRA = '.foglio-sfondo:not([hidden]), .q-pop:not([hidden]), #mic-box:not([hidden])';
 const sopraAperti = () => [...document.querySelectorAll(SEL_SOPRA)];
 function livelliAperti() {
   const altraVista = ['clienti', 'conti', 'preventivi', 'impostazioni', 'profilo'].some(v => { const el = document.getElementById('vista-' + v); return el && !el.hidden; });
@@ -8765,7 +8807,7 @@ document.addEventListener('touchend', () => {
     c.classList.add('in-pressione');
     premi = { c, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
       c.classList.remove('in-pressione'); premi = null; ingoiaClick = true;
-      if (navigator.vibrate) navigator.vibrate(15);
+      vibra();
       apriMenuLavoro(c);
     }, 500) };
   }, { passive: true });
@@ -8804,6 +8846,95 @@ function apriMenuLavoro(carta) {
   m.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { m.hidden = true; }));
   m.hidden = false;
 }
+
+// ===== ANIMAZIONI (23/11) — decise con il titolare: "si vedono ma non disturbano" =====
+// Numeri che scorrono: quando un importo cambia (es. dopo "Pagato") il numero va dal vecchio al nuovo
+// (la memoria sta sulla funzione stessa: può essere chiamata anche prima che questo pezzo di script sia letto)
+function contaNumero(el, chiave, valore) {
+  if (!el) return;
+  const memoria = contaNumero.memoria || (contaNumero.memoria = {});
+  // si parte dal numero che si vede adesso (anche se stava ancora contando), non da quello finale
+  const prima = memoria['ora:' + chiave] ?? memoria[chiave];
+  memoria[chiave] = valore; memoria['ora:' + chiave] = valore;
+  if (prima == null || prima === valore || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = euro(arrotonda(valore)); return; }
+  const t0 = performance.now(), DURATA = 700;
+  cancelAnimationFrame(memoria['raf:' + chiave]);           // se stava già contando, quel conteggio si ferma
+  const passo = t => {
+    const p = Math.min(1, (t - t0) / DURATA), e = 1 - Math.pow(1 - p, 3);
+    const ora = p < 1 ? Math.round(prima + (valore - prima) * e) : valore;
+    memoria['ora:' + chiave] = ora;
+    el.textContent = euro(p < 1 ? ora : arrotonda(valore));
+    if (p < 1) memoria['raf:' + chiave] = requestAnimationFrame(passo);
+  };
+  memoria['raf:' + chiave] = requestAnimationFrame(passo);
+  el.classList.remove('cambia'); void el.offsetWidth; el.classList.add('cambia');
+}
+
+// Eliminare tenendo premuto: all'inizio si riempie veloce (si capisce subito cosa succede),
+// poi rallenta per dare il tempo di decidere; se si lascia prima, si svuota e non succede niente.
+function tieniPremutoPer(btn, azione, testo = 'Tieni premuto per eliminare') {
+  if (!btn) return;
+  btn.onclick = null;
+  btn.classList.add('tieni');
+  btn.insertAdjacentHTML('afterbegin', '<i class="tieni-pieno" aria-hidden="true"></i>');
+  const pieno = btn.querySelector('.tieni-pieno'), DURATA = 1300;
+  const curva = p => p < 0.25 ? p / 0.25 * 0.45 : 0.45 + (p - 0.25) / 0.75 * 0.55;
+  let raf = 0, timer = 0;
+  const svuota = () => { pieno.style.transition = 'transform .25s ease-out'; pieno.style.transform = 'scaleY(0)'; };
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const t0 = performance.now(); pieno.style.transition = 'none';
+    const passo = t => {                                   // solo il disegno del riempimento
+      const p = Math.min(1, (t - t0) / DURATA);
+      pieno.style.transform = `scaleY(${curva(p)})`;
+      if (p < 1) raf = requestAnimationFrame(passo);
+    };
+    raf = requestAnimationFrame(passo);
+    timer = setTimeout(() => {                             // l'azione dipende dall'orologio, non dal disegno
+      timer = 0; cancelAnimationFrame(raf); pieno.style.transform = 'scaleY(1)';
+      vibra(); azione(); setTimeout(svuota, 300);
+    }, DURATA);
+  });
+  const lascia = () => {
+    cancelAnimationFrame(raf);
+    if (!timer) return;               // già finito o mai partito
+    clearTimeout(timer); timer = 0;
+    svuota(); avvisa(testo);
+  };
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, lascia));
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+}
+tieniPremutoPer($('s-elimina'), eliminaCliente);
+$('s-elimina').setAttribute('aria-label', 'Elimina cliente (tieni premuto)');
+
+// Cambio schermata dalla barra: la nuova entra dal lato giusto (verso destra = sezioni dopo)
+(() => {
+  const ORDINE = ['calendario', 'clienti', 'conti', 'preventivi'];
+  let da = 0;
+  const barra = document.querySelector('.barra');
+  barra.addEventListener('click', e => {               // prima dei tasti: quale schermata c'era?
+    if (!e.target.closest('button[data-vista]')) return;
+    da = Math.max(0, ORDINE.findIndex(v => !$('vista-' + v).hidden));
+  }, true);
+  barra.addEventListener('click', e => {               // dopo: animo quella nuova
+    const b = e.target.closest('button[data-vista]');
+    if (!b) return;
+    const a = ORDINE.indexOf(b.dataset.vista);
+    if (a < 0 || a === da) return;
+    const sez = $('vista-' + b.dataset.vista);
+    sez.classList.remove('entra-dx', 'entra-sx'); void sez.offsetWidth; sez.classList.add(a > da ? 'entra-dx' : 'entra-sx');
+  });
+})();
+
+// Numerini (badge) che saltano quando aumentano
+document.querySelectorAll('.ai-badge, .nr-badge').forEach(b => {
+  let prima = parseInt(b.textContent, 10) || 0;
+  new MutationObserver(() => {
+    const ora = parseInt(b.textContent, 10) || 0;
+    if (ora > prima && !b.hidden) { b.classList.remove('salta'); void b.offsetWidth; b.classList.add('salta'); }
+    prima = ora;
+  }).observe(b, { childList: true, characterData: true, subtree: true });
+});
 caricaMeteo();
 _doveAvviaAutocomplete();
 

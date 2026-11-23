@@ -52,6 +52,20 @@ Codice nel blocco `// ===== GESTI (23/11) =====` vicino alla fine dello script.
 - **Tenere premuto un lavoro** (0,5 s) apre il menu rapido: Fatto, Sposta, Chiama, Mappa, Apri.
 - Scartato dal titolare: scorrere un lavoro di lato per "Fatto" (rischio di tocchi sbagliati).
 
+## Animazioni (23/11) — "si vedono ma non disturbano"
+
+Codice nel blocco `// ===== ANIMAZIONI (23/11) =====`, stili in "Animazioni (23/11)".
+- `vibra()` = vibrazione leggera e breve, rispetta Impostazioni → Vibrazione (ora ricordata).
+  Usarla al posto di `navigator.vibrate`.
+- `contaNumero(el, chiave, valore)`: un importo che cambia scorre dal vecchio al nuovo
+  (usato per "Ti devono" in Clienti e "Ti deve" nella scheda).
+- `tieniPremutoPer(tasto, azione)`: Elimina cliente si fa **tenendo premuto** (si riempie
+  veloce all'inizio, poi lento; tocco breve = avviso). Deciso dal titolare.
+- Fatto/Pagato: la riga scivola via di lato; Salva disegna la spunta e il nuovo lavoro si
+  illumina; la schermata nuova entra dal lato giusto; i numerini saltano quando aumentano;
+  onde arancio quando il microfono ascolta (finte: non seguono la voce, per non disturbare
+  il riconoscimento vocale).
+
 ---
 
 ## Struttura dello schermo principale
