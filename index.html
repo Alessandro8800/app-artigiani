@@ -1065,7 +1065,8 @@ button.s-riga:first-child { border-top: 0; }
 .giorni-sett button { min-height: 44px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--sfondo); font-weight: 800; font-size: 15px; color: var(--testo-2); }
 .giorni-sett button.attivo { background: var(--foglia); border-color: var(--foglia); color: var(--sul-foglia); }
 .imp-lista { display: flex; flex-direction: column; gap: 6px; }
-.imp-voce { display: flex; gap: 6px; }
+.imp-voce { display: flex; gap: 6px; align-items: center; }
+.tipo-col-dot { width: 28px; height: 28px; min-width: 28px; border-radius: 50% !important; border: 2px solid rgba(0,0,0,0.12) !important; padding: 0 !important; cursor: pointer; flex-shrink: 0; }
 .imp-voce input { flex: 1; min-width: 0; min-height: 44px; padding: 8px 12px; border-radius: 11px; border: 1.5px solid var(--linea); background: var(--sfondo); font-size: 16px; font-weight: 600; }
 .imp-voce input:focus { outline: none; border-color: var(--foglia); }
 .imp-voce button { min-width: 44px; border-radius: 11px; border: 0; background: var(--sfondo); color: var(--testo-2); font-weight: 800; font-size: 15px; padding: 0 12px; }
@@ -7219,7 +7220,7 @@ function quotaCosti() {
   return (quotaCache = p ? Math.min(c / p, 0.95) : 0);
 }
 let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Impostazioni; 0 = non mostrare)
-let datiAttivita = { nome: '', piva: '', telefono: '', iva: [0], email: '', indirizzo: '', descrizione: '' };
+let datiAttivita = { nome: '', piva: '', telefono: '', iva: [0], email: '', indirizzo: '', descrizione: '', TIPI_COLORI: { Privato: '#3d9a5b', Condominio: '#3b82c4', Fabbrica: '#e08a2e' } };
 function nuovoIdLavoro() { return lavori.length ? Math.max(...lavori.map(l => +l.id || 0)) + 1 : 0; }
 let preventivi = [];
 let _prevContatore = 1;
@@ -8403,14 +8404,27 @@ const GRUPPI_IMP = [
       });
     } },
     { id: 'tipi', nome: 'Tipi di cliente', valore: () => TIPI.join(', '), done: () => TIPI.length > 0, corpo: el => {
+      if (!datiAttivita.TIPI_COLORI) datiAttivita.TIPI_COLORI = {};
       listaModificabile(el, TIPI, {
         segnaposto: 'Nuovo tipo, es. Ufficio',
-        rinomina: (v, n) => { lavori.forEach(l => { if (l.tipo === v) l.tipo = n; }); tutto(); },
+        rinomina: (v, n) => {
+          if (datiAttivita.TIPI_COLORI[v] !== undefined) { datiAttivita.TIPI_COLORI[n] = datiAttivita.TIPI_COLORI[v]; delete datiAttivita.TIPI_COLORI[v]; }
+          lavori.forEach(l => { if (l.tipo === v) l.tipo = n; }); tutto();
+        },
         puoiTogliere: v => {
           if (TIPI.length === 1) return 'Serve almeno un tipo';
           const quanti = clientiConosciuti().filter(c => c.tipo === v).length;
           return quanti ? `Lo usano ${quanti} clienti` : true;
         },
+        extraBtn: (v) => {
+          const col = datiAttivita.TIPI_COLORI[v] || '#888';
+          return `<button type="button" class="tipo-col-dot" data-tipo="${sicuro(v)}" style="background:${col}" aria-label="Cambia colore ${sicuro(v)}"></button>`;
+        },
+      });
+      el.querySelectorAll('.tipo-col-dot').forEach(b => {
+        b.onclick = () => {
+          apriTavolozza(c => { datiAttivita.TIPI_COLORI[b.dataset.tipo] = c; dbSalva(); disegnaImpostazioni(); });
+        };
       });
       el.insertAdjacentHTML('beforeend', '<p class="imp-testo">Il primo è quello già scelto. Un tipo usato da qualche cliente non si può togliere.</p>');
     } },
