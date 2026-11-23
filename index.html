@@ -8039,11 +8039,25 @@ const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività'
     tasse = Math.min(60, Math.max(0, tasse + +b.dataset.d));
     datiAttivita.tasse = tasse; dbSalva(); disegnaCorrente();   // prima le tasse non si salvavano
   }; });
-  $('i-att-nome').onchange      = e => { datiAttivita.nome      = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
-  $('i-att-piva').onchange      = e => { datiAttivita.piva      = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
-  $('i-att-tel').onchange       = e => { datiAttivita.telefono  = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
-  $('i-att-email').onchange     = e => { datiAttivita.email     = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
-  $('i-att-indirizzo').onchange = e => { datiAttivita.indirizzo = e.target.value.trim(); dbSalva(); disegnaCorrente(); };
+  const _spunta = (input, valido) => {
+    const ck = input.closest('.campo')?.querySelector('.campo-ck');
+    if (!ck) return;
+    const era = ck.classList.contains('fatto');
+    if (valido && !era) { ck.classList.remove('fatto'); void ck.offsetWidth; ck.classList.add('fatto'); }
+    else if (!valido && era) ck.classList.remove('fatto');
+    const p = $('profilo-progresso');
+    if (p) p.textContent = `${VOCI_PROFILO.filter(v => v.done?.()).length} di ${VOCI_PROFILO.filter(v => v.done).length}`;
+  };
+  $('i-att-nome').oninput      = e => { datiAttivita.nome      = e.target.value.trim(); _spunta(e.target, !!datiAttivita.nome); };
+  $('i-att-piva').oninput      = e => { datiAttivita.piva      = e.target.value.trim(); _spunta(e.target, _valida.piva(datiAttivita.piva)); };
+  $('i-att-tel').oninput       = e => { datiAttivita.telefono  = e.target.value.trim(); _spunta(e.target, _valida.tel(datiAttivita.telefono)); };
+  $('i-att-email').oninput     = e => { datiAttivita.email     = e.target.value.trim(); _spunta(e.target, _valida.email(datiAttivita.email)); };
+  $('i-att-indirizzo').oninput = e => { datiAttivita.indirizzo = e.target.value.trim(); _spunta(e.target, !!datiAttivita.indirizzo); };
+  $('i-att-nome').onchange      = e => { datiAttivita.nome      = e.target.value.trim(); dbSalva(); };
+  $('i-att-piva').onchange      = e => { datiAttivita.piva      = e.target.value.trim(); dbSalva(); };
+  $('i-att-tel').onchange       = e => { datiAttivita.telefono  = e.target.value.trim(); dbSalva(); };
+  $('i-att-email').onchange     = e => { datiAttivita.email     = e.target.value.trim(); dbSalva(); };
+  $('i-att-indirizzo').onchange = e => { datiAttivita.indirizzo = e.target.value.trim(); dbSalva(); };
   segmenti($('i-att-iva-seg'), Object.fromEntries(ivaOpzioni.map(o => [o.k, o.label])), datiAttivita.iva, k => { datiAttivita.iva = k; dbSalva(); disegnaCorrente(); });
 } };
 
