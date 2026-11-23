@@ -873,8 +873,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .profilo-ai-box { background: var(--carta); border: 1px solid var(--linea); border-radius: 20px; overflow: hidden; margin-bottom: 12px; }
 .profilo-ai-testa { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--linea); }
 .profilo-ai-testa strong { font-size: 15px; }
-.profilo-progresso { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--testo-2); font-weight: 600; }
-.profilo-progresso svg { flex-shrink: 0; }
+.profilo-progresso { font-size: 13px; color: var(--testo-2); font-weight: 600; }
 .profilo-imp-btn { width: 100%; display: flex; align-items: center; gap: 12px; padding: 15px 16px; background: var(--carta); border: 1px solid var(--linea); border-radius: 16px; color: var(--testo); font-size: 15px; font-weight: 700; text-align: left; }
 .imp-torna-btn { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: var(--foglia); font-size: 15px; font-weight: 700; padding: 0; margin-bottom: 4px; }
 /* Fine Profilo */
@@ -1078,6 +1077,8 @@ button.s-riga:first-child { border-top: 0; }
 .campo input, .campo textarea { width: 100%; min-height: 56px; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); font-size: 18px; font-weight: 600; }
 .campo textarea { resize: none; }
 .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--foglia); }
+.campo-ck { font-style: normal; font-size: 13px; font-weight: 800; color: var(--linea); margin-left: 4px; }
+.campo-ck.fatto { color: var(--ambra); }
 .msg-carosello { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .msg-carosello::-webkit-scrollbar { display: none; }
 .msg-card { flex: 0 0 85%; scroll-snap-align: start; background: var(--sfondo); border: 1.5px solid var(--linea); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -8014,14 +8015,15 @@ function riassuntoGiorni() {
 const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-label="Un altro colore">${minianello}</button>`;
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
-const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome && !!datiAttivita.telefono, corpo: el => {
+const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!(datiAttivita.nome && datiAttivita.piva && datiAttivita.telefono && datiAttivita.email && datiAttivita.indirizzo), corpo: el => {
   const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 4, label: '4%' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
+  const ck = v => `<span class="campo-ck${v ? ' fatto' : ''}">✓</span>`;
   el.innerHTML = `
-    <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
-    <label class="campo"><span>Partita IVA</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
-    <label class="campo"><span>Telefono</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
-    <label class="campo"><span>Email</span><input id="i-att-email" class="imp-input" type="email" value="${sicuro(datiAttivita.email)}" placeholder="Es. mario@esempio.it"></label>
-    <label class="campo"><span>Indirizzo sede</span><input id="i-att-indirizzo" class="imp-input" value="${sicuro(datiAttivita.indirizzo)}" placeholder="Es. Via Roma 12, Conegliano"></label>
+    <label class="campo"><span>Nome o ragione sociale ${ck(datiAttivita.nome)}</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
+    <label class="campo"><span>Partita IVA ${ck(datiAttivita.piva)}</span><input id="i-att-piva" class="imp-input" value="${sicuro(datiAttivita.piva)}" placeholder="Es. 01234567890"></label>
+    <label class="campo"><span>Telefono ${ck(datiAttivita.telefono)}</span><input id="i-att-tel" class="imp-input" type="tel" value="${sicuro(datiAttivita.telefono)}" placeholder="Es. 333 1234567"></label>
+    <label class="campo"><span>Email ${ck(datiAttivita.email)}</span><input id="i-att-email" class="imp-input" type="email" value="${sicuro(datiAttivita.email)}" placeholder="Es. mario@esempio.it"></label>
+    <label class="campo"><span>Indirizzo sede ${ck(datiAttivita.indirizzo)}</span><input id="i-att-indirizzo" class="imp-input" value="${sicuro(datiAttivita.indirizzo)}" placeholder="Es. Via Roma 12, Conegliano"></label>
     <p class="imp-testo" style="margin-top:4px">IVA sui preventivi</p>
     <div class="segmenti" id="i-att-iva-seg"></div>
     <p class="imp-testo" style="margin-top:8px">Tasse</p>
@@ -8453,9 +8455,7 @@ const GRUPPI_IMP = [
 
 const VOCI_PROFILO = [
   VOCE_DATI_ATT,
-  GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'descr-lavoro'),
   GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'zona'),
-  GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'chiave-ai'),
 ];
 
 function disegnaCorrente() {
@@ -8467,11 +8467,8 @@ let rigaApertaProfilo = null;
 function disegnaProfilo() {
   const conDone = VOCI_PROFILO.filter(v => v.done).length;
   const completati = VOCI_PROFILO.filter(v => v.done && v.done()).length;
-  const dots = VOCI_PROFILO.filter(v => v.done).map(v => v.done()
-    ? '<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="var(--foglia)"/></svg>'
-    : '<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--linea)" stroke-width="1.5" stroke-dasharray="3 2"/></svg>').join('');
   const progEl = $('profilo-progresso');
-  if (progEl) progEl.innerHTML = `${dots} <span>${completati} di ${conDone} completati</span>`;
+  if (progEl) progEl.innerHTML = `${completati} di ${conDone}`;
   const freccina = '<svg class="freccina" width="20" height="20" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   $('profilo-elenco').innerHTML = VOCI_PROFILO.map(r => `
     <div class="imp-r${r.id === rigaApertaProfilo ? ' aperta' : ''}">
