@@ -118,6 +118,15 @@ tinta. → Rifare la Fase 2: 3 proposte arancioni che differiscono per **concett
 
 Note: in A e C profilo e impostazioni sono un solo tondo con le iniziali (da decidere).
 
+**Scelte di Alessandro sul giro 2 (23/11):**
+- Nessuna delle tre è speciale così com'è. Resta la struttura di oggi: **calendario sopra, lavori sotto**.
+- I lavori come **linea del tempo** (da B) invece delle carte.
+- **Tenere quello che c'è già**: niente colonna degli orari.
+- Colore: **arancione**.
+- Piacciono i **riquadri in alto di C** ("Oggi 330 €", "Ti devono 1.240 €"), ma andrebbero
+  **in altre schede** (Conti, Clienti), non nella prima pagina.
+- Proposta di Alessandro: provare lo stile **direttamente nell'app vera**.
+
 ## 4. Regole per questo lavoro
 
 - Solo look: niente pezzi spostati, niente funzioni nuove.
