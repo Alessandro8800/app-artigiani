@@ -127,6 +127,19 @@ Note: in A e C profilo e impostazioni sono un solo tondo con le iniziali (da dec
   **in altre schede** (Conti, Clienti), non nella prima pagina.
 - Proposta di Alessandro: provare lo stile **direttamente nell'app vera**.
 
+## Lavori nell'app vera (ramo `nuovo-look`, non pubblicato)
+
+Tutto il nuovo stile sta in due blocchi "NUOVO LOOK (23/11)" in fondo agli stili di `index.html`.
+1. ✅ Prima pagina scura: neri neutri, colore "Arancio" (nuovo, di partenza), giallo per "da fare",
+   calendario senza riquadro con giorni tondi, lavori su una linea del tempo (cerchio = Fatto).
+   Approvato da Alessandro ("mi piace, vai avanti").
+2. ✅ Movimenti dalle ispirazioni: barra in basso a pillola con luce che scivola, fogli che salgono
+   morbidi con sfondo sfocato, avvisi col bordo arancio, luce che gira sul microfono quando
+   ascolta, "Fatto" che si gonfia con un'onda di luce, tasti che si schiacciano.
+3. Da fare: le altre schermate (Clienti, scheda cliente, Nuovo cliente, Conti con i riquadri tipo C,
+   Preventivi, Impostazioni), poi il tema chiaro (oggi l'arancio nel chiaro viene marrone).
+- Problema trovato: il colore e il tema scelti nelle Impostazioni non vengono ricordati.
+
 ## 4. Regole per questo lavoro
 
 - Solo look: niente pezzi spostati, niente funzioni nuove.
