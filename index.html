@@ -8842,7 +8842,7 @@ function disegnaPreventivi() {
   const bar = $('prev-bar');
   // Barra input: visibile solo nella lista; nascosta in anteprima/completo
   if (bar) {
-    bar.hidden = _prevVista !== 'lista';
+    bar.hidden = _prevVista !== 'lista' || (prevDati === null && !_prevSkipped);
     if (!bar.hidden) {
       const mic = $('prev-bar-mic'); if (mic && !mic.innerHTML.trim()) mic.innerHTML = SVG_MIC;
     }
