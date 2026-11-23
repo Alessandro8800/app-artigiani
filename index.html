@@ -2673,6 +2673,8 @@ function etichettaRitardo(k) {
 }
 
 // Dati del cliente: presi dal suo lavoro più recente
+// Colore da usare per un cliente: colore individuale, oppure colore del suo tipo
+function coloreCli(c) { return c.colore || (datiAttivita.TIPI_COLORI && datiAttivita.TIPI_COLORI[c.tipo || TIPI[0]]) || ''; }
 function datiCliente(nome) {
   const suoi = lavori.filter(l => l.nome === nome).sort((a, b) => b.data.localeCompare(a.data));
   const l = suoi[0] || {};
@@ -6642,7 +6644,7 @@ function disegnaClienti() {
     return g.length ? `<div class="gruppo-tipo"><span>${tp ? plurale(tp) : 'Altri'}</span><span>${g.length}</span></div>${contenitore(g.map(riga).join(''))}` : '';
   }).join('');
   // Tondo con le iniziali del cliente (bordo del suo colore, se ne ha uno)
-  const tondo = c => `<span class="iniziali"${c.colore ? ` style="--c:${c.colore}"` : ''} aria-hidden="true">${sicuro(iniziali(c.nome))}</span>`;
+  const tondo = c => { const cl = coloreCli(c); return `<span class="iniziali"${cl ? ` style="--c:${cl}"` : ''} aria-hidden="true">${sicuro(iniziali(c.nome))}</span>`; };
   const rigaDeve = c => `<div class="cliente" data-nome="${sicuro(c.nome)}">
       ${tondo(c)}
       <button class="apri" data-nome="${sicuro(c.nome)}">
@@ -6716,7 +6718,7 @@ function disegnaRubrica(filtroQ = '') {
     const gr = tutti.filter(c => normalizza(c.nome[0] || '').toUpperCase() === l);
     if (!gr.length) continue;
     html += `<div class="rubrica-sez" id="rs-${l}">${l}</div>`;
-    html += `<div class="in-regola">${gr.map(c => `<button class="apri" data-nome="${sicuro(c.nome)}"><span class="nome">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}${sicuro(c.nome)}</span></button>`).join('')}</div>`;
+    html += `<div class="in-regola">${gr.map(c => { const cl = coloreCli(c); return `<button class="apri" data-nome="${sicuro(c.nome)}"><span class="nome">${cl ? `<span class="punto" style="--c:${cl}"></span>` : ''}${sicuro(c.nome)}</span></button>`; }).join('')}</div>`;
   }
   if (!tutti.length) html = `<div class="vuoto" style="padding-top:24px">${q ? `Nessun cliente trovato per «${sicuro(filtroQ)}»` : 'Nessun cliente ancora.'}</div>`;
   lista.innerHTML = html;
@@ -6848,7 +6850,7 @@ function disegnaScheda() {
 
   $('s-corpo').innerHTML = `
     <div class="s-hero">
-    <span class="iniziali grande"${c.colore ? ` style="--c:${c.colore}"` : ''} aria-hidden="true">${sicuro(iniziali(c.nome))}</span>
+    <span class="iniziali grande"${coloreCli(c) ? ` style="--c:${coloreCli(c)}"` : ''} aria-hidden="true">${sicuro(iniziali(c.nome))}</span>
     <div class="s-info">
       ${c.tipo !== TIPI[0] ? `<span class="etichetta">${c.tipo}</span>` : ''}
       ${(c.dove || c.tel) ? `<span>${c.dove ? PIN + sicuro(c.dove) : ''}${c.dove && c.tel ? ` · ${TEL}${sicuro(c.tel)}` : c.tel ? TEL + sicuro(c.tel) : ''}</span>` : ''}
@@ -6969,7 +6971,7 @@ function disegnaLavoro() {
       : 'da incassare';
     const vociR = l.costi?.voci || [];
     $('l-corpo').innerHTML = `
-      <button type="button" class="l-cliente" id="l-cliente">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
+      <button type="button" class="l-cliente" id="l-cliente">${coloreCli(c) ? `<span class="punto" style="--c:${coloreCli(c)}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
       <div class="riepilogo l-soldi">
         <div class="l-soldi-riga"><span>Prezzo</span><b>${l.prezzo != null ? euro(l.prezzo) : '—'}</b></div>
         <div class="l-soldi-riga"><span>Costi</span><b>${costi != null ? '− ' + euro(costi) : 'non segnati'}</b></div>
@@ -7009,7 +7011,7 @@ function disegnaLavoro() {
   const tendineAperte = [...$('l-corpo').querySelectorAll('details[open] > summary')].map(s => s.textContent);
   const scorrevole = $('l-corpo').closest('.f-corpo') || $('l-corpo'), scrollPrima = scorrevole.scrollTop;
   $('l-corpo').innerHTML = `
-    <button type="button" class="l-cliente" id="l-cliente">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
+    <button type="button" class="l-cliente" id="l-cliente">${coloreCli(c) ? `<span class="punto" style="--c:${coloreCli(c)}"></span>` : ''}<span><strong>${sicuro(l.nome)}</strong><small>${sicuro(c.dove || '')}</small></span><em>Scheda cliente ›</em></button>
 
     <div class="l-azioni-top">
       <button type="button" class="l-btn-ripr" id="l-btn-ripr">↷ Riprogramma</button>
