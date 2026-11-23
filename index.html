@@ -1418,6 +1418,44 @@ button.s-riga:first-child { border-top: 0; }
 .ai-scrivi-btn, .ai-ic-row-btn, .giorno-aggiungi, .giorno-agg-btn, .gnf-salva, .mostra-altro, .riprogramma, .freccia, .cal-top-ic, .ca-maps, .barra button { transition: transform .12s ease-out, background .2s, color .2s; }
 .ai-scrivi-btn:active, .ai-ic-row-btn:active, .giorno-aggiungi:active, .giorno-agg-btn:active, .gnf-salva:active, .mostra-altro:active, .riprogramma:active, .freccia:active, .cal-top-ic:active, .ca-maps:active, .barra button:active { transform: scale(.92); }
 
+/* ===== NUOVO LOOK (23/11) — Clienti =====
+   In alto i riquadri coi numeri (Ti devono grande, In ritardo in rosso, Clienti),
+   poi i tasti rapidi, la ricerca e le liste in un unico riquadro con le iniziali di ogni cliente (#34). */
+#vista-clienti .c-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; background: none; border: 0; padding: 0; margin: 2px 0 14px; }
+#vista-clienti .c-stat-sep { display: none; }
+#vista-clienti .c-stat { align-items: flex-start; gap: 4px; background: var(--carta); border: 1px solid var(--linea); border-radius: 22px; padding: 14px 16px; }
+#vista-clienti .c-stat span { text-transform: none; letter-spacing: 0; font-size: 13px; }
+#vista-clienti .c-stat strong { font-size: 24px; }
+#vista-clienti .c-stat small { font-size: 13px; font-weight: 600; color: var(--testo-2); }
+#vista-clienti .c-stat-grande { grid-column: span 2; padding: 18px; background: color-mix(in srgb, var(--foglia) 14%, var(--carta)); border-color: color-mix(in srgb, var(--foglia) 35%, var(--linea)); }
+#vista-clienti .c-stat-grande span { color: var(--foglia); font-weight: 800; }
+#vista-clienti .c-stat-grande strong { font-size: 38px; letter-spacing: -.02em; line-height: 1.05; }
+#vista-clienti .c-stat-ritardo { background: color-mix(in srgb, var(--rosso) 12%, var(--carta)); border-color: color-mix(in srgb, var(--rosso) 30%, var(--linea)); }
+#vista-clienti .c-stat-ritardo span { color: var(--rosso); font-weight: 800; }
+
+#vista-clienti .c-az-btn { border: 0; border-radius: 18px; min-height: 66px; color: var(--testo); transition: transform .12s ease-out, background .2s; }
+#vista-clienti .c-az-btn svg { width: 22px; height: 22px; color: var(--foglia); }
+#vista-clienti .c-az-btn:active { transform: scale(.94); }
+#vista-clienti .cerca { margin-top: 0; border-width: 1px; border-radius: 26px; }
+
+#vista-clienti .lista { gap: 0; background: var(--carta); border: 1px solid var(--linea); border-radius: 22px; overflow: hidden; }
+#vista-clienti .cliente { gap: 10px; background: none; border: 0; border-top: 1px solid var(--linea); border-radius: 0; padding: 12px 10px 12px 12px; }
+#vista-clienti .cliente .iniziali { width: 36px; height: 36px; font-size: 13px; }
+#vista-clienti .cliente:first-child { border-top: 0; }
+#vista-clienti .cliente .nome { font-size: 17px; }
+#vista-clienti .cliente .soldi strong { font-size: 19px; }
+#vista-clienti .cliente .spunta { width: 50px; height: 50px; }
+#vista-clienti .cliente .apri { column-gap: 8px; }
+#vista-clienti .cliente .spunta small { font-size: 11px; }
+#vista-clienti .cliente.fatto .spunta { animation: salta .5s ease-out; }
+#vista-clienti .sollecito { padding-left: 46px; }
+#vista-clienti .in-regola { border-radius: 22px; }
+#vista-clienti .in-regola button { justify-content: flex-start; }
+#vista-clienti .in-regola .nome { flex: 1; }
+.iniziali { flex: none; width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--testo); background: var(--sfondo); box-shadow: inset 0 0 0 2px var(--c, var(--linea)); }
+.in-regola .iniziali { width: 36px; height: 36px; font-size: 13px; }
+@keyframes salta { 35% { transform: scale(1.15); } }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -1510,6 +1548,24 @@ button.s-riga:first-child { border-top: 0; }
       <h1>Clienti</h1>
       <p id="c-quanti" hidden></p>
     </header>
+    <!-- Riquadri: Ti devono (grande), In ritardo, Clienti -->
+    <div class="c-stats">
+      <div class="c-stat c-stat-grande">
+        <span>Ti devono</span>
+        <strong id="c-totale">€0</strong>
+        <small id="c-totale-sotto"></small>
+      </div>
+      <div class="c-stat-sep"></div>
+      <div class="c-stat c-stat-ritardo">
+        <span>In ritardo</span>
+        <strong id="c-in-ritardo">0</strong>
+      </div>
+      <div class="c-stat-sep"></div>
+      <div class="c-stat">
+        <span>Clienti</span>
+        <strong id="c-quanti-num">0</strong>
+      </div>
+    </div>
     <!-- Barra 4 azioni -->
     <div class="c-azioni">
       <button class="c-az-btn" onclick="apriFoglio()" aria-label="Nuovo cliente manuale">
@@ -1540,23 +1596,6 @@ button.s-riga:first-child { border-top: 0; }
       <svg width="20" height="20" viewBox="0 0 24 24"><path d="M11 18a7 7 0 100-14 7 7 0 000 14zM20 20l-4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       <input id="c-cerca" type="search" autocomplete="off" placeholder="Cerca un cliente" aria-label="Cerca un cliente">
     </label>
-    <!-- Stats strip -->
-    <div class="c-stats">
-      <div class="c-stat">
-        <strong id="c-totale">€0</strong>
-        <span>Ti devono</span>
-      </div>
-      <div class="c-stat-sep"></div>
-      <div class="c-stat">
-        <strong id="c-in-ritardo">0</strong>
-        <span>In ritardo</span>
-      </div>
-      <div class="c-stat-sep"></div>
-      <div class="c-stat">
-        <strong id="c-quanti-num">0</strong>
-        <span>Clienti</span>
-      </div>
-    </div>
     <div id="c-elenco"></div>
   </section>
 
@@ -6204,7 +6243,10 @@ function disegnaClienti() {
   const totale = devono.reduce((s, c) => s + c.dovuto, 0);
 
   $('c-totale').textContent = euro(totale);
-  const cir = $('c-in-ritardo'); if (cir) cir.textContent = devono.length;
+  const cts = $('c-totale-sotto');
+  if (cts) cts.textContent = devono.length ? `da ${devono.length} ${devono.length === 1 ? 'cliente' : 'clienti'}` : 'nessuno ti deve soldi';
+  // "In ritardo" = chi ha l'etichetta arancione o rossa (non tutti quelli che devono)
+  const cir = $('c-in-ritardo'); if (cir) cir.textContent = devono.filter(c => c.rit.classe).length;
   const cqn = $('c-quanti-num'); if (cqn) cqn.textContent = tutti.length;
 
   const filtro = c => !t || normalizza(c.nome).includes(t) || normalizza(c.dove || '').includes(t);
@@ -6214,13 +6256,17 @@ function disegnaClienti() {
   // Dentro ogni parte, i clienti sono divisi per tipo: prima i privati, poi condomini, poi fabbriche
   const PLURALI = { Privato: 'Privati', Condominio: 'Condomini', Fabbrica: 'Fabbriche' };
   const plurale = t => PLURALI[t] || t;   // tipi nuovi: si usa il nome così com'è
-  const perTipo = (elenco, riga, contenitore) => TIPI.map(tp => {
-    const g = elenco.filter(c => c.tipo === tp);
-    return g.length ? `<div class="gruppo-tipo"><span>${plurale(tp)}</span><span>${g.length}</span></div>${contenitore(g.map(riga).join(''))}` : '';
+  // I clienti con un tipo che non è nell'elenco (es. arrivato dalla voce) vanno in "Altri", così non spariscono
+  const perTipo = (elenco, riga, contenitore) => [...TIPI, null].map(tp => {
+    const g = tp ? elenco.filter(c => c.tipo === tp) : elenco.filter(c => !TIPI.includes(c.tipo));
+    return g.length ? `<div class="gruppo-tipo"><span>${tp ? plurale(tp) : 'Altri'}</span><span>${g.length}</span></div>${contenitore(g.map(riga).join(''))}` : '';
   }).join('');
+  // Tondo con le iniziali del cliente (bordo del suo colore, se ne ha uno)
+  const tondo = c => `<span class="iniziali"${c.colore ? ` style="--c:${c.colore}"` : ''} aria-hidden="true">${sicuro(iniziali(c.nome))}</span>`;
   const rigaDeve = c => `<div class="cliente" data-nome="${sicuro(c.nome)}">
+      ${tondo(c)}
       <button class="apri" data-nome="${sicuro(c.nome)}">
-        <span class="nome">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}${sicuro(c.nome)}</span>
+        <span class="nome">${sicuro(c.nome)}</span>
         <span class="info">${c.lavori === 1 ? '1 lavoro' : `${c.lavori} lavori`} da pagare</span>
         <span class="soldi"><strong>${euro(c.dovuto)}</strong><span class="ritardo${c.rit.classe}">${c.rit.testo}</span></span>
       </button>
@@ -6231,7 +6277,7 @@ function disegnaClienti() {
         <small>Pagato</small>
       </button>
     </div>`;
-  const rigaSaldato = c => `<button class="apri" data-nome="${sicuro(c.nome)}"><span class="nome">${c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : ''}${sicuro(c.nome)}</span><small>${ultimo(c.ultimo)}</small></button>`;
+  const rigaSaldato = c => `<button class="apri" data-nome="${sicuro(c.nome)}">${tondo(c)}<span class="nome">${sicuro(c.nome)}</span><small>${ultimo(c.ultimo)}</small></button>`;
 
   $('c-elenco').innerHTML =
     (d.length ? `<div class="c-titolo"><h2>Devono pagare</h2><div class="c-filtro-wrap"><button class="c-filtro-btn" onclick="toggleFiltroMenu()">${FILTRO_LABEL[cFiltro]}</button><div class="c-filtro-menu" id="c-filtro-menu" hidden>${Object.entries(FILTRO_LABEL).map(([k,v])=>`<button class="${k===cFiltro?'attivo':''}" onclick="scegliFiltroCli('${k}')">${v}</button>`).join('')}</div></div></div>
@@ -6246,6 +6292,13 @@ function disegnaClienti() {
     b.onclick = () => apriScheda(b.dataset.nome);
   });
   $('c-elenco').querySelectorAll('.cliente .spunta').forEach(b => { b.onclick = () => segnaPagato(b.closest('.cliente')); });
+}
+
+// Le iniziali di un nome: "Luca Bassi" → "LB", "Sig. Rossi" → "R", "Villa Verdi" → "VV"
+function iniziali(nome) {
+  const parole = String(nome || '').split(/\s+/).filter(p => p && !/^(sig|sig\.ra|sigra|dott|dr|ing)\.?$/i.test(p));
+  const lettere = parole.slice(0, 2).map(p => p.replace(/[^\p{L}\p{N}]/gu, '')[0] || '').join('').toUpperCase();
+  return lettere || '?';
 }
 
 // Filtro ordinamento "Devono pagare"
