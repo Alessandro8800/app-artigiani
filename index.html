@@ -1675,6 +1675,28 @@ button.s-riga:first-child { border-top: 0; }
 .ai-barra .av-btn.urgenti { color: var(--rosso); }
 .ai-barra .ai-ic-row-btn.av-attivo { color: var(--rosso); background: color-mix(in srgb, var(--rosso) 12%, var(--sfondo)); }
 
+/* Cornice "vetro" (24/11): calendario, barra della prima pagina e barra dei Preventivi */
+.vetro, #vista-calendario .calendario {
+  background: color-mix(in srgb, var(--carta) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--testo) 10%, transparent); border-radius: 30px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 10px 30px rgba(0, 0, 0, .25);
+}
+#vista-calendario .calendario { padding: 12px 10px 8px; }
+#prev-bar { padding: 12px 8px 8px; margin-bottom: 14px; }
+#prev-bar .prev-crea-label { margin: 0 10px 8px; }
+
+/* Casella "scrivi o parla": identica nella prima pagina e nei Preventivi (presa da quella dei Preventivi) */
+.casella-ai { display: flex; align-items: flex-end; gap: 8px; width: 100%; max-width: none; padding: 6px 6px 6px 16px; border: 1px solid var(--linea); border-radius: 26px; background: var(--sfondo); box-shadow: none; transition: border-color .2s, box-shadow .2s; }
+.casella-ai:focus-within { border-color: var(--foglia); box-shadow: 0 0 0 3px var(--foglia-chiara); }
+.casella-ai .ai-testo-input, .casella-ai .prev-bar-txt { flex: 1; min-width: 0; height: auto; min-height: 24px; max-height: 140px; margin: 0; padding: 12px 0; border: 0; border-radius: 0; background: none; box-shadow: none; animation: none; color: var(--testo); font: 600 16px/1.4 var(--font-testo); resize: none; overflow-y: auto; field-sizing: content; }
+.casella-ai .ai-testo-input:focus, .casella-ai .prev-bar-txt:focus { outline: none; border: 0; box-shadow: none; }
+.casella-ai .ai-testo-input::placeholder, .casella-ai .prev-bar-txt::placeholder { color: var(--testo-2); font-weight: 500; }
+.casella-ai .tasto-ai { flex: none; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; gap: 0; font-size: 0; background: var(--foglia); color: var(--sul-foglia); box-shadow: 0 6px 18px color-mix(in srgb, var(--foglia) 40%, transparent); transition: transform .12s ease-out, background .2s; animation: apri-pop .25s ease-out; }
+.casella-ai .tasto-ai svg { width: 22px; height: 22px; }
+.casella-ai .tasto-ai:active { transform: scale(.92); }
+.casella-ai .tasto-ai.ascolta { background: var(--rosso); color: #fff; }
+
 /* Scheda del lavoro */
 .l-tendina { border-width: 1px; border-radius: 20px; }
 .l-btn-ripr, .l-btn-annulla { border-radius: 99px; }
@@ -1716,18 +1738,19 @@ button.s-riga:first-child { border-top: 0; }
         </div>
         <div class="griglia" id="griglia"></div>
       </div>
-      <!-- Barra AI: mic grande + matita + 3 icone notifiche sotto -->
-      <div class="ai-barra">
-        <div class="ai-barra-top">
-          <button class="ai-microfono" id="ai-mic" aria-label="Parla con l'assistente">
+      <!-- Barra AI (24/11): stessa grafica della barra dei Preventivi. Casella sempre visibile;
+           il tasto grande è il microfono, appena scrivi diventa la freccia per inviare. Sotto, 3 pillole. -->
+      <div class="ai-barra vetro">
+        <div class="ai-barra-top casella-ai">
+          <textarea class="ai-testo-input" id="ai-testo-input" rows="1" placeholder="Scrivi o tocca il microfono…" aria-label="Scrivi all'assistente" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();inviaTestoAI()}"></textarea>
+          <button class="ai-microfono tasto-ai" id="ai-mic" aria-label="Parla con l'assistente">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
             Parla
           </button>
-          <input class="ai-testo-input" id="ai-testo-input" placeholder="Scrivi un messaggio…" onkeydown="if(event.key==='Enter')inviaTestoAI()" hidden>
-          <button class="ai-testo-invia" id="ai-testo-invia" onclick="inviaTestoAI()" aria-label="Invia" hidden>
+          <button class="ai-testo-invia tasto-ai" id="ai-testo-invia" onclick="inviaTestoAI()" aria-label="Invia" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
           </button>
-          <button class="ai-scrivi-btn" id="ai-scrivi" onclick="toggleAiScrivi()" aria-label="Scrivi un messaggio">
+          <button class="ai-scrivi-btn" id="ai-scrivi" onclick="toggleAiScrivi()" aria-label="Scrivi un messaggio" hidden>
             <svg id="ai-scrivi-ic-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             <svg id="ai-scrivi-ic-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
           </button>
@@ -1837,12 +1860,12 @@ button.s-riga:first-child { border-top: 0; }
 
   <section id="vista-preventivi" class="gutter" hidden>
     <header class="testata"><h1>Preventivi</h1><button id="prev-hint-pill" class="prev-hint-pill" hidden onclick="apriPrevForm()">Tariffe</button></header>
-    <div id="prev-bar" hidden>
+    <div id="prev-bar" class="vetro" hidden>
       <p class="prev-crea-label">Crea preventivo</p>
-      <div class="prev-bar-inner">
+      <div class="prev-bar-inner casella-ai">
         <textarea id="prev-bar-txt" class="prev-bar-txt" placeholder="Descrivi il lavoro da preventivare…" rows="1"></textarea>
-        <button id="prev-bar-mic" class="prev-bar-btn" onclick="avviaMicPrevBar()" title="Parla con il microfono"></button>
-        <button id="prev-bar-invia" class="prev-bar-btn prev-bar-invia" onclick="avviaGeneraPreventivo()" title="Genera preventivo">
+        <button id="prev-bar-mic" class="prev-bar-btn tasto-ai" onclick="avviaMicPrevBar()" title="Parla con il microfono" aria-label="Parla con il microfono"></button>
+        <button id="prev-bar-invia" class="prev-bar-btn prev-bar-invia tasto-ai" onclick="avviaGeneraPreventivo()" title="Genera preventivo" aria-label="Genera preventivo" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
       </div>
@@ -6355,7 +6378,7 @@ function inviaTestoAI() {
   const testo = inp.value.trim(); if (!testo) return;
   if (!ANTHROPIC_KEY) { apriChiaveAI('globale'); return; }
   inp.value = '';
-  toggleAiScrivi();   // dopo l'invio si torna al microfono (prima qui c'era un pezzo che non esiste più e dava errore)
+  aggiornaCaselleAI();   // casella vuota → torna il microfono (prima qui c'era un pezzo che non esiste più e dava errore)
   const box = $('mic-box');
   $('mic-box-testo').textContent = testo;
   $('mic-box-cat-wrap').hidden = false;
@@ -8950,6 +8973,23 @@ $('s-elimina').setAttribute('aria-label', 'Elimina cliente (tieni premuto)');
   });
 })();
 
+// Barre "scrivi o parla" (Calendario e Preventivi, stessa grafica): finché la casella è vuota
+// il tasto grande è il microfono; appena scrivi diventa la freccia per inviare (come nelle app di messaggi)
+function aggiornaCaselleAI() {
+  [['ai-testo-input', 'ai-mic', 'ai-testo-invia'], ['prev-bar-txt', 'prev-bar-mic', 'prev-bar-invia']].forEach(([t, m, i]) => {
+    const casella = $(t), mic = $(m), invia = $(i);
+    if (!casella || !mic || !invia) return;
+    const pieno = casella.value.trim() !== '';
+    mic.hidden = pieno; invia.hidden = !pieno;
+    // cresce in verticale se scrivi tanto (si misura solo quando si vede: nascosta l'altezza verrebbe 0)
+    if (casella.offsetParent) { casella.style.height = 'auto'; casella.style.height = casella.scrollHeight + 'px'; }
+    else casella.style.height = '';
+  });
+}
+document.addEventListener('input', e => { if (e.target.id === 'ai-testo-input' || e.target.id === 'prev-bar-txt') aggiornaCaselleAI(); });
+aggiornaCaselleAI();
+{ const m = $('prev-bar-mic'); if (m && !m.innerHTML.trim()) m.innerHTML = SVG_MIC; }
+
 // Numerini (badge) che saltano quando aumentano
 document.querySelectorAll('.ai-badge, .nr-badge').forEach(b => {
   let prima = parseInt(b.textContent, 10) || 0;
@@ -9277,7 +9317,7 @@ async function avviaGeneraPreventivo() {
   const ris = await generaPreventivo(desc);
   if (invia) { invia.disabled = false; invia.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>'; }
   if (!ris) { avvisa('Errore nella generazione — riprova'); return; }
-  txt.value = ''; txt.style.height = 'auto';
+  txt.value = ''; txt.style.height = 'auto'; aggiornaCaselleAI();
   _prevBozzaVoci = ris.voci; _prevBozzaNote = ris.note; _prevBozzaInput = desc; _prevEditId = null;
   _prevVista = 'anteprima'; disegnaPreventivi();
 }
@@ -9294,6 +9334,7 @@ function avviaMicPrevBar() {
     const testo = e.results[0]?.[0]?.transcript || '';
     const txt = $('prev-bar-txt'); if (txt && testo) { txt.value = testo; txt.style.height = 'auto'; txt.style.height = txt.scrollHeight + 'px'; txt.focus(); }
     btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC;
+    aggiornaCaselleAI();   // c'è il testo detto: il tasto diventa la freccia per generare
   };
   sr.onerror = sr.onend = () => { if (btn.classList.contains('ascolta')) { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC; } };
   sr.start();
@@ -9478,6 +9519,7 @@ function disegnaPreventivi() {
     bar.hidden = _prevVista !== 'lista' || (prevDati === null && !_prevSkipped);
     if (!bar.hidden) {
       const mic = $('prev-bar-mic'); if (mic && !mic.innerHTML.trim()) mic.innerHTML = SVG_MIC;
+      aggiornaCaselleAI();
     }
   }
   // Pill "Tariffe": visibile solo nella lista quando l'utente ha saltato ma non ancora compilato
