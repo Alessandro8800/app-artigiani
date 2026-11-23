@@ -5668,7 +5668,8 @@ REGOLE PER IL CONTESTO
 // Schema: {"operations":[{tipo, nome, lavoro, data, importo, testo, missing_fields}]}
 // Una frase può contenere più operazioni → una card per ognuna (Step 2 in HANDOFF.md).
 async function categorizzaVoceAI(testo) {
-  const system = `Sei l'assistente vocale di un giardiniere italiano.
+  const chi = datiAttivita.descrizione ? `artigiano italiano. Lavoro: ${datiAttivita.descrizione}` : 'artigiano italiano';
+  const system = `Sei l'assistente vocale di un ${chi}.
 Trasformi il suo messaggio in dati. Rispondi SOLO con JSON valido, niente altro.
 
 Una frase può contenere PIÙ operazioni: creane una per ognuna, nell'ordine in cui sono dette.
