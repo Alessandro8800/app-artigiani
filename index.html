@@ -8018,7 +8018,7 @@ const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-labe
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
 const _valida = {
   piva:  v => /^\d{11}$/.test(v || ''),
-  tel:   v => ((v || '').replace(/\D/g, '').length >= 9),
+  tel:   v => ((v || '').replace(/\D/g, '').length >= 10),
   email: v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v || ''),
 };
 const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!(datiAttivita.nome && _valida.piva(datiAttivita.piva) && _valida.tel(datiAttivita.telefono) && _valida.email(datiAttivita.email) && datiAttivita.indirizzo), corpo: el => {
