@@ -3360,7 +3360,7 @@ function apriFoglio(giorno, perCliente) {
   quando = g || giorniMigliori()[0];
   dateScelte = []; allineaDate();
   for (const id of ['f-nome', 'f-dove', 'f-tel', 'f-note', 'f-cosa', 'f-prezzo']) $(id).value = '';
-  $('f-tel-wrap').querySelectorAll('.tel-riga:not(:first-child)').forEach(r => r.remove());
+  $('f-tel-wrap').querySelectorAll('.tel-riga:not(:first-of-type)').forEach(r => r.remove());
   aggiornaPlusTel();
   $('f-avanzate').open = false;
   disegnaTipo(); disegnaDurata(); disegnaPrezzoDrum(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
@@ -3386,7 +3386,7 @@ function apriModifica(nome) {
   $('f-nome').value = c.nome; $('f-dove').value = c.dove; $('f-note').value = c.note;
   const telsM = (c.tel || '').split('\n').filter(Boolean);
   const wrapM = $('f-tel-wrap');
-  wrapM.querySelectorAll('.tel-riga:not(:first-child)').forEach(r => r.remove());
+  wrapM.querySelectorAll('.tel-riga:not(:first-of-type)').forEach(r => r.remove());
   $('f-tel').value = telsM[0] || '';
   telsM.slice(1).forEach(t => { const inp = aggiungiTelInput(); if (inp) inp.value = t; });
   aggiornaPlusTel();
@@ -4586,7 +4586,7 @@ function apriModificaInboxCliente(card, item) {
   quandoFisso = false; quando = giorniMigliori()[0]; dateScelte = []; allineaDate();
   preparaFoglio('nuovo');
   for (const id of ['f-nome','f-dove','f-tel','f-note','f-cosa','f-prezzo']) $(id).value = '';
-  $('f-tel-wrap').querySelectorAll('.tel-riga:not(:first-child)').forEach(r => r.remove());
+  $('f-tel-wrap').querySelectorAll('.tel-riga:not(:first-of-type)').forEach(r => r.remove());
   aggiornaPlusTel(); $('f-avanzate').open = false;
   disegnaTipo(); disegnaDurata(); disegnaPrezzoDrum(); disegnaColori(); disegnaRipeti(); disegnaComuni(); disegnaOra(); disegnaSemestrale();
   // Pre-compila i campi dall'item inbox
