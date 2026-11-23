@@ -8014,7 +8014,7 @@ function riassuntoGiorni() {
 const tastoTavolozza = () => `<button type="button" class="piu-anello" aria-label="Un altro colore">${minianello}</button>`;
 
 // Le righe, divise in gruppi. Ogni riga: nome, valore attuale, e cosa c'è dentro quando si apre.
-const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome, corpo: el => {
+const VOCE_DATI_ATT = { id: 'dati-attivita', nome: 'Il nome della tua attività', valore: () => datiAttivita.nome || 'Da compilare', done: () => !!datiAttivita.nome && !!datiAttivita.telefono, corpo: el => {
   const ivaOpzioni = [{ k: 0, label: 'Nessuna (regime forfettario)' }, { k: 4, label: '4%' }, { k: 10, label: '10%' }, { k: 22, label: '22%' }];
   el.innerHTML = `
     <label class="campo"><span>Nome o ragione sociale</span><input id="i-att-nome" class="imp-input" value="${sicuro(datiAttivita.nome)}" placeholder="Es. Mario Rossi Impianti"></label>
@@ -8395,7 +8395,7 @@ const GRUPPI_IMP = [
     } },
   ]],
   ['I tuoi dati', [
-    { id: 'chiave-ai', nome: 'Chiave assistente vocale', valore: () => ANTHROPIC_KEY ? `Salvata · …${ANTHROPIC_KEY.slice(-4)}` : 'Nessuna chiave', corpo: el => {
+    { id: 'chiave-ai', nome: 'Chiave assistente vocale', valore: () => ANTHROPIC_KEY ? `Salvata · …${ANTHROPIC_KEY.slice(-4)}` : 'Nessuna chiave', done: () => !!ANTHROPIC_KEY, corpo: el => {
       el.innerHTML = `<p class="imp-testo">Serve all'assistente vocale per capire quello che dici. Resta salvata solo su questo telefono.</p>
         <button type="button" class="salva" id="i-chiave">${ANTHROPIC_KEY ? 'Cambia chiave' : 'Metti la chiave'}</button>
         ${ANTHROPIC_KEY ? '<button type="button" class="secondario" id="i-chiave-togli">Togli la chiave</button>' : ''}`;
@@ -8453,8 +8453,9 @@ const GRUPPI_IMP = [
 
 const VOCI_PROFILO = [
   VOCE_DATI_ATT,
+  GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'descr-lavoro'),
   GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'zona'),
-  // (24/11) "Tipi di cliente" non è più qui: sta nel gruppo "Il lavoro", più sotto
+  GRUPPI_IMP.flatMap(g => g[1]).find(v => v.id === 'chiave-ai'),
 ];
 
 function disegnaCorrente() {
