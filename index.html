@@ -1534,6 +1534,75 @@ button.s-riga:first-child { border-top: 0; }
 .k-anello-riga small { grid-column: 2 / -1; margin-top: -4px; font-size: 12px; font-weight: 600; color: var(--testo-2); }
 @media (max-width: 360px) { .k-anello { flex-direction: column; } }
 
+/* ===== NUOVO LOOK (23/11) — pezzi comuni a tutte le schermate =====
+   Campi da scrivere, scelte a pillola, tasti Salva e secondari, interruttori, fogli e finestre. */
+.salva { box-shadow: 0 8px 22px color-mix(in srgb, var(--foglia) 30%, transparent); transition: transform .12s ease-out, box-shadow .2s; }
+.salva:active { transform: scale(.97); }
+.salva.premuto { animation: onda-salva .55s ease-out; }
+@keyframes onda-salva { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--foglia) 60%, transparent); } to { box-shadow: 0 0 0 14px transparent; } }
+.secondario { background: var(--carta); border: 1px solid var(--linea); color: var(--testo); transition: transform .12s ease-out; }
+.secondario:active { transform: scale(.97); }
+
+.campo input, .campo textarea, .imp-input, .imp-voce input, .gnf-titolo, .gnf-testo, .k-ric-form input[type="text"], .k-ric-form input[type="number"], .k-ric-form input[type="date"], .inbox-edit-panel input, .inbox-edit-panel textarea, .nr-form textarea, .nr-form-titolo-inp {
+  border: 1px solid var(--linea); border-radius: 16px; background: var(--carta); transition: border-color .2s, box-shadow .2s;
+}
+.campo input:focus, .campo textarea:focus, .imp-input:focus, .imp-voce input:focus, .gnf-titolo:focus, .gnf-testo:focus, .inbox-edit-panel input:focus, .inbox-edit-panel textarea:focus, .nr-form textarea:focus, .nr-form-titolo-inp:focus {
+  outline: none; border-color: var(--foglia); box-shadow: 0 0 0 3px var(--foglia-chiara);
+}
+.campo > span { font-size: 14px; color: var(--testo-2); }
+
+.chip, .foglio .chip { border: 1px solid var(--linea); border-radius: 99px; transition: transform .12s ease-out, background .2s, color .2s, border-color .2s; }
+.chip:active { transform: scale(.95); }
+.chip.attivo { background: var(--foglia); border-color: var(--foglia); color: var(--sul-foglia); }
+.chip.rapido { color: var(--foglia); }
+.chip.attivo.rapido { color: var(--sul-foglia); }
+
+.interruttore { transition: background .25s; }
+.interruttore i { transition: transform .35s cubic-bezier(.3, 1.5, .5, 1); }
+.interruttore.acceso { box-shadow: 0 0 12px color-mix(in srgb, var(--foglia) 45%, transparent); }
+
+.foglio { border-radius: 28px 28px 0 0; }
+.foglio::before { content: ''; flex: none; align-self: center; width: 40px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--linea); }
+.chiudi { border-radius: 50%; transition: transform .12s ease-out; }
+.chiudi:active { transform: scale(.92); }
+.f-testa h2 { font-size: 22px; }
+.q-pop { background: rgba(0, 0, 0, .55); }
+.q-pop-box { animation: apri-pop .32s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes apri-pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+
+/* Impostazioni e Profilo */
+.imp-gruppo { border-radius: 22px; }
+.imp-testa { transition: background .15s; }
+.imp-testa:active { background: color-mix(in srgb, var(--foglia) 8%, transparent); }
+.imp-r.aperta { background: color-mix(in srgb, var(--foglia) 5%, transparent); }
+.imp-torna-btn { font-weight: 800; }
+
+/* Notifiche da confermare, avvisi, note rapide */
+.inbox-card { border-radius: 20px; }
+.inbox-btn-ok, .inbox-btn-no, .inbox-btn-sospeso, .inbox-btn-pianifica { border-radius: 99px; transition: transform .12s ease-out; }
+.inbox-btn-ok:active, .inbox-btn-no:active, .inbox-btn-sospeso:active, .inbox-btn-pianifica:active { transform: scale(.95); }
+.inbox-ic { border-radius: 50%; }
+.av-voce { border-width: 1px; border-radius: 18px; transition: transform .12s ease-out; }
+.av-voce:active { transform: scale(.98); }
+.nr-nota-tick { transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), background .2s; }
+.nr-nota.fatta .nr-nota-tick { transform: scale(1.1); }
+.nr-form-salva, .nr-form-mic { border-radius: 16px; }
+
+/* Preventivi */
+.prev-bar-inner { border-width: 1px; border-radius: 26px; background: var(--carta); box-shadow: 0 8px 24px rgba(0, 0, 0, .25); }
+.prev-bar-inner:focus-within { border-color: var(--foglia); }
+.prev-bar-invia { box-shadow: 0 4px 14px color-mix(in srgb, var(--foglia) 40%, transparent); }
+.prev-card { border-radius: 22px; padding: 18px; }
+.prev-card-tot { font-size: 26px; }
+.prev-card-btn button { border-radius: 99px; height: 44px; transition: transform .12s ease-out; }
+.prev-card-btn button:active { transform: scale(.96); }
+.prev-voce { border-radius: 18px; }
+.prev-hint-pill { border-radius: 99px; }
+
+/* Scheda del lavoro */
+.l-tendina { border-width: 1px; border-radius: 20px; }
+.l-btn-ripr, .l-btn-annulla { border-radius: 99px; }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -7742,13 +7811,14 @@ const NOTIFICHE = [
 const TEMI = { auto: 'Come il telefono', light: 'Chiaro', dark: 'Scuro' };
 const TESTI = { piccolo: ['Piccolo', 0.9], normale: ['Normale', 1], grande: ['Grande', 1.12] };
 // Colore dell'app: la tinta (0-360) e quanto è viva
-const ACCENTI = { arancio: ['Arancio', 20, 100], verde: ['Foglia', 140, 40], blu: ['Mare', 212, 45], terracotta: ['Terracotta', 16, 50], viola: ['Lavanda', 268, 35], ottanio: ['Ottanio', 186, 45], grafite: ['Grafite', 150, 4] };
+// (il quarto numero, se c'è, è quanto è chiaro il colore nel tema chiaro: l'arancio a 30 diventava marrone)
+const ACCENTI = { arancio: ['Arancio', 20, 100, 42], verde: ['Foglia', 140, 40], blu: ['Mare', 212, 45], terracotta: ['Terracotta', 16, 50], viola: ['Lavanda', 268, 35], ottanio: ['Ottanio', 186, 45], grafite: ['Grafite', 150, 4] };
 const NOMI_GIORNI = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
 // Applica il colore dell'app ai due temi (chiaro e scuro)
 function applicaAccento() {
-  const [, h, sat] = ACCENTI[accento] || ACCENTI.verde;
-  const chiaro = `--foglia: hsl(${h} ${sat}% 30%); --foglia-chiara: hsl(${h} ${Math.min(sat, 35)}% 91%); --sul-foglia: #fff;`;
+  const [, h, sat, luce = 30] = ACCENTI[accento] || ACCENTI.verde;
+  const chiaro = `--foglia: hsl(${h} ${sat}% ${luce}%); --foglia-chiara: hsl(${h} ${Math.min(sat, 35)}% 91%); --sul-foglia: #fff;`;
   const scuro = `--foglia: hsl(${h} ${sat}% 62%); --foglia-chiara: hsl(${h} ${Math.min(sat, 25)}% 17%); --sul-foglia: hsl(${h} 30% 8%);`;
   let st = $('stile-accento');
   if (!st) { st = document.createElement('style'); st.id = 'stile-accento'; document.head.appendChild(st); }
@@ -7829,6 +7899,7 @@ const GRUPPI_IMP = [
       segmenti(el.firstChild, TEMI, tema, k => {
         tema = k;
         if (k === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
+        ricordaAspetto();
         disegnaImpostazioni();
       });
     } },
@@ -7836,11 +7907,11 @@ const GRUPPI_IMP = [
       el.innerHTML = `<div class="accenti">${Object.entries(ACCENTI).map(([k, [n, h, sat]]) =>
         `<button type="button" class="${k === accento ? 'attivo' : ''}" data-k="${k}" style="--c:hsl(${h} ${sat}% 40%)"><i>${k === accento ? '✓' : ''}</i>${n}</button>`).join('')}</div>
         <p class="imp-testo">È il colore dei tasti e delle cose scelte. I colori delle etichette dei clienti non cambiano.</p>`;
-      el.querySelectorAll('.accenti button').forEach(b => { b.onclick = () => { accento = b.dataset.k; applicaAccento(); disegnaImpostazioni(); }; });
+      el.querySelectorAll('.accenti button').forEach(b => { b.onclick = () => { accento = b.dataset.k; applicaAccento(); ricordaAspetto(); disegnaImpostazioni(); }; });
     } },
     { id: 'testo', nome: 'Grandezza del testo', valore: () => TESTI[testo][0], corpo: el => {
       el.innerHTML = '<div class="segmenti"></div>';
-      segmenti(el.firstChild, TESTI, testo, k => { testo = k; document.documentElement.style.fontSize = (TESTI[k][1] * 100) + '%'; disegnaImpostazioni(); });
+      segmenti(el.firstChild, TESTI, testo, k => { testo = k; document.documentElement.style.fontSize = (TESTI[k][1] * 100) + '%'; ricordaAspetto(); disegnaImpostazioni(); });
     } },
     { id: 'calendario-vista', nome: 'Vista del calendario', valore: () => TEMPLATE_CAL[templateCalendario], corpo: el => {
       const tpl = Object.keys(TEMPLATE_CAL);
@@ -8565,7 +8636,21 @@ function estraiIndirizzo(testo) {
   return m ? m[0].trim() : null;
 }
 
+// Tema, colore e grandezza del testo scelti nelle Impostazioni: ora si ricordano (prima si perdevano a ogni apertura)
+function ricordaAspetto() { try { localStorage.setItem('aspetto', JSON.stringify({ tema, accento, testo })); } catch (e) {} }
+try {
+  const a = JSON.parse(localStorage.getItem('aspetto') || '{}');
+  if (ACCENTI[a.accento]) accento = a.accento;
+  if (TEMI[a.tema]) { tema = a.tema; if (tema !== 'auto') document.documentElement.dataset.theme = tema; }
+  if (TESTI[a.testo]) { testo = a.testo; document.documentElement.style.fontSize = (TESTI[testo][1] * 100) + '%'; }
+} catch (e) {}
 applicaAccento();
+// Tasto Salva: al tocco manda un'onda di luce (solo un effetto, non cambia cosa fa il tasto)
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.salva');
+  if (!b || b.disabled) return;
+  b.classList.remove('premuto'); void b.offsetWidth; b.classList.add('premuto');
+});
 caricaMeteo();
 _doveAvviaAutocomplete();
 
@@ -9230,7 +9315,7 @@ function disegnaPreventivi() {
           <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
         </svg>
         <h2>Nessun preventivo</h2>
-        <p style="color:var(--testo-2);font-size:15px">Scrivi o parla nella barra qui sotto — l'AI genera la stima con le voci.</p>
+        <p style="color:var(--testo-2);font-size:15px">Scrivi o parla nella barra qui sopra — l'AI genera la stima con le voci.</p>
       </div>`;
     return;
   }

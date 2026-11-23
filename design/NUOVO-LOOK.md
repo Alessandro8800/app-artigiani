@@ -145,9 +145,20 @@ Tutto il nuovo stile sta in due blocchi "NUOVO LOOK (23/11)" in fondo agli stili
 5. ✅ Conti: quattro riquadri con icona e sfondo tinto (incassato verde, da incassare giallo,
    spese rosso, margine neutro), "Risultato" con la luce arancio, grafico 6 mesi con solo il mese
    in corso acceso e la cifra sopra, "Costi dei lavori" ad anello con percentuali.
-6. Da fare: le altre schermate ( Nuovo cliente, Conti con i riquadri tipo C,
+6. ✅ Tutto il resto (23/11, Alessandro: "fai tutte le modifiche che servono, senza domandarmi"):
+   pezzi comuni (campi arrotondati con alone arancio quando scrivi, scelte a pillola che si
+   riempiono d'arancio, Salva che brilla e manda un'onda al tocco, tasti secondari neutri,
+   interruttori col rimbalzo, fogli con la maniglia in alto, finestre piccole che si aprono
+   morbide), Nuovo cliente, scheda del lavoro, Preventivi (barra "Descrivi il lavoro" come una
+   casella AI), Impostazioni e Profilo, notifiche da confermare, avvisi, note rapide.
+   - Tema chiaro: l'arancio ora è arancio vero (prima marrone). Rifinitura del chiaro: da fare.
+   - **Corretto:** tema, colore e grandezza del testo scelti ora si ricordano.
+   - Corretto un testo dei Preventivi ("barra qui sotto" → "qui sopra").
+7. Da fare / vecchia lista: le altre schermate ( Nuovo cliente, Conti con i riquadri tipo C,
    Preventivi, Impostazioni), poi il tema chiaro (oggi l'arancio nel chiaro viene marrone).
-- Problema trovato: il colore e il tema scelti nelle Impostazioni non vengono ricordati.
+- ~~Problema trovato: il colore e il tema scelti nelle Impostazioni non vengono ricordati.~~ Corretto.
+- Prossimi passi: prova completa sul telefono vero (anche al sole), rifinire il tema chiaro,
+  poi decidere se portare il ramo `nuovo-look` nella versione pubblicata (lo decide Alessandro).
 
 ## 4. Regole per questo lavoro
 
