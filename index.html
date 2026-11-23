@@ -1917,7 +1917,7 @@ button.s-riga:first-child { border-top: 0; }
   <section id="vista-profilo" class="gutter" hidden>
     <button class="imp-torna-btn" onclick="tornaAlCalendario()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      Calendario
+      Indietro
     </button>
     <header class="testata"><h1>Profilo</h1></header>
     <div class="profilo-ai-box">
@@ -8465,7 +8465,7 @@ function apriImpostazioni(tornare) {
   btn.hidden = false;
   btn.onclick = typeof tornare === 'function' ? tornare : tornaAlCalendario;
   const label = $('imp-torna-label');
-  if (label) label.textContent = typeof tornare === 'function' && tornare === tornaAProfilo ? 'Profilo' : 'Calendario';
+  if (label) label.textContent = 'Indietro';   // (24/11) solo "Indietro", senza dire dove
   disegnaImpostazioni();
   window.scrollTo(0, 0);
 }
