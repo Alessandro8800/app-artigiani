@@ -21,6 +21,26 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
 
 ---
 
+## Nuovo look (23/11) — fatto e pubblicato
+
+- **Stile:** scuro neutro + **arancio** (colore "Arancio" in `ACCENTI`, quello di partenza).
+  Significato dei colori: giallo = da fare / ritardo medio, rosso = ritardo lungo / spese,
+  verde = soldi incassati. Il tema chiaro va ancora rifinito.
+- **Dove sta:** tutto il CSS nuovo è nei blocchi `/* ===== NUOVO LOOK (23/11) … */` in fondo
+  allo `<style>`. Le modifiche di stile vanno lì, non sparse nel file.
+- **Prima pagina:** calendario sopra, lavori su una **linea del tempo** (il cerchio a sinistra
+  è "Fatto"; `.card-azioni` è `display: contents`). Niente colonna degli orari: deciso dal titolare.
+- **Barra in basso:** pillola con `<i class="barra-luce">` che si sposta con `:has()` →
+  dipende dall'ordine dei 4 tasti. Se si aggiunge/toglie un tasto, aggiornare quelle regole.
+- **Correzioni fatte:** tema/colore/testo ora si ricordano (`localStorage` `aspetto`,
+  `ricordaAspetto()`); clienti con un tipo fuori elenco vanno in "Altri" (prima sparivano);
+  "In ritardo" conta solo le etichette gialle/rosse.
+- **Da fare:** prova sul telefono al sole; tema chiaro; capire perché dalla voce il tipo
+  cliente a volte arriva come tipo di lavoro (es. "Taglio erba").
+- Storia, scelte e ispirazioni: `design/NUOVO-LOOK.md`, `design/ispirazioni/`.
+
+---
+
 ## Struttura dello schermo principale
 
 ```
@@ -654,50 +674,10 @@ const CLIENTI_FAKE = ['Villa Verdi', 'Sig. Rossi', 'Marco Brambilla', 'Condomini
 
 ---
 
-## Temi grafici — lavoro in sospeso
-
-### Stato attuale
-Tre temi progettati come mockup HTML (artifact su claude.ai), approvati concettualmente:
-
-| Tema | Artifact | Stato |
-|---|---|---|
-| **Default** (verde foresta attuale, rifinito) | https://claude.ai/artifact/UaWgUvui37oFjuHBSEt4Mz | Da implementare |
-| **Acciaio** (dark #0D0D0D + teal neon, stile Linear) | https://claude.ai/artifact/DgASrYPsYkgpBt86n36pk6 | Approvato ✓ |
-| **Carta** (editoriale serif, Moleskine digitale) | https://claude.ai/artifact/VXz2thdJUNKrPRog6GXoFZ | Da implementare |
-
-### Cosa si deve fare
-Implementare il selettore tema in `index.html` — **solo CSS, niente layout**.
-
-**Regola fondamentale:** ogni tema cambia colori, font e stile visivo. **Non si toccano posizioni, layout, dimensioni, struttura HTML.** L'app deve funzionare identicamente in tutti i temi.
-
-**Come implementare:**
-1. Aggiungere una classe al `<body>` o su `:root` per il tema attivo (es. `data-tema="acciaio"`)
-2. Ridefinire le variabili CSS esistenti dentro ogni blocco tema:
-   ```css
-   :root[data-tema="acciaio"] {
-     --foglia: #00E5B0;
-     --sfondo: #0D0D0D;
-     /* ... etc */
-   }
-   ```
-3. Per i temi con font diversi, caricare il font da Google Fonts e riassegnare la variabile font (se esiste) o aggiungere `font-family` override sul body dentro il blocco tema
-4. Collegare la scelta alle Impostazioni > Aspetto > Tema (già esiste la voce con segmenti)
-
-**Regole di design per ogni tema:**
-
-**Default:** font invariato (Bricolage Grotesque + Manrope). Colori: sfondo `#F7F9F5`, testo `#1A1F1B`, accento `#2d6a3e`. Sistema 10 token semantici, tutto coerente — vedi artifact.
-
-**Acciaio:** sfondo `#0D0D0D`, card `#161616`, accento neon `#00E5B0`. Font: Inter per testo, JetBrains Mono **solo per numeri/importi** (non per tutto il testo). Zero decorazioni.
-
-**Carta:** sfondo `#FEFCF7` (panna), testo `#1C1C1A`. Font: Cormorant Garamond 700 per titoli/numeri grandi, Crimson Pro per body. **Nessun accento UI** — l'unico colore sono i dot dei clienti. Zero ombre, border-radius max 6px, separatori 1px invece di card.
-
----
 
 ## Prossimi passi (in ordine di priorità)
 
-0. **Nuovo look (dal 23/11, priorità del titolare)** — rifare tutto l'aspetto da zero, senza
-   spostare niente. Leggere prima `design/NUOVO-LOOK.md`: strategia, scaletta in 6 fasi e
-   domande aperte. I temi Verde/Acciaio/Carta qui sotto ("Temi grafici") sono messi da parte.
+0. ✅ **Nuovo look** — fatto e pubblicato il 23/11 (vedi la sezione in cima).
 
 1. **`nota-cliente` → salva nella scheda cliente** — quando si conferma "Villa Verdi: codice cancello 1234", la nota deve finire nel campo note della scheda di Villa Verdi. `confermaCarta` per cat=`nota` con `Cliente` presente salva già in `prendiExtra(cliente).note`, ma la scheda cliente non mostra ancora queste note extra in modo prominente.
 2. **Collegare pagamenti ai lavori già segnati** — un pagamento nell'inbox deve essere legato a un lavoro esistente. (21/11: i **costi** detti a voce vanno già nel lavoro del cliente; `CLIENTI_FAKE` è stato tolto, si usano i clienti veri. Manca il legame pagamento → lavoro.)
