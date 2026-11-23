@@ -142,7 +142,10 @@ Tutto il nuovo stile sta in due blocchi "NUOVO LOOK (23/11)" in fondo agli stili
 4. ✅ Scheda cliente: tondo grande con le iniziali, "Ti deve" in un riquadro con luce arancio
    (rossa se il ritardo è lungo), Ricavi/Costi/Utile in tre riquadri, lavori su una linea del
    tempo con pallino per stato (arancio da fare, giallo/rosso da pagare, pieno pagato).
-5. Da fare: le altre schermate ( Nuovo cliente, Conti con i riquadri tipo C,
+5. ✅ Conti: quattro riquadri con icona e sfondo tinto (incassato verde, da incassare giallo,
+   spese rosso, margine neutro), "Risultato" con la luce arancio, grafico 6 mesi con solo il mese
+   in corso acceso e la cifra sopra, "Costi dei lavori" ad anello con percentuali.
+6. Da fare: le altre schermate ( Nuovo cliente, Conti con i riquadri tipo C,
    Preventivi, Impostazioni), poi il tema chiaro (oggi l'arancio nel chiaro viene marrone).
 - Problema trovato: il colore e il tema scelti nelle Impostazioni non vengono ricordati.
 
