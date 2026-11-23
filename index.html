@@ -1456,6 +1456,42 @@ button.s-riga:first-child { border-top: 0; }
 .in-regola .iniziali { width: 36px; height: 36px; font-size: 13px; }
 @keyframes salta { 35% { transform: scale(1.15); } }
 
+/* ===== NUOVO LOOK (23/11) — Scheda cliente =====
+   In alto il tondo grande con le iniziali e i dati; "Ti deve" in un riquadro con una luce arancio
+   (rossa se è molto in ritardo); Ricavi/Costi/Utile in tre riquadri; lavori su una linea del tempo
+   con un pallino per stato: arancio = da fare, giallo/rosso = da pagare in ritardo, pieno = pagato. */
+#scheda .chiudi, #scheda .s-ic { border-radius: 50%; transition: transform .12s ease-out; }
+#scheda .chiudi:active, #scheda .s-ic:active { transform: scale(.92); }
+#scheda .s-ic.verde { background: var(--foglia); color: var(--sul-foglia); box-shadow: 0 6px 18px color-mix(in srgb, var(--foglia) 35%, transparent); }
+#scheda .s-hero { display: flex; align-items: flex-start; gap: 14px; }
+.iniziali.grande { width: 60px; height: 60px; font-size: 20px; box-shadow: inset 0 0 0 3px var(--c, var(--foglia)); }
+#scheda .s-info { flex: 1; min-width: 0; gap: 6px; padding-top: 4px; font-size: 15px; }
+#scheda .s-note { display: block; margin-top: 4px; padding: 10px 12px; border-radius: 14px; background: var(--carta); border: 1px solid var(--linea); color: var(--testo); }
+
+#scheda .s-dovuto { padding: 18px; border-radius: 24px; border-color: color-mix(in srgb, var(--foglia) 30%, var(--linea)); background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--foglia) 24%, transparent), transparent 60%), var(--carta); }
+#scheda .s-dovuto:has(.ritardo.alto) { border-color: color-mix(in srgb, var(--rosso) 35%, var(--linea)); background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--rosso) 22%, transparent), transparent 60%), var(--carta); }
+#scheda .s-dovuto .riga-tit > span:first-child { color: var(--foglia); font-weight: 800; }
+#scheda .s-dovuto strong { font-size: 40px; margin-top: 2px; }
+#scheda .s-dovuto .s-tasti .salva, #scheda .s-dovuto .s-tasti .secondario { height: 52px; border-radius: 16px; transition: transform .12s ease-out; }
+#scheda .s-dovuto .s-tasti .secondario { background: var(--sfondo); border: 1px solid var(--linea); color: var(--testo); }
+#scheda .s-dovuto .s-tasti button:active { transform: scale(.96); }
+#scheda .s-ok-riga { padding: 14px 16px; border-radius: 18px; background: var(--carta); border: 1px solid var(--linea); }
+
+#scheda .s-resa { gap: 8px; margin-bottom: 0; }
+#scheda .s-resa span { border-radius: 16px; padding: 10px 12px; gap: 2px; }
+#scheda .s-resa b { font-size: 18px; }
+#scheda .s-sezione { margin: 8px 0 -6px; }
+
+#scheda .s-righe { position: relative; background: none; border: 0; border-radius: 0; overflow: visible; }
+#scheda .s-righe::before { content: ''; position: absolute; left: 13px; top: 24px; bottom: 24px; width: 2px; border-radius: 1px; background: var(--linea); }
+#scheda .s-riga { position: relative; width: 100%; padding: 12px 0 12px 40px; border: 0; background: none; color: var(--testo); text-align: left; }
+#scheda .s-riga::before { content: ''; position: absolute; left: 6px; top: 16px; width: 16px; height: 16px; border-radius: 50%; background: var(--sfondo); box-shadow: inset 0 0 0 2.5px var(--testo-2); }
+#scheda .s-riga:has(.etichetta.arancio)::before { box-shadow: inset 0 0 0 2.5px var(--foglia); }
+#scheda .s-riga:has(small.medio)::before { box-shadow: inset 0 0 0 2.5px var(--ambra); }
+#scheda .s-riga:has(small.alto)::before { box-shadow: inset 0 0 0 2.5px var(--rosso); }
+#scheda .s-riga:has(small.ok)::before { background: var(--testo-2); box-shadow: none; }
+#scheda .s-riga:active { opacity: .7; }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -6403,7 +6439,7 @@ function chiudiScheda() { $('scheda').hidden = true; document.body.classList.rem
 function disegnaScheda() {
   const c = datiCliente(schedaNome);
   const k = conto(schedaNome);
-  $('s-nome').innerHTML = (c.colore ? `<span class="punto" style="--c:${c.colore}"></span>` : '') + sicuro(c.nome);
+  $('s-nome').innerHTML = sicuro(c.nome);   // il colore del cliente si vede nel tondo con le iniziali
 
   const { testo: ritardo, classe } = etichettaRitardo(k);
   // Parte già pagata dei lavori ancora aperti (acconti)
@@ -6460,11 +6496,14 @@ function disegnaScheda() {
     ${conCosti.length < fatti.length ? `<p class="s-nota-costi">Costi segnati su ${conCosti.length === 1 ? "1 lavoro" : conCosti.length + " lavori"} su ${fatti.length}: tocca un lavoro per aggiungerli.</p>` : ''}` : '';
 
   $('s-corpo').innerHTML = `
+    <div class="s-hero">
+    <span class="iniziali grande"${c.colore ? ` style="--c:${c.colore}"` : ''} aria-hidden="true">${sicuro(iniziali(c.nome))}</span>
     <div class="s-info">
       ${c.tipo !== TIPI[0] ? `<span class="etichetta">${c.tipo}</span>` : ''}
       ${(c.dove || c.tel) ? `<span>${c.dove ? PIN + sicuro(c.dove) : ''}${c.dove && c.tel ? ` · ${TEL}${sicuro(c.tel)}` : c.tel ? TEL + sicuro(c.tel) : ''}</span>` : ''}
       ${c.ripeti && c.ripeti !== 'no' ? `<span>↻ Si ripete: ${c.ripeti.startsWith('custom:') ? 'personalizzato' : (RIPETI[c.ripeti]?.nome || c.ripeti).toLowerCase()}</span>` : ''}
       ${c.note ? `<span class="s-note">${sicuro(c.note)}</span>` : ''}
+    </div>
     </div>
     ${dovuto}
     <div class="s-sezione"><h3>Lavori</h3><span>${(fatti.length + daFare.length) || ''}</span></div>
