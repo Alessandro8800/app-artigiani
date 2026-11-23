@@ -26,6 +26,7 @@
   --linea: #dfe6de;
   --foglia: #2d6a3e;        /* colore principale */
   --foglia-chiara: #e2efe4;
+  --verde: #22c55e;          /* verde vivo per stato attivo mic */
   --sul-foglia: #ffffff;    /* testo sopra il verde */
   --ambra: #b5651d;         /* lavori da fare, ritardo medio */
   --ambra-chiara: #fbecd9;
@@ -39,12 +40,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --sfondo: #111613; --carta: #1a211c; --testo: #e8eee9; --testo-2: #9aa79d; --linea: #2a332d;
-    --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #e8a25c; --ambra-chiara: #3a2a19; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; color-scheme: dark;
+    --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #e8a25c; --ambra-chiara: #3a2a19; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; --verde: #4ade80; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --sfondo: #111613; --carta: #1a211c; --testo: #e8eee9; --testo-2: #9aa79d; --linea: #2a332d;
-  --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #e8a25c; --ambra-chiara: #3a2a19; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; color-scheme: dark;
+  --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #e8a25c; --ambra-chiara: #3a2a19; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; --verde: #4ade80; color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -2153,7 +2154,7 @@ function generaSerie(modello, regola) {
   if (regola && regola.startsWith('custom:')) {
     const data = regola.slice(7);
     if (!data) return 0;
-    lavori.push({ ...modello, id: lavori.length, data, fatto: false, ripetuto: true });
+    lavori.push({ ...modello, id: nuovoIdLavoro(), data, fatto: false, ripetuto: true });
     return 1;
   }
   if (!RIPETI[regola] || regola === 'no') return 0;
@@ -2162,7 +2163,7 @@ function generaSerie(modello, regola) {
   for (let k = 1; k < 60; k++) {
     const d = volta(modello.data, regola, k);
     if (d > fine) break;
-    const copia = { ...modello, id: lavori.length, data: iso(d), fatto: false, ripetuto: true };
+    const copia = { ...modello, id: nuovoIdLavoro(), data: iso(d), fatto: false, ripetuto: true };
     if (modello.date) copia.date = modello.date.map(g => { const x = new Date(d); x.setDate(x.getDate() + Math.round((daIso(g) - daIso(modello.data)) / 86400000)); return iso(x); });
     lavori.push(copia);
     n++;
@@ -3638,7 +3639,7 @@ function salva() {
   const salvaBt = $('f-salva');
   if (salvaBt) { salvaBt.disabled = true; salvaBt.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Salvato'; }
   const nuovo = {
-    id: lavori.length, nome, data: quando, fatto: false, prezzo,
+    id: nuovoIdLavoro(), nome, data: quando, fatto: false, prezzo,
     dove: (clienteScelto && clienteScelto.dove) || $('f-dove').value.trim(),
     tipo: clienteScelto ? clienteScelto.tipo : tipo,
     durata,
@@ -4450,7 +4451,7 @@ function confermaCarta(card, item, cat) {
     // Il giorno detto a voce; solo se manca, il primo giorno libero
     const data = parseDataRelativa(getCampo('Giorno') || getCampo('Data')) || giorniMigliori()[0] || tra(1);
     const ore = parseFloat(String(getCampo('OreStimate')).replace(',', '.'));
-    const nuovo = { id: lavori.length, nome, data, fatto: false, prezzo, dove, tipo: tipoDaNome(nome) || TIPI[0], durata: ore > 0 ? Math.round(ore * 2) / 2 : durataSolita, ora: fasciaOra(getCampo('Ora')), cosa };
+    const nuovo = { id: nuovoIdLavoro(), nome, data, fatto: false, prezzo, dove, tipo: tipoDaNome(nome) || TIPI[0], durata: ore > 0 ? Math.round(ore * 2) / 2 : durataSolita, ora: fasciaOra(getCampo('Ora')), cosa };
     lavori.push(nuovo);
     const noteVoce = getCampo('Note');
     if (noteVoce) { const e = prendiExtra(nome); e.note = e.note ? e.note + '\n' + noteVoce : noteVoce; }
@@ -4474,7 +4475,7 @@ function confermaCarta(card, item, cat) {
     if (giorno) {
       const data = parseDataRelativa(giorno) || tra(1);
       const nomeEvento = (item.testa !== 'Nuova nota' && item.testa) || nota.slice(0, 40);   // nota aggiunta col "+": titolo = il testo
-      lavori.push({ id: lavori.length, nome: nomeEvento, data, fatto: false, prezzo: null, dove: '', tipo: TIPI[0], durata: 0.5, cosa: nota, memo: true });
+      lavori.push({ id: nuovoIdLavoro(), nome: nomeEvento, data, fatto: false, prezzo: null, dove: '', tipo: TIPI[0], durata: 0.5, cosa: nota, memo: true });
       avvisa(`Promemoria salvato per ${maiuscola(fmtSettBreve.format(daIso(data)))}`);
       tutto();
     } else if (cliente) {
@@ -6695,6 +6696,7 @@ function quotaCosti() {
 }
 let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Impostazioni; 0 = non mostrare)
 let datiAttivita = { nome: '', piva: '', telefono: '', iva: '0' };
+function nuovoIdLavoro() { return lavori.length ? Math.max(...lavori.map(l => +l.id || 0)) + 1 : 0; }
 let preventivi = [];
 let _prevContatore = 1;
 let _prevVista = 'lista'; // 'lista' | 'nuovo' | 'anteprima' | 'completo'
@@ -7183,7 +7185,7 @@ $('in-salva').onclick = () => {
     const nome = d.nome.trim(), importo = leggiImporto(d.importo);
     if (!nome || !importo) continue;
     const c = clientiConosciuti().find(x => normalizza(x.nome) === normalizza(nome));
-    lavori.push({ id: lavori.length, nome: c ? c.nome : maiuscoleParole(nome), cosa: "Da prima dell'app", prezzo: importo, data: tra(-DA_QUANDO[d.da][1]), fatto: true, iniziale: true, tipo: c ? c.tipo : TIPI[0], dove: c ? c.dove : '', durata: 0 });
+    lavori.push({ id: nuovoIdLavoro(), nome: c ? c.nome : maiuscoleParole(nome), cosa: "Da prima dell'app", prezzo: importo, data: tra(-DA_QUANDO[d.da][1]), fatto: true, iniziale: true, tipo: c ? c.tipo : TIPI[0], dove: c ? c.dove : '', durata: 0 });
     n++;
   }
   chiudiInizio();
@@ -7299,7 +7301,7 @@ function lavoroPerCronometro(nomeDetto, cosaDetta) {
     nota = `portato a oggi (era ${nomeGiorno(vecchia).toLowerCase()})`;
   }
   if (!l) {
-    l = { id: lavori.length, nome, data: oggi, fatto: false, prezzo: null, dove: (cli && cli.dove) || '', tipo: tipoDaNome(nome) || TIPI[0], durata: durataSolita, cosa: cosaDetta || '' };
+    l = { id: nuovoIdLavoro(), nome, data: oggi, fatto: false, prezzo: null, dove: (cli && cli.dove) || '', tipo: tipoDaNome(nome) || TIPI[0], durata: durataSolita, cosa: cosaDetta || '' };
     lavori.push(l);
     nota = 'nuovo lavoro di oggi';
   }
@@ -8825,7 +8827,7 @@ async function avviaMicPrev() {
         })
       });
       const dati = await risposta.json();
-      const ris = JSON.parse(dati.content[0].text);
+      const ris = JSON.parse(dati.content?.find(b => b?.type === 'text')?.text || 'null');
       if (ris?.voci?.length) { _prevBozzaVoci = ris.voci; disegnaPrevVoci(); aggiornaTotalePrev(); avvisa('Voci aggiornate ✓'); }
     } catch (err) { avvisa('Errore — riprova'); }
     btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC;
