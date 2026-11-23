@@ -7222,7 +7222,7 @@ function quotaCosti() {
   return (quotaCache = p ? Math.min(c / p, 0.95) : 0);
 }
 let tasse = 0;   // % da mettere da parte per le tasse (si sceglie nelle Impostazioni; 0 = non mostrare)
-let datiAttivita = { nome: '', piva: '', telefono: '', iva: [0], email: '', indirizzo: '', descrizione: '', TIPI_COLORI: { Privato: '#aaaaaa', Condominio: '#3b82c4', Fabbrica: '#8a5cc7' } };
+let datiAttivita = { nome: '', piva: '', telefono: '', iva: [0], email: '', indirizzo: '', descrizione: '', TIPI_COLORI: { Privato: '#aaaaaa', Condominio: '#3b82c4', Fabbrica: '#8a5cc7' }, TIPI_COLORI_V: 2 };
 function nuovoIdLavoro() { return lavori.length ? Math.max(...lavori.map(l => +l.id || 0)) + 1 : 0; }
 let preventivi = [];
 let _prevContatore = 1;
@@ -8410,13 +8410,12 @@ const GRUPPI_IMP = [
       });
     } },
     { id: 'tipi', nome: 'Tipi di cliente', valore: () => TIPI.join(', '), done: () => TIPI.length > 0, corpo: el => {
-      if (!datiAttivita.TIPI_COLORI) datiAttivita.TIPI_COLORI = {};
-      // Migrazione: sostituisce i colori default della prima versione con quelli corretti
-      const _migOld = { Privato: '#3d9a5b', Condominio: '#3b82c4', Fabbrica: '#e08a2e' };
-      const _migNew = { Privato: '#aaaaaa', Condominio: '#3b82c4', Fabbrica: '#8a5cc7' };
-      let _migrato = false;
-      Object.entries(_migOld).forEach(([k, v]) => { if (datiAttivita.TIPI_COLORI[k] === v) { datiAttivita.TIPI_COLORI[k] = _migNew[k]; _migrato = true; } });
-      if (_migrato) dbSalva();
+      // Migrazione v2: resetta i colori default se l'utente non li ha ancora personalizzati
+      if (!datiAttivita.TIPI_COLORI || (datiAttivita.TIPI_COLORI_V || 0) < 2) {
+        datiAttivita.TIPI_COLORI = { Privato: '#aaaaaa', Condominio: '#3b82c4', Fabbrica: '#8a5cc7' };
+        datiAttivita.TIPI_COLORI_V = 2;
+        dbSalva();
+      }
       const _palette = ['#aaaaaa', '#3b82c4', '#8a5cc7', '#3d9a5b', '#d64545', '#d4b11f', '#e05591', '#5c8a3d', '#3d7a8a', '#c47b3b'];
       TIPI.forEach(v => { if (!datiAttivita.TIPI_COLORI[v]) { const usati = Object.values(datiAttivita.TIPI_COLORI); datiAttivita.TIPI_COLORI[v] = _palette.find(c => !usati.includes(c)) || _palette[TIPI.indexOf(v) % _palette.length]; } });
       listaModificabile(el, TIPI, {
