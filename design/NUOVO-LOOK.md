@@ -100,7 +100,10 @@ https://claude.ai/artifact/KwCRQt2kYUYwbPB5dM8jzY (copia in `design/proposte-pri
 
 In tutte: niente bordo colorato a sinistra sulle carte (il colore del cliente diventa un pallino),
 barra in basso a pillola che galleggia, lavori di più giorni uniti da una pillola (26-27).
-**Da scegliere:** una delle tre, o pezzi da più di una.
+**Risposta di Alessandro (23/11):** a parte i colori sono troppo simili all'app di oggi, e il colore
+si cambia già dalle Impostazioni. Colore preferito: **arancione**. Il nuovo look deve cambiare
+**com'è fatto** ogni pezzo (forme, calendario, carte, barra Parla, profondità, animazioni), non la
+tinta. → Rifare la Fase 2: 3 proposte arancioni che differiscono per **concetto visivo**.
 
 ## 4. Regole per questo lavoro
 
