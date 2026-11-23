@@ -1599,6 +1599,23 @@ button.s-riga:first-child { border-top: 0; }
 .prev-voce { border-radius: 18px; }
 .prev-hint-pill { border-radius: 99px; }
 
+/* Gesti (23/11): calendario che scivola, lavoro tenuto premuto, menu rapido del lavoro */
+#griglia.scorri-sx { animation: entra-da-destra .28s cubic-bezier(.22, 1, .36, 1); }
+#griglia.scorri-dx { animation: entra-da-sinistra .28s cubic-bezier(.22, 1, .36, 1); }
+@keyframes entra-da-destra { from { opacity: .3; transform: translateX(36px); } }
+@keyframes entra-da-sinistra { from { opacity: .3; transform: translateX(-36px); } }
+#agenda .lavoro { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; transition: transform .45s ease-out; }
+#agenda .lavoro.in-pressione { transform: scale(.97); }
+.menu-lavoro { align-items: flex-end; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+.ml-box { display: flex; flex-direction: column; padding: 8px; background: var(--carta); border: 1px solid var(--linea); border-radius: 24px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45); animation: sali-morbido .35s cubic-bezier(.22, 1, .36, 1); }
+.ml-testa { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px 10px; }
+.ml-testa strong { font-size: 18px; }
+.ml-testa small { font-size: 14px; font-weight: 600; color: var(--testo-2); }
+.ml-box button, .ml-box a { min-height: 52px; display: flex; align-items: center; padding: 0 14px; border: 0; border-radius: 16px; background: none; color: var(--testo); font: inherit; font-size: 16px; font-weight: 700; text-align: left; text-decoration: none; }
+.ml-box button:active, .ml-box a:active { background: var(--foglia-chiara); }
+.ml-box .ml-fatto { color: var(--foglia); }
+.ml-box .ml-annulla { justify-content: center; margin-top: 4px; color: var(--testo-2); border-top: 1px solid var(--linea); border-radius: 0 0 16px 16px; }
+
 /* Scheda del lavoro */
 .l-tendina { border-width: 1px; border-radius: 20px; }
 .l-btn-ripr, .l-btn-annulla { border-radius: 99px; }
@@ -2541,7 +2558,7 @@ const fmtNumero = new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximu
 const fmtCentesimi = new Intl.NumberFormat('it-IT', { useGrouping: 'always', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const euro = n => (Number.isInteger(Math.round(n * 100) / 100) ? fmtNumero : fmtCentesimi).format(n) + ' €';   // 80 € oppure 80,50 €
 const normalizza = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-const sicuro = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sicuro = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function nomeGiorno(s) {
   if (s === tra(0)) return 'Oggi';
@@ -8651,6 +8668,142 @@ document.addEventListener('click', e => {
   if (!b || b.disabled) return;
   b.classList.remove('premuto'); void b.offsetWidth; b.classList.add('premuto');
 });
+
+// ===== GESTI (23/11) =====
+// 1. "Indietro" del telefono (gesto dal bordo dello schermo o tasto indietro):
+//    chiude il foglio o la finestra aperta in cima; se non ce ne sono, torna al Calendario;
+//    se si è già sul Calendario, il telefono esce dall'app come sempre.
+//    Come funziona: per ogni cosa aperta l'app aggiunge un passo alla "cronologia" del browser;
+//    l'indietro del telefono toglie un passo e qui chiudiamo la cosa in cima.
+const SEL_SOPRA = '.foglio-sfondo:not([hidden]), .q-pop:not([hidden])';
+const sopraAperti = () => [...document.querySelectorAll(SEL_SOPRA)];
+function livelliAperti() {
+  const altraVista = ['clienti', 'conti', 'preventivi', 'impostazioni', 'profilo'].some(v => { const el = document.getElementById('vista-' + v); return el && !el.hidden; });
+  return sopraAperti().length + (altraVista ? 1 : 0);
+}
+function chiudiSopra(el) {
+  const b = el.querySelector('.chiudi, [id$="-chiudi"], [aria-label^="Chiudi"], [aria-label^="Torna"]');
+  if (b && b.offsetParent !== null) b.click();                                       // il suo tasto ✕ / ‹ (fa anche le sue pulizie)
+  else if (el.getAttribute('onclick')) el.dispatchEvent(new MouseEvent('click', { bubbles: true }));   // tocco sullo sfondo
+  if (!el.hidden) el.hidden = true;                                                   // per sicurezza
+  if (!sopraAperti().some(x => x.classList.contains('foglio-sfondo'))) document.body.classList.remove('bloccato');
+}
+function cimaAperta() {
+  // la finestra più in alto: z-index più alto, a parità quella che viene dopo nella pagina
+  return sopraAperti().sort((a, b) => (+getComputedStyle(a).zIndex || 0) - (+getComputedStyle(b).zIndex || 0)).pop();
+}
+let passiStoria = 0, ignoraIndietro = 0, _sincStoria = null;
+history.replaceState({ app: 0 }, '');
+function sincronizzaStoria() {
+  const n = livelliAperti();
+  if (n > passiStoria) { for (let i = passiStoria; i < n; i++) history.pushState({ app: i + 1 }, ''); passiStoria = n; }
+  else if (n < passiStoria) { const togli = passiStoria - n; passiStoria = n; ignoraIndietro++; history.go(-togli); }   // chiuso con un tasto: tolgo i passi in più
+}
+new MutationObserver(() => { clearTimeout(_sincStoria); _sincStoria = setTimeout(sincronizzaStoria, 0); })
+  .observe(document.body, { attributes: true, attributeFilter: ['hidden'], subtree: true });
+window.addEventListener('popstate', () => {
+  if (ignoraIndietro) { ignoraIndietro--; return; }
+  if (passiStoria === 0) return;
+  passiStoria--;
+  const cima = cimaAperta();
+  if (cima) chiudiSopra(cima); else tornaAlCalendario();
+});
+
+// 2. Trascinare giù un foglio (dalla maniglia o dal titolo) per chiuderlo
+let _trascina = null;
+document.addEventListener('touchstart', e => {
+  const f = e.target.closest && e.target.closest('.foglio');
+  if (!f || e.target.closest('input, textarea, select')) return;
+  const t = e.touches[0];
+  if (t.clientY - f.getBoundingClientRect().top > 64) return;   // solo la parte alta: il resto del foglio scorre normalmente
+  _trascina = { f, y0: t.clientY, dy: 0, t0: Date.now() };
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!_trascina) return;
+  _trascina.dy = Math.max(0, e.touches[0].clientY - _trascina.y0);
+  if (_trascina.dy > 6) { _trascina.f.style.transition = 'none'; _trascina.f.style.transform = `translateY(${_trascina.dy}px)`; }
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  if (!_trascina) return;
+  const { f, dy, t0 } = _trascina; _trascina = null;
+  const veloce = dy / Math.max(1, Date.now() - t0) > 0.6;
+  if (dy > 120 || (veloce && dy > 40)) {
+    f.style.transition = 'transform .2s ease-in'; f.style.transform = 'translateY(100%)';
+    setTimeout(() => { f.style.transition = ''; f.style.transform = ''; const s = f.closest('.foglio-sfondo'); if (s) chiudiSopra(s); }, 190);
+  } else if (dy > 0) {
+    f.style.transition = 'transform .3s cubic-bezier(.3, 1.4, .5, 1)'; f.style.transform = '';
+    setTimeout(() => { f.style.transition = ''; }, 310);
+  }
+});
+
+// 3. Scorrere il calendario a destra / sinistra per cambiare mese
+(() => {
+  const cal = document.querySelector('#vista-calendario .calendario');
+  if (!cal) return;
+  let inizio = null;
+  cal.addEventListener('touchstart', e => { const t = e.touches[0]; inizio = { x: t.clientX, y: t.clientY }; }, { passive: true });
+  cal.addEventListener('touchend', e => {
+    if (!inizio) return;
+    const t = e.changedTouches[0], dx = t.clientX - inizio.x, dy = t.clientY - inizio.y;
+    inizio = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;   // non era uno scorrimento di lato
+    (dx < 0 ? $('mese-dopo') : $('mese-prima')).click();
+    const g = $('griglia');
+    g.classList.remove('scorri-sx', 'scorri-dx'); void g.offsetWidth; g.classList.add(dx < 0 ? 'scorri-sx' : 'scorri-dx');
+  }, { passive: true });
+})();
+
+// 4. Tenere premuto un lavoro (mezzo secondo): menu rapido con Fatto, Sposta, Chiama, Mappa
+(() => {
+  const agenda = $('agenda');
+  let premi = null, ingoiaClick = false;
+  const lascia = () => { if (premi) { clearTimeout(premi.timer); premi.c.classList.remove('in-pressione'); premi = null; } };
+  agenda.addEventListener('touchstart', e => {
+    const c = e.target.closest('.lavoro');
+    if (!c || e.target.closest('.ca-fatto, .ca-maps')) return;
+    const t = e.touches[0];
+    c.classList.add('in-pressione');
+    premi = { c, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+      c.classList.remove('in-pressione'); premi = null; ingoiaClick = true;
+      if (navigator.vibrate) navigator.vibrate(15);
+      apriMenuLavoro(c);
+    }, 500) };
+  }, { passive: true });
+  agenda.addEventListener('touchmove', e => { if (premi && Math.hypot(e.touches[0].clientX - premi.x, e.touches[0].clientY - premi.y) > 10) lascia(); }, { passive: true });
+  agenda.addEventListener('touchend', lascia);
+  agenda.addEventListener('touchcancel', lascia);
+  agenda.addEventListener('contextmenu', e => { if (e.target.closest('.lavoro')) e.preventDefault(); });
+  // dopo la pressione lunga il dito si alza: quel "tocco" non deve aprire anche il lavoro
+  agenda.addEventListener('click', e => { if (ingoiaClick) { ingoiaClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+})();
+function apriMenuLavoro(carta) {
+  const l = lavori[carta.dataset.id];
+  if (!l) return;
+  const cifre = (datiCliente(l.nome).tel || '').replace(/\D/g, '');
+  let m = $('menu-lavoro');
+  if (!m) {
+    m = document.createElement('div'); m.className = 'q-pop menu-lavoro'; m.id = 'menu-lavoro'; m.hidden = true;
+    m.onclick = e => { if (e.target === m) m.hidden = true; };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div class="q-pop-box ml-box" role="dialog" aria-label="Azioni per ${sicuro(l.nome)}">
+    <div class="ml-testa"><strong>${sicuro(l.nome)}</strong><small>${sicuro(l.cosa || 'Lavoro')}${l.prezzo ? ' · ' + euro(l.prezzo) : ''}</small></div>
+    ${l.fatto ? '' : '<button type="button" class="ml-fatto" data-a="fatto">✓ Segna come fatto</button>'}
+    <button type="button" data-a="sposta">↷ Sposta a un altro giorno</button>
+    ${cifre ? `<a href="tel:${cifre}">Chiama ${sicuro(l.nome)}</a>` : ''}
+    ${l.dove ? `<a href="https://maps.google.com/?q=${encodeURIComponent(indirizzoCompleto(l.dove))}" target="_blank" rel="noopener">Apri la mappa</a>` : ''}
+    <button type="button" data-a="apri">Apri il lavoro</button>
+    <button type="button" class="ml-annulla" data-a="chiudi">Annulla</button>
+  </div>`;
+  m.querySelectorAll('[data-a]').forEach(b => { b.onclick = () => {
+    const a = b.dataset.a; m.hidden = true;
+    if (a === 'fatto') segnaFatto(carta);
+    else if (a === 'sposta') apriCalSposta(l.id);
+    else if (a === 'apri') apriLavoro(l.id);
+  }; });
+  m.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { m.hidden = true; }));
+  m.hidden = false;
+}
 caricaMeteo();
 _doveAvviaAutocomplete();
 

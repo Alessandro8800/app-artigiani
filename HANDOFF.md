@@ -39,6 +39,19 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
   cliente a volte arriva come tipo di lavoro (es. "Taglio erba").
 - Storia, scelte e ispirazioni: `design/NUOVO-LOOK.md`, `design/ispirazioni/`.
 
+## Gesti (23/11)
+
+Codice nel blocco `// ===== GESTI (23/11) =====` vicino alla fine dello script.
+- **Indietro del telefono** (gesto dal bordo / tasto): chiude il foglio o la finestra in cima,
+  poi torna al Calendario, poi esce. Funziona con la cronologia del browser: un
+  `MutationObserver` guarda l'attributo `hidden` di `.foglio-sfondo` / `.q-pop` / viste e aggiunge
+  o toglie passi (`passiStoria`). **Un nuovo foglio o finestra deve usare quelle classi e
+  `hidden`, e avere un tasto `.chiudi` / `id="…-chiudi"`**, altrimenti l'indietro non lo vede.
+- **Trascinare giù** un foglio dai primi 64 px (maniglia e titolo) lo chiude.
+- **Scorrere il calendario** a destra/sinistra cambia mese.
+- **Tenere premuto un lavoro** (0,5 s) apre il menu rapido: Fatto, Sposta, Chiama, Mappa, Apri.
+- Scartato dal titolare: scorrere un lavoro di lato per "Fatto" (rischio di tocchi sbagliati).
+
 ---
 
 ## Struttura dello schermo principale
