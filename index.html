@@ -1078,6 +1078,9 @@ button.s-riga:first-child { border-top: 0; }
 .campo input, .campo textarea { width: 100%; min-height: 56px; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); font-size: 18px; font-weight: 600; }
 .campo textarea { resize: none; }
 .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--foglia); }
+.msg-carosello { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.msg-carosello::-webkit-scrollbar { display: none; }
+.msg-card { flex: 0 0 85%; scroll-snap-align: start; background: var(--sfondo); border: 1.5px solid var(--linea); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 /* Autocomplete indirizzo */
 #campo-dove { position: relative; }
 .dove-suggerimenti { position: absolute; left: 0; right: 0; top: 100%; background: var(--carta); border-radius: 12px; border: 1.5px solid var(--foglia); overflow: hidden; z-index: 200; margin-top: 4px; box-shadow: 0 4px 20px rgba(0,0,0,.18); }
@@ -8263,10 +8266,14 @@ const GRUPPI_IMP = [
     { id: 'messaggi', nome: 'Messaggi per chi deve pagare', valore: () => firma ? `Firmato: ${firma} · ${messaggi.length} modelli` : `${messaggi.length} modelli pronti`, corpo: el => {
       el.innerHTML = `<label class="campo"><span>La tua firma</span><input id="i-firma" class="imp-input" value="${sicuro(firma)}" placeholder="Es. Marco, giardiniere"></label>
         <p class="imp-testo">La firma appare in tutti i messaggi. {nome}, {importo}, {lavoro} e {firma} si scrivono da soli.</p>
-        ${messaggi.map((m, i) => `
-          <p class="imp-testo" style="margin-top:14px"><strong>${sicuro(m.nome)}</strong>${i === 0 ? ' · si manda quando è arancione' : i === 1 ? ' · si manda quando è rosso' : ''}</p>
-          <label class="campo"><span>Nome del modello</span><input class="imp-input i-msg-nome" data-i="${i}" value="${sicuro(m.nome)}"></label>
-          <label class="campo"><textarea class="imp-input i-msg-testo" data-i="${i}" rows="3">${sicuro(m.testo)}</textarea></label>`).join('')}
+        <div class="msg-carosello">
+          ${messaggi.map((m, i) => `
+            <div class="msg-card">
+              <p class="imp-testo" style="margin:0"><strong>${sicuro(m.nome)}</strong>${i === 0 ? ' · arancione' : i === 1 ? ' · rosso' : ''}</p>
+              <label class="campo" style="gap:4px"><span style="font-size:13px;font-weight:700;color:var(--testo-2)">Nome modello</span><input class="imp-input i-msg-nome" data-i="${i}" value="${sicuro(m.nome)}"></label>
+              <label class="campo" style="gap:4px"><textarea class="imp-input i-msg-testo" data-i="${i}" rows="4">${sicuro(m.testo)}</textarea></label>
+            </div>`).join('')}
+        </div>
         <p class="imp-testo">Si apre WhatsApp col testo già scritto: puoi modificarlo prima di mandarlo.</p>`;
       $('i-firma').onchange = e => { firma = e.target.value.trim(); dbSalva(); disegnaImpostazioni(); };
       el.querySelectorAll('.i-msg-nome').forEach(inp => { inp.onchange = e => { messaggi[+inp.dataset.i].nome = e.target.value.trim() || MESSAGGI_DEFAULT[+inp.dataset.i].nome; dbSalva(); disegnaImpostazioni(); }; });
