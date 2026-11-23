@@ -926,3 +926,70 @@ Già documentato al punto 9 di "Prossimi passi": condivisione contatto `.vcf` da
 - Dati solo sul telefono (IndexedDB via Dexie, no server in beta)
 - Decisioni di prodotto estese: vedi `PRODOTTO.md`
 - Decisioni AI vocale: vedi `PRODOTTO.md` sezione AI
+
+---
+
+## Regola anti-flash (critica)
+
+**Non chiamare mai `disegnaCorrente()` da dentro un `oninput`, `onchange` o `onclick` di un campo interattivo.** Causa un re-render completo che produce un lampeggio nero di 1 ms. Regola fissa:
+- `oninput` → aggiorna solo la variabile + DOM minimo in-place (testo, classe)
+- `onchange` → solo `dbSalva()`
+- Stessa cosa per toggle e bottoni: aggiornare solo le classi `.attivo` sui bottoni interessati, non ridisegnare tutto.
+
+---
+
+## Profilo "Per l'assistente" — struttura (fine nov 2026)
+
+**`VOCI_PROFILO`** = array con 2 soli checkpoint fondamentali:
+1. `VOCE_DATI_ATT` — nome attività, P.IVA (11 cifre), telefono (10 cifre), email (@ + .), indirizzo sede
+2. La voce `zona` da `GRUPPI_IMP`
+
+Progresso mostrato come "X di 2" (id `profilo-progresso`).
+
+**`_valida`** — oggetto di validazione inline:
+```js
+const _valida = { piva: v => /^\d{11}$/.test(v||''), tel: v => ((v||'').replace(/\D/g,'').length >= 10), email: v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v||'') };
+```
+
+**Spunta animata** (`.campo-ck.fatto`): replay forzato con `void ck.offsetWidth` tra remove e add della classe. Aggiornata in-place da `_spunta(input, valido)`.
+
+**AI system prompt** usa `datiAttivita.descrizione` (campo "Di che ti occupi", nel gruppo "Il lavoro"):
+```js
+const chi = datiAttivita.descrizione ? `artigiano italiano. Lavoro: ${datiAttivita.descrizione}` : 'artigiano italiano';
+```
+
+---
+
+## IVA preventivi — struttura (fine nov 2026)
+
+**`datiAttivita.iva`** è ora un **array** (es. `[0]`, `[10]`, `[4,22]`). Migrazione automatica in `dbCarica` e in `ivaArray()`.
+
+**Funzioni helper:**
+- `ivaArray(src?)` — normalizza stringa/array → `number[]`
+- `ivaBreakdown(voci, ivaSrc?)` → `[{perc, imponibile, iva}]`
+- `totalConIva(voci, ivaSrc?)` — totale con IVA inclusa
+
+**Forfettario** = `!ivaArray(p.iva).some(r => r > 0)` → nota legale nel documento.
+
+Se più aliquote selezionate: ogni voce del preventivo ha il suo selettore `.prev-iva-btn`.
+
+---
+
+## Messaggi sollecito — struttura (fine nov 2026)
+
+```js
+const MESSAGGI_DEFAULT = [
+  { nome: 'Leggero', testo: 'Ciao {nome}, ti ricordo il pagamento di {importo} per {lavoro}. Grazie! {firma}' },
+  { nome: 'Urgente', testo: 'Gentile {nome}, il pagamento di {importo} per {lavoro} è ancora in sospeso. Ti chiedo di provvedere. {firma}' },
+];
+let messaggi = MESSAGGI_DEFAULT.map(m => ({...m}));
+let messaggioAttivoIdx = 0;  // quale dei due è attivo
+```
+`testoSollecito()` usa `messaggi[messaggioAttivoIdx].testo`.
+
+---
+
+## Tasse — selezione rapida (fine nov 2026)
+
+Sopra il contatore manuale: 3 bottoni `5% / 15% / 26%` (id `i-tasse-quick`).
+Aggiornar l'etichetta del contatore: `el.querySelector('.contatore b').textContent = \`${tasse}%\`` (il `b` è figlio del `div` interno, non del `button`).
