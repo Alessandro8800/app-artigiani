@@ -1696,6 +1696,17 @@ button.s-riga:first-child { border-top: 0; }
 .casella-ai .tasto-ai svg { width: 22px; height: 22px; }
 .casella-ai .tasto-ai:active { transform: scale(.92); }
 .casella-ai .tasto-ai.ascolta { background: var(--rosso); color: #fff; }
+/* Modalità "parla" (di base): il tasto grande arancio "Parla" occupa la casella, accanto la matita */
+.casella-ai:not(.modo-testo) { padding-left: 6px; align-items: center; }
+.casella-ai .tasto-parla { flex: 1; min-width: 0; width: auto; height: 52px; padding: 0 16px; border: 0; border-radius: 22px; display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--foglia); color: var(--sul-foglia); font: 800 17px var(--font-testo); box-shadow: 0 8px 22px color-mix(in srgb, var(--foglia) 35%, transparent); transition: transform .12s ease-out, background .2s; }
+.casella-ai .tasto-parla svg { width: 22px; height: 22px; flex: none; }
+.casella-ai .tasto-parla:active { transform: scale(.97); }
+.casella-ai .tasto-parla.ascolta { background: var(--rosso); color: #fff; }
+/* Tasto piccolo: matita (in "parla") oppure microfono (in "scrivi", casella vuota) */
+.casella-ai .tasto-cambia { flex: none; width: 48px; height: 48px; padding: 0; border: 1px solid var(--linea); border-radius: 50%; display: grid; place-items: center; background: var(--carta); color: var(--testo); transition: transform .12s ease-out, background .2s, color .2s; animation: apri-pop .25s ease-out; }
+.casella-ai .tasto-cambia svg { width: 20px; height: 20px; }
+.casella-ai .tasto-cambia:active { transform: scale(.92); }
+.casella-ai.modo-testo .tasto-cambia { color: var(--foglia); border-color: color-mix(in srgb, var(--foglia) 40%, var(--linea)); background: var(--foglia-chiara); }
 
 /* Scheda del lavoro */
 .l-tendina { border-width: 1px; border-radius: 20px; }
@@ -1738,21 +1749,22 @@ button.s-riga:first-child { border-top: 0; }
         </div>
         <div class="griglia" id="griglia"></div>
       </div>
-      <!-- Barra AI (24/11): stessa grafica della barra dei Preventivi. Casella sempre visibile;
-           il tasto grande è il microfono, appena scrivi diventa la freccia per inviare. Sotto, 3 pillole. -->
+      <!-- Barra AI (24/11): stessa grafica della barra dei Preventivi.
+           Di base: tasto grande "Parla" + matita piccola. La matita apre la casella per scrivere;
+           lì il tasto piccolo è il microfono (per tornare a parlare) e, appena scrivi, la freccia. Sotto, 3 pillole. -->
       <div class="ai-barra vetro">
         <div class="ai-barra-top casella-ai">
-          <textarea class="ai-testo-input" id="ai-testo-input" rows="1" placeholder="Scrivi o tocca il microfono…" aria-label="Scrivi all'assistente" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();inviaTestoAI()}"></textarea>
-          <button class="ai-microfono tasto-ai" id="ai-mic" aria-label="Parla con l'assistente">
+          <textarea class="ai-testo-input" id="ai-testo-input" rows="1" placeholder="Scrivi un messaggio…" aria-label="Scrivi all'assistente" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();inviaTestoAI()}" hidden></textarea>
+          <button class="ai-microfono tasto-parla" id="ai-mic" aria-label="Parla con l'assistente">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
             Parla
           </button>
           <button class="ai-testo-invia tasto-ai" id="ai-testo-invia" onclick="inviaTestoAI()" aria-label="Invia" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
           </button>
-          <button class="ai-scrivi-btn" id="ai-scrivi" onclick="toggleAiScrivi()" aria-label="Scrivi un messaggio" hidden>
-            <svg id="ai-scrivi-ic-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            <svg id="ai-scrivi-ic-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+          <button class="ai-scrivi-btn tasto-cambia" id="ai-scrivi" onclick="toggleAiScrivi()" aria-label="Scrivi invece di parlare">
+            <svg id="ai-scrivi-ic-matita" class="ic-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <svg id="ai-scrivi-ic-mic" class="ic-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
           </button>
         </div>
         <div class="ai-ic-row">
@@ -1863,8 +1875,12 @@ button.s-riga:first-child { border-top: 0; }
     <div id="prev-bar" class="vetro" hidden>
       <p class="prev-crea-label">Crea preventivo</p>
       <div class="prev-bar-inner casella-ai">
-        <textarea id="prev-bar-txt" class="prev-bar-txt" placeholder="Descrivi il lavoro da preventivare…" rows="1"></textarea>
-        <button id="prev-bar-mic" class="prev-bar-btn tasto-ai" onclick="avviaMicPrevBar()" title="Parla con il microfono" aria-label="Parla con il microfono"></button>
+        <textarea id="prev-bar-txt" class="prev-bar-txt" placeholder="Descrivi il lavoro da preventivare…" rows="1" hidden></textarea>
+        <button id="prev-bar-mic" class="prev-bar-btn tasto-parla" onclick="avviaMicPrevBar()" title="Parla con il microfono" aria-label="Parla con il microfono"></button>
+        <button id="prev-bar-scrivi" class="tasto-cambia" onclick="cambiaModoAI('prev')" aria-label="Scrivi invece di parlare">
+          <svg class="ic-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <svg class="ic-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+        </button>
         <button id="prev-bar-invia" class="prev-bar-btn prev-bar-invia tasto-ai" onclick="avviaGeneraPreventivo()" title="Genera preventivo" aria-label="Genera preventivo" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
@@ -6362,15 +6378,7 @@ function toggleAiScrivi() {
   const mic = $('ai-mic'), inp = $('ai-testo-input'), invia = $('ai-testo-invia');
   const icMatita = $('ai-scrivi-ic-matita'), icMic = $('ai-scrivi-ic-mic');
   if (!mic || !inp) return;
-  // Le icone sono disegni (SVG): per loro ".hidden = …" non funziona, serve l'attributo vero
-  const scrivi = inp.hidden;   // true = passo alla casella di testo
-  mic.hidden = scrivi; inp.hidden = !scrivi; if (invia) invia.hidden = !scrivi;
-  if (icMatita) icMatita.toggleAttribute('hidden', scrivi);
-  if (icMic) icMic.toggleAttribute('hidden', !scrivi);
-  const btn = $('ai-scrivi');
-  if (btn) btn.setAttribute('aria-label', scrivi ? 'Torna al microfono' : 'Scrivi un messaggio');
-  $('vista-calendario').classList.toggle('ai-scrive', scrivi);
-  if (scrivi) inp.focus();
+  cambiaModoAI('home');   // matita ↔ microfono: tutta la logica è in cambiaModoAI / aggiornaCaselleAI
 }
 
 function inviaTestoAI() {
@@ -6378,7 +6386,7 @@ function inviaTestoAI() {
   const testo = inp.value.trim(); if (!testo) return;
   if (!ANTHROPIC_KEY) { apriChiaveAI('globale'); return; }
   inp.value = '';
-  aggiornaCaselleAI();   // casella vuota → torna il microfono (prima qui c'era un pezzo che non esiste più e dava errore)
+  cambiaModoAI('home', false);   // inviato: si torna al tasto grande "Parla" (prima qui c'era un pezzo che non esiste più e dava errore)
   const box = $('mic-box');
   $('mic-box-testo').textContent = testo;
   $('mic-box-cat-wrap').hidden = false;
@@ -8973,22 +8981,44 @@ $('s-elimina').setAttribute('aria-label', 'Elimina cliente (tieni premuto)');
   });
 })();
 
-// Barre "scrivi o parla" (Calendario e Preventivi, stessa grafica): finché la casella è vuota
-// il tasto grande è il microfono; appena scrivi diventa la freccia per inviare (come nelle app di messaggi)
+// Barre "scrivi o parla" (Calendario e Preventivi, stessa grafica).
+// Di base: tasto grande "Parla" (il principale) + matita piccola.
+// Tocco la matita → compare la casella per scrivere; il tasto piccolo diventa il microfono (per tornare a parlare)
+// e, appena scrivo qualcosa, la freccia per inviare.
+function barreAI() { return {
+  home: { testo: 'ai-testo-input', parla: 'ai-mic', invia: 'ai-testo-invia', cambia: 'ai-scrivi' },
+  prev: { testo: 'prev-bar-txt', parla: 'prev-bar-mic', invia: 'prev-bar-invia', cambia: 'prev-bar-scrivi' },
+}; }  // (funzione e non costante: può servire anche mentre l'app si sta ancora caricando)
+function cambiaModoAI(quale, scrivi) {
+  const b = barreAI()[quale], box = $(b.testo) && $(b.testo).closest('.casella-ai');
+  if (!box) return;
+  const ora = scrivi ?? !box.classList.contains('modo-testo');
+  box.classList.toggle('modo-testo', ora);
+  aggiornaCaselleAI();
+  if (ora) $(b.testo).focus();
+}
 function aggiornaCaselleAI() {
-  [['ai-testo-input', 'ai-mic', 'ai-testo-invia'], ['prev-bar-txt', 'prev-bar-mic', 'prev-bar-invia']].forEach(([t, m, i]) => {
-    const casella = $(t), mic = $(m), invia = $(i);
-    if (!casella || !mic || !invia) return;
+  Object.values(barreAI()).forEach(({ testo: t, parla: m, invia: i, cambia: c }) => {
+    const casella = $(t), mic = $(m), invia = $(i), cambia = $(c);
+    if (!casella || !mic || !invia || !cambia) return;
+    const scrivi = casella.closest('.casella-ai').classList.contains('modo-testo');
     const pieno = casella.value.trim() !== '';
-    mic.hidden = pieno; invia.hidden = !pieno;
+    casella.hidden = !scrivi;                 // la casella c'è solo in modalità "scrivi"
+    mic.hidden = scrivi;                      // il tasto grande "Parla" solo in modalità "parla"
+    invia.hidden = !(scrivi && pieno);        // freccia: solo se c'è qualcosa da inviare
+    cambia.hidden = scrivi && pieno;          // matita (in "parla") oppure microfono (in "scrivi", casella vuota)
+    // sui disegni (SVG) ".hidden" non funziona: serve l'attributo vero
+    cambia.querySelector('.ic-matita')?.toggleAttribute('hidden', scrivi);
+    cambia.querySelector('.ic-mic')?.toggleAttribute('hidden', !scrivi);
+    cambia.setAttribute('aria-label', scrivi ? 'Torna al microfono' : 'Scrivi invece di parlare');
     // cresce in verticale se scrivi tanto (si misura solo quando si vede: nascosta l'altezza verrebbe 0)
     if (casella.offsetParent) { casella.style.height = 'auto'; casella.style.height = casella.scrollHeight + 'px'; }
     else casella.style.height = '';
   });
 }
 document.addEventListener('input', e => { if (e.target.id === 'ai-testo-input' || e.target.id === 'prev-bar-txt') aggiornaCaselleAI(); });
+{ const m = $('prev-bar-mic'); if (m && !m.innerHTML.trim()) m.innerHTML = SVG_MIC + ' Parla'; }
 aggiornaCaselleAI();
-{ const m = $('prev-bar-mic'); if (m && !m.innerHTML.trim()) m.innerHTML = SVG_MIC; }
 
 // Numerini (badge) che saltano quando aumentano
 document.querySelectorAll('.ai-badge, .nr-badge').forEach(b => {
@@ -9317,7 +9347,7 @@ async function avviaGeneraPreventivo() {
   const ris = await generaPreventivo(desc);
   if (invia) { invia.disabled = false; invia.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>'; }
   if (!ris) { avvisa('Errore nella generazione — riprova'); return; }
-  txt.value = ''; txt.style.height = 'auto'; aggiornaCaselleAI();
+  txt.value = ''; txt.style.height = 'auto'; cambiaModoAI('prev', false);   // preventivo fatto: torna "Parla"
   _prevBozzaVoci = ris.voci; _prevBozzaNote = ris.note; _prevBozzaInput = desc; _prevEditId = null;
   _prevVista = 'anteprima'; disegnaPreventivi();
 }
@@ -9327,16 +9357,16 @@ function avviaMicPrevBar() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) { avvisa('Microfono non supportato'); return; }
   if (btn.classList.contains('ascolta')) return;
-  btn.classList.add('ascolta');
+  btn.classList.add('ascolta'); btn.innerHTML = SVG_MIC + ' In ascolto…';
   const sr = new SpeechRecognition();
   sr.lang = 'it-IT'; sr.interimResults = false; sr.continuous = false;
   sr.onresult = e => {
     const testo = e.results[0]?.[0]?.transcript || '';
-    const txt = $('prev-bar-txt'); if (txt && testo) { txt.value = testo; txt.style.height = 'auto'; txt.style.height = txt.scrollHeight + 'px'; txt.focus(); }
-    btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC;
-    aggiornaCaselleAI();   // c'è il testo detto: il tasto diventa la freccia per generare
+    btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC + ' Parla';
+    const txt = $('prev-bar-txt');
+    if (txt && testo) { txt.value = testo; cambiaModoAI('prev', true); }   // il testo detto compare nella casella, con la freccia per generare
   };
-  sr.onerror = sr.onend = () => { if (btn.classList.contains('ascolta')) { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC; } };
+  sr.onerror = sr.onend = () => { if (btn.classList.contains('ascolta')) { btn.classList.remove('ascolta'); btn.innerHTML = SVG_MIC + ' Parla'; } };
   sr.start();
 }
 
@@ -9518,7 +9548,7 @@ function disegnaPreventivi() {
   if (bar) {
     bar.hidden = _prevVista !== 'lista' || (prevDati === null && !_prevSkipped);
     if (!bar.hidden) {
-      const mic = $('prev-bar-mic'); if (mic && !mic.innerHTML.trim()) mic.innerHTML = SVG_MIC;
+      const mic = $('prev-bar-mic'); if (mic && !mic.innerHTML.trim()) mic.innerHTML = SVG_MIC + ' Parla';
       aggiornaCaselleAI();
     }
   }

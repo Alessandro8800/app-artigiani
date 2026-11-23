@@ -31,9 +31,10 @@ La versione app vera è in `src/` + `prima-versione/` (bocciata, resta online). 
 - **Prima pagina:** calendario sopra, lavori su una **linea del tempo** (il cerchio a sinistra
   è "Fatto"; `.card-azioni` è `display: contents`). Niente colonna degli orari: deciso dal titolare.
 - **Barre "scrivi o parla"** (prima pagina e Preventivi): stessa grafica, classe `.casella-ai`
-  dentro una cornice `.vetro` (anche il calendario ha la cornice vetro). Il tasto grande è il
-  **microfono**; appena scrivi diventa la freccia (`aggiornaCaselleAI()`). La matita non c'è più
-  (deciso dal titolare). Nuove barre di questo tipo: usare le stesse classi.
+  dentro una cornice `.vetro` (anche il calendario ha la cornice vetro). **Di base c'è il tasto
+  grande "Parla"** (il principale, deciso dal titolare) + una matita piccola; la matita apre la
+  casella (`modo-testo`), dove il tasto piccolo è il microfono per tornare indietro e, appena
+  scrivi, la freccia. Logica in `cambiaModoAI()` / `aggiornaCaselleAI()` / `barreAI()`.
 - **Barra in basso:** pillola con `<i class="barra-luce">` che si sposta con `:has()` →
   dipende dall'ordine dei 4 tasti. Se si aggiunge/toglie un tasto, aggiornare quelle regole.
 - **Correzioni fatte:** tema/colore/testo ora si ricordano (`localStorage` `aspetto`,
