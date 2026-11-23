@@ -6334,38 +6334,18 @@ function avviaMicrofono(sorgente) {
     if (finale) {
       _micFinaleTrovato = true;
       $('mic-box-testo').textContent = finale;
-      // 4. "Elaboro…" mentre l'AI lavora
-      catWrap.hidden = false;
-      catEl.className = 'mic-box-cat';
-      catEl.innerHTML = '<span class="mic-box-elabora"><span></span><span></span><span></span></span> Elaboro…';
-      const mostra = (ris) => {
-        if ($('mic-box').hidden) return; // l'utente ha già chiuso il riquadro
-        const et = etichettaRisultato(ris);
-        catEl.className = 'mic-box-cat cat-' + et.cat;
-        catEl.textContent = et.testo;
-        vibra();
-        // Countdown 4 secondi + Annulla
-        const autoWrap = document.createElement('div');
-        autoWrap.className = 'mic-box-auto-wrap';
-        catWrap.querySelectorAll('.mic-box-auto-wrap').forEach(e => e.remove()); // al massimo una barra
-        autoWrap.innerHTML = '<div class="mic-box-auto-bar"><div class="mic-box-auto-progresso"></div></div><button class="mic-box-annulla-btn">Annulla</button>';
-        catWrap.appendChild(autoWrap);
-        void autoWrap.offsetWidth;
-        autoWrap.querySelector('.mic-box-auto-progresso').classList.add('corre');
-        const salvaTimer = setTimeout(() => {
-          aggiungiVoceInbox(finale, ris);
-          chiudiMicBox();
-          // Chiave rifiutata: la frase è salvata come nota, ora si chiede una chiave nuova
-          if (ris && ris._chiaveErrata) apriChiaveAI(sorgente, 'La chiave salvata non funziona. Incollane una nuova.');
-        }, 4000);
-        autoWrap.querySelector('.mic-box-annulla-btn').onclick = () => { clearTimeout(salvaTimer); chiudiMicBox(); };
-      };
-      // 5. Se l'AI fallisce (rete, errore, tempo scaduto) → nota grezza con il motivo, la trascrizione non si perde
-      categorizzaVoceAI(finale).then(mostra).catch(e => {
+      vibra();
+      // Chiude subito dopo un breve istante — l'AI lavora in background
+      setTimeout(chiudiMicBox, 600);
+      // 4. AI in background: il risultato va nell'inbox senza bloccare l'utente
+      categorizzaVoceAI(finale).then(ris => {
+        aggiungiVoceInbox(finale, ris);
+        if (ris && ris._chiaveErrata) apriChiaveAI(sorgente, 'La chiave salvata non funziona. Incollane una nuova.');
+      }).catch(e => {
         const motivo = motivoErroreAI(e);
         const chiaveErrata = e && (e.stato === 401 || e.stato === 403);
         if (chiaveErrata) { ANTHROPIC_KEY = ''; try { localStorage.removeItem('anthropic_key'); } catch(_){} }
-        mostra({ operations: [{ tipo: 'nota', testo: finale }], _fallback: true, _motivo: motivo, _chiaveErrata: chiaveErrata });
+        aggiungiVoceInbox(finale, { operations: [{ tipo: 'nota', testo: finale }], _fallback: true, _motivo: motivo, _chiaveErrata: chiaveErrata });
       });
     } else if (interim) {
       $('mic-box-testo').innerHTML = `<em>${sicuro(interim)}</em>`;
@@ -6415,21 +6395,10 @@ function inviaTestoAI() {
   const testo = inp.value.trim(); if (!testo) return;
   if (!ANTHROPIC_KEY) { apriChiaveAI('globale'); return; }
   inp.value = '';
-  cambiaModoAI('home', false);   // inviato: si torna al tasto grande "Parla" (prima qui c'era un pezzo che non esiste più e dava errore)
-  const box = $('mic-box');
-  $('mic-box-testo').textContent = testo;
-  $('mic-box-cat-wrap').hidden = false;
-  const catEl = $('mic-box-cat');
-  catEl.className = 'mic-box-cat';
-  catEl.innerHTML = '<span class=\'mic-box-elabora\'><span></span><span></span><span></span></span> Elaboro…';
-  box.hidden = false;
-  const mostraCat = ris => {
-    const et = etichettaRisultato(ris);
-    catEl.className = 'mic-box-cat cat-' + et.cat;
-    catEl.textContent = et.testo;
-    setTimeout(() => { aggiungiVoceInbox(testo, ris); box.hidden = true; }, 1200);
-  };
-  categorizzaVoceAI(testo).then(mostraCat).catch(() => mostraCat({ operations: [{ tipo: 'nota', testo }], _fallback: true }));
+  cambiaModoAI('home', false);
+  vibra();
+  // AI in background, niente riquadro
+  categorizzaVoceAI(testo).then(ris => aggiungiVoceInbox(testo, ris)).catch(() => aggiungiVoceInbox(testo, { operations: [{ tipo: 'nota', testo }], _fallback: true }));
 }
 $('mic-box-chiudi').onclick = chiudiMicBox;
 
