@@ -93,3 +93,9 @@ salvataggio con git. Niente pubblicazione (push) finché Alessandro non lo dice.
   Si tiene solo il colore principale scelto, o si toglie?
 - Il cerchio "Fatto" e le altre animazioni: si tengono così o si ridisegnano?
 - I caratteri attuali (Bricolage Grotesque + Manrope): si decide guardando le proposte della Fase 2.
+- **La rotella degli importi** (23/11, Alessandro): oggi è **più lenta della tastiera**. Da
+  ripensare. Idee da valutare: tastiera dei numeri come modo principale e rotella solo per
+  ritocchi piccoli; oppure togliere la rotella. Attenzione: cambiare *come si scrive* un numero
+  non è solo look, quindi va deciso a parte.
+- **Ispirazioni**: Mobbin gratis mostra troppo poco. Alternative gratuite: Dribbble, Pinterest,
+  le foto delle app nella pagina del Play Store, foto dello schermo delle app sul telefono.
