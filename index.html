@@ -1077,8 +1077,9 @@ button.s-riga:first-child { border-top: 0; }
 .campo input, .campo textarea { width: 100%; min-height: 56px; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--carta); font-size: 18px; font-weight: 600; }
 .campo textarea { resize: none; }
 .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--foglia); }
-.campo-ck { font-style: normal; font-size: 13px; font-weight: 800; color: var(--linea); margin-left: 4px; }
-.campo-ck.fatto { color: var(--ambra); }
+.campo-ck { font-style: normal; font-size: 13px; font-weight: 800; color: var(--linea); margin-left: 4px; display: inline-block; }
+.campo-ck.fatto { color: var(--ambra); animation: ck-pop .4s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes ck-pop { from { transform: scale(0) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
 .msg-carosello { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .msg-carosello::-webkit-scrollbar { display: none; }
 .msg-card { flex: 0 0 85%; scroll-snap-align: start; background: var(--sfondo); border: 1.5px solid var(--linea); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
