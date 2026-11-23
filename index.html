@@ -39,13 +39,13 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --sfondo: #111613; --carta: #1a211c; --testo: #e8eee9; --testo-2: #9aa79d; --linea: #2a332d;
-    --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #e8a25c; --ambra-chiara: #3a2a19; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; --verde: #4ade80; color-scheme: dark;
+    --sfondo: #0b0b0b; --carta: #171717; --testo: #f5f5f5; --testo-2: #a8a8a8; --linea: #2a2a2a;
+    --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #ffc53d; --ambra-chiara: #3a3115; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; --verde: #4ade80; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --sfondo: #111613; --carta: #1a211c; --testo: #e8eee9; --testo-2: #9aa79d; --linea: #2a332d;
-  --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #e8a25c; --ambra-chiara: #3a2a19; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; --verde: #4ade80; color-scheme: dark;
+  --sfondo: #0b0b0b; --carta: #171717; --testo: #f5f5f5; --testo-2: #a8a8a8; --linea: #2a2a2a;
+  --foglia: #6fbf86; --foglia-chiara: #1f3326; --sul-foglia: #0f1a12; --ambra: #ffc53d; --ambra-chiara: #3a3115; --rosso: #f08a7e; --rosso-chiaro: #3d1f1c; --verde: #4ade80; color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -1337,6 +1337,33 @@ button.s-riga:first-child { border-top: 0; }
 .prova-tu summary { font-weight: 700; color: var(--testo-2); cursor: pointer; padding-block: 6px; }
 .prova-tu textarea { width: 100%; margin-block: 8px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--linea); background: var(--sfondo); font-size: 16px; resize: none; }
 @keyframes pulsa { 0%, 100% { box-shadow: 0 0 0 0 var(--foglia-chiara); } 50% { box-shadow: 0 0 0 16px var(--foglia-chiara); } }
+
+/* ===== NUOVO LOOK (23/11) — prima pagina =====
+   Calendario più leggero (senza riquadro, giorni tondi) e lavori su una linea del tempo:
+   a sinistra una linea verticale con un cerchio per ogni lavoro (toccandolo = Fatto). */
+#vista-calendario .calendario { background: none; border: 0; padding: 4px 0 0; }
+#vista-calendario .cal-testa { padding: 0 0 6px; }
+#vista-calendario .freccia { background: none; color: var(--testo-2); }
+#vista-calendario .nome-g { font-size: 11px; letter-spacing: .06em; padding-block: 0 6px; }
+#vista-calendario .griglia .g { width: 42px; height: 42px; justify-self: center; border-radius: 50%; font-weight: 600; }
+.pallini i { background: var(--foglia); }
+.pallini i.fatto { background: var(--testo-2); opacity: .55; }
+
+#agenda .giorno-testa { margin-bottom: 0; padding-bottom: 8px; border-bottom: 1px solid var(--linea); }
+#agenda .giorno-sotto { margin: 8px 0 2px; }
+#agenda .lista { position: relative; gap: 0; }
+#agenda .lista::before { content: ''; position: absolute; left: 21px; top: 30px; bottom: 30px; width: 2px; border-radius: 1px; background: var(--linea); }
+#agenda .lavoro { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 0 12px; align-items: start; background: none; border: 0; border-radius: 0; padding: 12px 0; }
+#agenda .lavoro.colorato { border-left: 0; padding-left: 0; }
+#agenda .lavoro.colorato .nome::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 3px; background: var(--c); margin-right: 8px; vertical-align: 2px; }
+#agenda .lavoro .testo { grid-column: 2; grid-row: 1; padding: 4px 0 0; background: none; border: 0; text-align: left; }
+#agenda .lavoro .nome { font-size: 18px; }
+#agenda .card-azioni { display: contents; }
+#agenda .ca-fatto { grid-column: 1; grid-row: 1; position: relative; z-index: 1; width: 30px; height: 30px; margin: 7px; font-size: 15px; background: var(--sfondo); box-shadow: inset 0 0 0 2.5px var(--foglia); color: color-mix(in srgb, var(--foglia) 45%, transparent); }
+#agenda .ca-fatto::after { content: ''; position: absolute; inset: -7px; }
+#agenda .lavoro.fatto .ca-fatto { background: var(--foglia); color: var(--sul-foglia); }
+#agenda .ca-maps { grid-column: 3; grid-row: 1; width: 40px; height: 40px; margin-top: 2px; border: 0; background: var(--carta); color: var(--testo-2); }
+#agenda .ora-etichetta { background: var(--carta); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
@@ -7486,7 +7513,7 @@ $('pp-senza').onclick = () => { $('prezzo-pop').hidden = true; segnaFatto(fattoI
 // Giorni in cui lavora (lunedì → domenica): quelli spenti non vengono proposti nel "Quando"
 const giorniLavoro = [true, true, true, true, true, true, false];
 const soglie = { arancio: 7, rosso: 21 };   // giorni di ritardo prima dell'etichetta arancione / rossa
-let tema = 'auto', testo = 'normale', accento = 'verde', ultimaCopia = '';
+let tema = 'auto', testo = 'normale', accento = 'arancio', ultimaCopia = '';
 let templateCalendario = 'mensile';
 let vibrazioneAttiva = true;
 const TEMPLATE_CAL = { mensile: 'Mensile', 'per-settimane': 'Per settimane', agenda: 'Agenda', anno: 'Anno · Report' };
@@ -7502,7 +7529,7 @@ const NOTIFICHE = [
 const TEMI = { auto: 'Come il telefono', light: 'Chiaro', dark: 'Scuro' };
 const TESTI = { piccolo: ['Piccolo', 0.9], normale: ['Normale', 1], grande: ['Grande', 1.12] };
 // Colore dell'app: la tinta (0-360) e quanto è viva
-const ACCENTI = { verde: ['Foglia', 140, 40], blu: ['Mare', 212, 45], terracotta: ['Terracotta', 16, 50], viola: ['Lavanda', 268, 35], ottanio: ['Ottanio', 186, 45], grafite: ['Grafite', 150, 4] };
+const ACCENTI = { arancio: ['Arancio', 20, 100], verde: ['Foglia', 140, 40], blu: ['Mare', 212, 45], terracotta: ['Terracotta', 16, 50], viola: ['Lavanda', 268, 35], ottanio: ['Ottanio', 186, 45], grafite: ['Grafite', 150, 4] };
 const NOMI_GIORNI = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
 // Applica il colore dell'app ai due temi (chiaro e scuro)
